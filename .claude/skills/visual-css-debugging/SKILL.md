@@ -1,22 +1,28 @@
 ---
 name: visual-css-debugging
-description: Use when frontend has CSS styling issues, visual bugs, or needs visual verification - combines Playwright for page control with mmxcli for AI image analysis in feedback loops
+description: Use when frontend has CSS styling issues, visual bugs, runtime errors, or page load failures - combines Playwright for page control with mmxcli for AI image analysis in feedback loops
 ---
 
 # Visual CSS Debugging with Playwright + mmxcli
 
 ## Overview
 
-Debug frontend CSS issues using a feedback loop: Playwright navigates and captures, mmxcli analyzes visually, you fix based on AI feedback. Repeat until visually correct.
+Debug frontend issues using a feedback loop: Playwright navigates and captures, mmxcli analyzes visually, you fix based on feedback. Repeat until correct.
+
+**Two debugging modes:**
+1. **Runtime check** - Page load errors, console errors, React crashes
+2. **Visual check** - CSS not applying, layout issues, missing styles
 
 ## When to Use
 
+- Page won't load or shows blank
+- "Unexpected Application Error" in browser
+- Console errors: "Hooks violated", "Cannot read properties of null"
 - CSS styles not applying correctly
 - Layout issues (overflow, alignment, spacing)
 - Visual bugs after code changes
 - "CSS几乎完全没有" (CSS almost missing) symptoms
 - Need visual verification before commit
-- Component looks different than expected
 
 ## Core Pattern
 
@@ -46,9 +52,60 @@ digraph debugging_flow {
 |------|---------|---------|
 | Navigate | `mcp__plugin_playwright_playwright__browser_navigate` | Open URL |
 | Screenshot | `mcp__plugin_playwright_playwright__browser_take_screenshot` | Capture visual |
+| Snapshot | `mcp__plugin_playwright_playwright__browser_snapshot` | DOM structure |
 | Console | `mcp__plugin_playwright_playwright__browser_console_messages` | Check errors |
 | Analyze | `mmx vision describe --image <path>` | AI visual analysis |
 | Wait | `mcp__plugin_playwright_playwright__browser_wait_for` | Wait for render |
+
+## Step 1: Runtime Error Detection
+
+Before visual debugging, check for runtime errors that prevent page from loading.
+
+### Navigate to page
+```
+mcp__plugin_playwright_playwright__browser_navigate
+  url: "http://localhost:<port>/<path>"
+```
+
+### Wait for initial render
+```
+mcp__plugin_playwright_playwright__browser_wait_for
+  time: 3
+```
+
+### Check console errors immediately
+```
+mcp__plugin_playwright_playwright__browser_console_messages
+  level: "error"
+```
+
+### Common Runtime Errors
+
+| Error Message | Likely Cause | Fix |
+|--------------|--------------|-----|
+| "Should have a queue. You are likely calling Hooks conditionally" | useCallback inside useMemo | Move hooks to top level |
+| "Cannot read properties of null (reading 'useEffect')" | React version mismatch, module not loaded | Check imports, React version |
+| "Failed to fetch dynamically imported module" | Stale Vite cache, module not found | Clear .vite cache, restart dev server |
+| "is not exported by module" | Wrong import path | Check export/import paths |
+| "TypeError: Failed to fetch" | Network error, port issue | Restart dev server |
+
+### Snapshot check for error boundary
+```
+mcp__plugin_playwright_playwright__browser_snapshot
+```
+
+Look for:
+- `Unexpected Application Error` heading
+- Error message details
+- Stack trace location
+
+### If Runtime Error Found
+
+1. **Analyze error** → Identify root cause from message
+2. **Fix code** → Common fixes below
+3. **pnpm run build** → Verify compilation
+4. **Restart dev server** → `pkill -f "vite"` then `npm run dev`
+5. **Re-navigate** → Go back to step 1
 
 ## Step-by-Step Loop
 
