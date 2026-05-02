@@ -1,0 +1,7 @@
+services:
+  rt:
+    build: .
+    container_name: rt_app
+    ports:
+      - "81:80"
+    restart: unless-stopped
