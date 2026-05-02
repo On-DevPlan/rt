@@ -4,3 +4,7 @@ dist
 .idea
 .vscode
 *.local
+
+# Cloned repositories (nested git repos)
+.claude/repo/
+
