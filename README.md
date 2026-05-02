@@ -12,8 +12,8 @@
 ## 开发
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 开发端口固定为 `81`。
@@ -36,3 +36,4 @@ src/
 - Docker 镜像使用多阶段构建。
 - Nginx 对外提供 SPA 路由回退与 `/health` 健康检查。
 - GitHub Actions 工作流模仿参考项目 `ve` 的 Docker 打包 + SCP + SSH 发布流程，外部映射端口为 `81`。
+- 包管理器统一为 `pnpm`，锁文件为 `pnpm-lock.yaml`。
