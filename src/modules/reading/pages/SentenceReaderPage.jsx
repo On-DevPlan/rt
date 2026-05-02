@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styles from './SentenceReaderPage.module.css'
 
 const HOVER_DELAY_MS = 3000
@@ -51,17 +51,19 @@ const story = {
   ]
 }
 
-function SentenceRow({
-  item,
-  index,
-  isActive,
-  isRevealed,
-  progress,
-  onEnter,
-  onLeave
-}) {
+function ProgressBar({ progress, hidden }) {
+  if (hidden) return null
+  const pct = Math.round(progress * 100)
   return (
-    <div className={`${styles.line}${isActive ? ` ${styles.active}` : ''}${isRevealed ? ` ${styles.revealed}` : ''}`}>
+    <div style={{ width: '100%', height: '10px', background: 'rgba(120, 80, 50, 0.15)', borderRadius: '999px', marginTop: '8px', overflow: 'hidden' }}>
+      <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #5c3d2e, #8b6343)', borderRadius: '999px', transition: 'width 0.05s linear', boxShadow: '0 0 8px rgba(92, 61, 46, 0.5)' }} />
+    </div>
+  )
+}
+
+function SentenceRow({ item, index, isActive, isRevealed, progress, onEnter, onLeave, cleanMode }) {
+  return (
+    <div className={`${styles.line}${isActive ? ` ${styles.lineActive}` : ''}`}>
       <button
         type="button"
         className={styles.sentenceButton}
@@ -72,25 +74,20 @@ function SentenceRow({
       >
         <span className={styles.sentenceStack}>
           <span className={styles.sentenceEn}>{item.en}</span>
-          <span className={styles.progressTrack} aria-hidden="true">
-            <span
-              className={styles.progressFill}
-              style={{ width: `${Math.max(0, Math.min(progress, 1)) * 100}%` }}
-            />
-          </span>
+          {!cleanMode && <ProgressBar progress={isActive ? progress : 0} />}
         </span>
       </button>
 
-      <div className={`${styles.detail}${isRevealed ? ` ${styles.visible}` : ''}`}>
-        <p className={styles.sentenceZh}>{item.zh}</p>
-        <div className={styles.focusTags}>
-          {item.focus.map((point) => (
-            <span key={point} className={styles.focusTag}>
-              {point}
-            </span>
-          ))}
+      {!cleanMode && (
+        <div className={`${styles.detail}${isRevealed ? ` ${styles.detailVisible}` : ''}`}>
+          <p className={styles.sentenceZh}>{item.zh}</p>
+          <div className={styles.focusTags}>
+            {item.focus.map((point) => (
+              <span key={point} className={styles.focusTag}>{point}</span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -99,12 +96,9 @@ export default function SentenceReaderPage() {
   const [activeIndex, setActiveIndex] = useState(null)
   const [progress, setProgress] = useState(0)
   const [revealedIndexes, setRevealedIndexes] = useState([])
-  const hoverStartRef = useRef(0)
-  const rafRef = useRef(0)
+  const [cleanMode, setCleanMode] = useState(false)
+  const intervalRef = useRef(0)
   const timerRef = useRef(0)
-
-  const activeSentence = activeIndex === null ? null : story.sentences[activeIndex]
-  const remainingMs = useMemo(() => Math.max(0, Math.ceil((1 - progress) * HOVER_DELAY_MS)), [progress])
 
   useEffect(() => {
     if (activeIndex === null) {
@@ -112,42 +106,48 @@ export default function SentenceReaderPage() {
       return undefined
     }
 
-    hoverStartRef.current = performance.now()
     setProgress(0)
 
-    const tick = (now) => {
-      const nextProgress = Math.min((now - hoverStartRef.current) / HOVER_DELAY_MS, 1)
-      setProgress(nextProgress)
+    const step = 50
+    let elapsed = 0
 
-      if (nextProgress < 1) {
-        rafRef.current = window.requestAnimationFrame(tick)
+    intervalRef.current = window.setInterval(() => {
+      elapsed += step
+      const newProgress = Math.min(elapsed / HOVER_DELAY_MS, 1)
+      setProgress(newProgress)
+
+      if (newProgress >= 1) {
+        window.clearInterval(intervalRef.current)
       }
-    }
+    }, step)
 
-    rafRef.current = window.requestAnimationFrame(tick)
     timerRef.current = window.setTimeout(() => {
       setProgress(1)
-      setRevealedIndexes((current) => (current.includes(activeIndex) ? current : [...current, activeIndex]))
+      setRevealedIndexes((current) =>
+        current.includes(activeIndex) ? current : [...current, activeIndex]
+      )
     }, HOVER_DELAY_MS)
 
     return () => {
-      window.cancelAnimationFrame(rafRef.current)
+      window.clearInterval(intervalRef.current)
       window.clearTimeout(timerRef.current)
     }
   }, [activeIndex])
 
-  const handleEnter = (index) => {
-    setActiveIndex(index)
-  }
+  const handleEnter = (index) => setActiveIndex(index)
+  const handleLeave = () => setActiveIndex(null)
 
-  const handleLeave = () => {
-    setActiveIndex(null)
-    setProgress(0)
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    setCleanMode((prev) => !prev)
   }
 
   return (
     <div className="page-stack">
-      <section className={styles.shell}>
+      <section
+        className={`${styles.shell}${cleanMode ? ` ${styles.cleanMode}` : ''}`}
+        onContextMenu={handleContextMenu}
+      >
         <header className={styles.header}>
           <div>
             <span className={styles.kicker}>{story.level}</span>
@@ -158,10 +158,6 @@ export default function SentenceReaderPage() {
             <div className={styles.chip}>
               <strong>{story.sentences.length}</strong>
               <span>sentences</span>
-            </div>
-            <div className={styles.chip}>
-              <strong>{remainingMs}ms</strong>
-              <span>reveal delay</span>
             </div>
             <div className={styles.chip}>
               <strong>{revealedIndexes.length}</strong>
@@ -181,6 +177,7 @@ export default function SentenceReaderPage() {
               progress={activeIndex === index ? progress : 0}
               onEnter={handleEnter}
               onLeave={handleLeave}
+              cleanMode={cleanMode}
             />
           ))}
         </div>
