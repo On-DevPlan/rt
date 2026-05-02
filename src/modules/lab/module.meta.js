@@ -15,7 +15,9 @@ export default defineModule({
       summary: '说明如何把一个新业务域接到这个框架里，同时保留隔离性和懒加载。',
       order: 0,
       tags: ['sandbox', 'module', 'performance'],
-      widgets: ['prefetch-strategy']
+      widgets: ['prefetch-strategy'],
+      showcase: false,
+      internal: true
     })
   ],
   widgets: [

@@ -8,16 +8,6 @@ export default defineModule({
   color: '#1e7a5d',
   pages: [
     definePage({
-      id: 'home',
-      title: '框架首页',
-      route: '/',
-      entry: './pages/LandingPage.jsx',
-      summary: '从模块发现、懒加载、注册表组织三个方向说明这个 React 工程的框架性。',
-      order: 0,
-      tags: ['featured', 'autoload', 'registry'],
-      widgets: ['registry-stats', 'route-map']
-    }),
-    definePage({
       id: 'registry-explorer',
       title: '注册表总览',
       route: '/registry',
@@ -25,7 +15,9 @@ export default defineModule({
       summary: '查看所有模块、页面和 widgets 的自动发现结果，并验证元数据是否集中。',
       order: 10,
       tags: ['metadata', 'inspection', 'search'],
-      widgets: ['isolation-contract']
+      widgets: ['isolation-contract'],
+      showcase: false,
+      internal: true
     })
   ],
   widgets: [

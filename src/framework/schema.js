@@ -7,6 +7,9 @@ export function definePage(config) {
     order: 0,
     tags: [],
     widgets: [],
+    showcase: true,
+    fullscreen: true,
+    internal: false,
     ...config
   }
 }

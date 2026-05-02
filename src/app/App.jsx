@@ -1,35 +1,26 @@
 import { Suspense } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { AppShell } from '../framework/components/AppShell.jsx'
+import HomePage from './HomePage.jsx'
+import { FullscreenPage } from '../framework/components/FullscreenPage.jsx'
 import { NotFoundPage } from '../framework/components/NotFoundPage.jsx'
-import { PageFrame } from '../framework/components/PageFrame.jsx'
 import { registry } from '../framework/registry.js'
 
-const pageRoutes = registry.pages.map((page) => {
-  if (page.route === '/') {
-    return {
-      index: true,
-      element: <PageFrame page={page} />
-    }
-  }
-
-  return {
-    path: page.route.replace(/^\//, ''),
-    element: <PageFrame page={page} />
-  }
-})
+const pageRoutes = registry.pages
+  .filter((page) => page.route !== '/')
+  .map((page) => ({
+    path: page.route,
+    element: <FullscreenPage page={page} />
+  }))
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <AppShell />,
-    children: [
-      ...pageRoutes,
-      {
-        path: '*',
-        element: <NotFoundPage />
-      }
-    ]
+    element: <HomePage />
+  },
+  ...pageRoutes,
+  {
+    path: '*',
+    element: <NotFoundPage />
   }
 ])
 

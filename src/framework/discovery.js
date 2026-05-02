@@ -116,6 +116,9 @@ export function createRegistry() {
         order: pageMeta.order || 0,
         tags: ensureArray(pageMeta.tags),
         widgets: ensureArray(pageMeta.widgets),
+        showcase: pageMeta.showcase !== false,
+        fullscreen: pageMeta.fullscreen !== false,
+        internal: pageMeta.internal === true,
         entry: pageMeta.entry,
         preload: cachedLoader.preload,
         Component: lazy(cachedLoader)
