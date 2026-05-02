@@ -2,16 +2,21 @@ import { Link } from 'react-router-dom'
 import { registry } from '../framework/registry.js'
 import { useDocumentTitle } from '../framework/hooks/useDocumentTitle.js'
 
-function ShowcaseCard({ page, featured = false }) {
+function ShowcaseCard({ page }) {
   return (
     <article
-      className={`showcase-card${featured ? ' featured' : ''}`}
+      className="showcase-card"
       onMouseEnter={() => page.preload?.()}
       onFocus={() => page.preload?.()}
     >
-      <span className="showcase-module">{page.moduleTitle}</span>
-      <h3>{page.title}</h3>
-      <p>{page.summary}</p>
+      <div className="showcase-card-top">
+        <span className="showcase-module">{page.moduleTitle}</span>
+        <span className="showcase-card-badge">Fullscreen</span>
+      </div>
+      <div className="showcase-card-body">
+        <h3>{page.title}</h3>
+        <p>{page.summary}</p>
+      </div>
       <div className="showcase-tags">
         {page.tags.slice(0, 4).map((tag) => (
           <span key={tag} className="showcase-tag">
@@ -19,9 +24,12 @@ function ShowcaseCard({ page, featured = false }) {
           </span>
         ))}
       </div>
-      <Link className="showcase-link" to={page.route}>
-        Open Fullscreen
-      </Link>
+      <div className="showcase-card-bottom">
+        <span className="showcase-route-label">component page</span>
+        <Link className="showcase-link" to={page.route}>
+          Open
+        </Link>
+      </div>
     </article>
   )
 }
@@ -30,34 +38,34 @@ export default function HomePage() {
   useDocumentTitle('Components')
 
   const showcasePages = registry.pages.filter((page) => !page.internal && page.showcase !== false)
-  const [featuredPage, ...otherPages] = showcasePages
+  const moduleCount = new Set(showcasePages.map((page) => page.moduleId)).size
 
   return (
     <div className="home-stage">
-      <section className="home-hero">
-        <div className="home-hero-copy">
+      <section className="home-toolbar">
+        <div className="home-toolbar-copy">
           <span className="home-kicker">RT Components</span>
-          <h1>组件入口</h1>
-          <p>
-            只保留组件展示。进入后直接全屏查看单个组件，不暴露实现规则，不展示框架结构。
-          </p>
+          <h1>组件总览</h1>
         </div>
-        <div className="home-hero-stats">
-          <div className="home-stat">
+        <div className="home-toolbar-stats">
+          <div className="home-stat-chip">
             <strong>{showcasePages.length}</strong>
-            <span>Live Components</span>
+            <span>components</span>
           </div>
-          <div className="home-stat">
+          <div className="home-stat-chip">
+            <strong>{moduleCount}</strong>
+            <span>modules</span>
+          </div>
+          <div className="home-stat-chip">
             <strong>81</strong>
-            <span>Dev Port</span>
+            <span>port</span>
           </div>
         </div>
       </section>
 
-      {featuredPage ? (
+      {showcasePages.length > 0 ? (
         <section className="showcase-grid">
-          <ShowcaseCard page={featuredPage} featured />
-          {otherPages.map((page) => (
+          {showcasePages.map((page) => (
             <ShowcaseCard key={page.id} page={page} />
           ))}
         </section>
