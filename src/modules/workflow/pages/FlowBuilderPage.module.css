@@ -1,0 +1,117 @@
+.shell {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  background:
+    radial-gradient(circle at top right, rgba(35, 92, 134, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 253, 250, 0.99), rgba(247, 241, 233, 0.96));
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1;
+}
+
+.header p {
+  margin: 8px 0 0;
+  color: #7a5a3a;
+  font-size: 14px;
+}
+
+.canvas {
+  height: 500px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(35, 92, 134, 0.1);
+  background: #f7f9fb;
+}
+
+.info {
+  text-align: center;
+  color: #7a5a3a;
+}
+
+.nodeStart {
+  padding: 12px 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #52c41a, #73d13d);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
+
+.nodeStep {
+  padding: 12px 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+}
+
+.nodeEnd {
+  padding: 12px 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+}
+
+.btnPrimary {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnPrimary:hover {
+  opacity: 0.85;
+}
+
+.btnDefault {
+  padding: 8px 16px;
+  border: 1px solid rgba(35, 92, 134, 0.2);
+  border-radius: 8px;
+  background: white;
+  color: #5c3d2e;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnDefault:hover {
+  background: rgba(35, 92, 134, 0.05);
+}
+
+@media (max-width: 720px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .canvas {
+    height: 400px;
+  }
+}
