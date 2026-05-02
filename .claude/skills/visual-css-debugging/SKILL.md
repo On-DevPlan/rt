@@ -24,25 +24,42 @@ Debug frontend issues using a feedback loop: Playwright navigates and captures, 
 - "CSS几乎完全没有" (CSS almost missing) symptoms
 - Need visual verification before commit
 
-## Core Pattern
+## Complete Debug Loop
 
 ```dot
 digraph debugging_flow {
   "Open page with Playwright" [shape=box]
+  "Wait for render" [shape=box]
+  "Check console errors" [shape=box]
+  "Runtime error?" [shape=diamond]
+  "Simple error?" [shape=diamond]
+  "Fix based on error msg" [shape=box]
+  "Stubborn error?" [shape=diamond]
   "Take screenshot" [shape=box]
-  "mmx analyze image" [shape=box]
-  "CSS issues found?" [shape=diamond]
+  "mmx analyze" [shape=box]
+  "Fix based on mmx+error" [shape=box]
+  "Visual issues?" [shape=diamond]
   "Fix CSS" [shape=box]
-  "Build & verify" [shape=box]
-  "Repeat loop" [shape=box]
+  "Build & restart" [shape=box]
+  "Repeat" [shape=box]
 
-  "Open page with Playwright" -> "Take screenshot"
-  "Take screenshot" -> "mmx analyze image"
-  "mmx analyze image" -> "CSS issues found?"
-  "CSS issues found?" -> "Fix CSS" [label="yes"]
-  "CSS issues found?" -> "Done" [label="no"]
-  "Fix CSS" -> "Build & verify"
-  "Build & verify" -> "Take screenshot"
+  "Open page with Playwright" -> "Wait for render"
+  "Wait for render" -> "Check console errors"
+  "Check console errors" -> "Runtime error?"
+  "Runtime error?" -> "Simple error?" [label="yes"]
+  "Runtime error?" -> "Take screenshot" [label="no"]
+  "Simple error?" -> "Fix based on error msg" [label="yes"]
+  "Simple error?" -> "Stubborn error?" [label="no"]
+  "Stubborn error?" -> "Take screenshot" [label="yes"]
+  "Stubborn error?" -> "Fix based on error msg" [label="no"]
+  "Fix based on error msg" -> "Build & restart"
+  "Take screenshot" -> "mmx analyze"
+  "mmx analyze" -> "Fix based on mmx+error"
+  "Fix based on mmx+error" -> "Build & restart"
+  "Build & restart" -> "Wait for render"
+  "Visual issues?" -> "Fix CSS" [label="yes"]
+  "Visual issues?" -> "Done" [label="no"]
+  "Fix CSS" -> "Build & restart"
 }
 ```
 
@@ -79,16 +96,6 @@ mcp__plugin_playwright_playwright__browser_console_messages
   level: "error"
 ```
 
-### Common Runtime Errors
-
-| Error Message | Likely Cause | Fix |
-|--------------|--------------|-----|
-| "Should have a queue. You are likely calling Hooks conditionally" | useCallback inside useMemo | Move hooks to top level |
-| "Cannot read properties of null (reading 'useEffect')" | React version mismatch, module not loaded | Check imports, React version |
-| "Failed to fetch dynamically imported module" | Stale Vite cache, module not found | Clear .vite cache, restart dev server |
-| "is not exported by module" | Wrong import path | Check export/import paths |
-| "TypeError: Failed to fetch" | Network error, port issue | Restart dev server |
-
 ### Snapshot check for error boundary
 ```
 mcp__plugin_playwright_playwright__browser_snapshot
@@ -101,58 +108,70 @@ Look for:
 
 ### If Runtime Error Found
 
-1. **Analyze error** → Identify root cause from message
-2. **Fix code** → Common fixes below
-3. **pnpm run build** → Verify compilation
-4. **Restart dev server** → `pkill -f "vite"` then `npm run dev`
-5. **Re-navigate** → Go back to step 1
+**For simple errors:** Apply fix based on error message, rebuild, retest.
 
-## Step-by-Step Loop
+**For difficult/stubborn errors:** Use mmx visual analysis loop even for runtime errors:
 
-### 1. Start dev server
-```bash
-npm run dev  # or pnpm run dev
-# Note: port may auto-increment if default is in use
-```
+1. **Take screenshot of error page**
+2. **Analyze with mmx**: `mmx vision describe --image "<path>" --prompt "描述页面显示的错误状态,分析错误信息,指出可能的代码问题"`
+3. **Get mmx's perspective** on what might be wrong
+4. **Apply fix** based on combined analysis
+5. **Rebuild and retest**
+6. **Repeat loop** until error resolved
 
-### 2. Navigate with Playwright
-```
-mcp__plugin_playwright_playwright__browser_navigate
-  url: "http://localhost:<port>/<path>"
-```
+### Common Runtime Errors
 
-### 3. Wait for render
-```
-mcp__plugin_playwright_playwright__browser_wait_for
-  time: 2
-```
+| Error Message | Likely Cause | Fix |
+|--------------|--------------|-----|
+| "Should have a queue. You are likely calling Hooks conditionally" | useCallback inside useMemo | Move hooks to top level |
+| "Cannot read properties of null (reading 'useEffect')" | React version mismatch, module not loaded | Check imports, React version |
+| "Failed to fetch dynamically imported module" | Stale Vite cache, module not found | Clear .vite cache, restart dev server |
+| "is not exported by module" | Wrong import path | Check export/import paths |
+| "TypeError: Failed to fetch" | Network error, port issue | Restart dev server |
 
-### 4. Check for errors
-```
-mcp__plugin_playwright_playwright__browser_console_messages
-  level: "error"
-```
+### For Stubborn Runtime Errors
 
-### 5. Take screenshot
+When errors persist after applying standard fixes:
+
+1. **Screenshot error state** - even if showing error boundary
+2. **Use mmx to analyze**: mmx can sometimes identify visual patterns that indicate root cause
+3. **Check mmx response for patterns**:
+   - "空白页面" → module not loading
+   - "错误边界显示" → React error caught but not handled
+   - "部分渲染" → hydration or data loading issue
+4. **Combine mmx insight with console error** for better diagnosis
+5. **Iterate fix → build → test loop**
+
+## Step 2: Visual CSS Debugging
+
+After confirming no runtime errors, proceed to visual verification.
+
+### Take screenshot
 ```
 mcp__plugin_playwright_playwright__browser_take_screenshot
   type: "png"
   fullPage: true  # for full page capture
 ```
 
-### 6. Analyze with mmxcli
+### Analyze with mmxcli
 ```bash
-mmx vision describe --image "<screenshot-path>" --prompt "详细描述CSS样式问题:1.整体布局 2.组件样式 3.缺少的视觉元素" --output json --quiet
+mmx vision describe --image "<screenshot-path>" --prompt "详细描述:1.整体布局 2.组件样式问题 3.缺少的视觉元素" --output json --quiet
 ```
 
-### 7. Fix CSS based on feedback
+### Fix CSS based on feedback
 
-### 8. Rebuild
+### Rebuild
 ```bash
 pnpm run build  # MANDATORY before retest
 ```
 
-### 9. Repeat from step 3 until no issues
+### Restart dev server if needed
+```bash
+pkill -f "vite"  # Kill existing
+npm run dev      # Restart
+```
+
+### Repeat from Step 1 until correct
 
 ## CSS Module Debugging Checklist
 
@@ -218,7 +237,20 @@ CSS样式修复后,请描述:1.页面整体视觉效果 2.各个组件的样式�
 
 ## Real-World Example
 
-See session transcript for complete workflow:
-- Workflow module CSS debugging: 7 components fixed
-- Used 3 iterations of Playwright → mmx → fix → build loop
-- Final result: "已达到上线使用的视觉标准"
+**Workflow module debugging session:**
+
+### Round 1: Runtime Error
+- Error: "Should have a queue. You are likely calling Hooks conditionally"
+- Root cause: `useCallback` inside `useMemo` in store.js
+- Fix: Move all `useCallback` outside `useMemo`
+- Restart dev server
+
+### Round 2: Visual Check
+- Screenshot shows "CSS almost missing"
+- mmx analysis: "纯HTML结构,缺乏现代Web应用质感"
+- Root cause: Components using `className="global"` instead of CSS module `className={styles.class}`
+- Fix: 7 components updated to use CSS modules
+- 3 iterations to finalize
+
+### Final Result
+"已达到上线使用的视觉标准" - Modern flat design, proper layout, all components styled
