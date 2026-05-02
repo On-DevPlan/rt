@@ -1,5 +1,3 @@
-import { Node, Edge } from '@xyflow/react'
-
 /**
  * 节点类型枚举
  */

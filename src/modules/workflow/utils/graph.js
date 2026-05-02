@@ -1,10 +1,8 @@
-import { Node, Edge } from '@xyflow/react'
-
 /**
  * 获取节点的所有出边（从该节点发出的边）
  * @param {string} nodeId - 节点ID
- * @param {Edge[]} edges - 边列表
- * @returns {Edge[]} 出边数组
+ * @param {Array} edges - 边列表
+ * @returns {Array} 出边数组
  */
 export function getOutgoingEdges(nodeId, edges) {
   return edges.filter(edge => edge.source === nodeId)

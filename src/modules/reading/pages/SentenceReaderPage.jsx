@@ -51,13 +51,49 @@ const story = {
   ]
 }
 
-function ProgressBar({ progress, hidden }) {
+function ProgressDot({ progress, hidden, isRevealed }) {
   if (hidden) return null
-  const pct = Math.round(progress * 100)
+  const radius = 5
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference * (1 - progress)
+  const fillOpacity = 0.3 + progress * 0.7
+
   return (
-    <div style={{ width: '100%', height: '10px', background: 'rgba(120, 80, 50, 0.15)', borderRadius: '999px', marginTop: '8px', overflow: 'hidden' }}>
-      <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #5c3d2e, #8b6343)', borderRadius: '999px', transition: 'width 0.05s linear', boxShadow: '0 0 8px rgba(92, 61, 46, 0.5)' }} />
-    </div>
+    <span style={{
+      display: 'inline-block',
+      width: '10px',
+      height: '10px',
+      borderRadius: '50%',
+      marginLeft: '8px',
+      verticalAlign: 'middle',
+      position: 'relative',
+    }}>
+      <svg width="10" height="10" viewBox="0 0 10 10" style={{ position: 'absolute', top: 0, left: 0 }}>
+        <circle
+          cx="5"
+          cy="5"
+          r={radius}
+          fill="rgba(120, 80, 50, 0.15)"
+        />
+        <circle
+          cx="5"
+          cy="5"
+          r={radius}
+          fill="#5c3d2e"
+          fillOpacity={fillOpacity}
+          stroke="#5c3d2e"
+          strokeWidth="1.5"
+          strokeOpacity={isRevealed ? 0 : 1}
+          strokeDasharray={circumference}
+          strokeDashoffset={isRevealed ? 0 : offset}
+          transform="rotate(-90 5 5)"
+          style={{ transition: 'stroke-dashoffset 0.05s linear, stroke-opacity 0.2s ease' }}
+        />
+        {isRevealed && (
+          <circle cx="5" cy="5" r={radius - 2} fill="#5c3d2e" fillOpacity="0.6" />
+        )}
+      </svg>
+    </span>
   )
 }
 
@@ -74,7 +110,7 @@ function SentenceRow({ item, index, isActive, isRevealed, progress, onEnter, onL
       >
         <span className={styles.sentenceStack}>
           <span className={styles.sentenceEn}>{item.en}</span>
-          {!cleanMode && <ProgressBar progress={isActive ? progress : 0} />}
+          {!cleanMode && <ProgressDot progress={isActive ? progress : 0} isRevealed={isRevealed} />}
         </span>
       </button>
 

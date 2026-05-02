@@ -1,0 +1,143 @@
+/* Properties Panel Styles */
+.panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.emptyContent {
+  text-align: center;
+  color: #bfbfbf;
+  font-size: 14px;
+}
+
+.emptyContent span {
+  display: block;
+}
+
+.header {
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.type {
+  padding: 2px 8px;
+  background: #e6f7ff;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #1890ff;
+}
+
+.body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-bottom: 6px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: #1890ff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.graph {
+  padding: 16px;
+  background: #fafafa;
+  border-top: 1px solid #e8e8e8;
+}
+
+.graph h5 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.graphItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #595959;
+  border-bottom: 1px dashed #e8e8e8;
+}
+
+.graphItem:last-child {
+  border-bottom: none;
+}
+
+.footer {
+  padding: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.deleteBtn {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.deleteBtn:hover {
+  background: #ff4d4f;
+  color: #fff;
+}

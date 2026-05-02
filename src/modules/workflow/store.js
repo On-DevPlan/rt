@@ -1,6 +1,6 @@
-import { create } from 'zustand'
+import { useReducer, useCallback } from 'react'
 import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react'
-import { defaultEdgeOptions, NodeType } from '../types'
+import { defaultEdgeOptions, NodeType } from './types'
 
 /**
  * 生成唯一ID
@@ -93,164 +93,311 @@ const initialEdges = [
   }
 ]
 
-const useWorkflowStore = create((set, get) => ({
+const initialState = {
   nodes: initialNodes,
   edges: initialEdges,
-
   selectedNodeId: null,
   selectedEdgeId: null,
+  viewport: { x: 0, y: 0, zoom: 1 }
+}
 
-  viewport: { x: 0, y: 0, zoom: 1 },
+/**
+ * Reducer actions
+ */
+const ActionType = {
+  NODES_CHANGE: 'NODES_CHANGE',
+  EDGES_CHANGE: 'EDGES_CHANGE',
+  CONNECT: 'CONNECT',
+  ADD_NODE: 'ADD_NODE',
+  UPDATE_NODE: 'UPDATE_NODE',
+  UPDATE_NODE_DATA: 'UPDATE_NODE_DATA',
+  DELETE_NODE: 'DELETE_NODE',
+  ADD_EDGE: 'ADD_EDGE',
+  UPDATE_EDGE: 'UPDATE_EDGE',
+  DELETE_EDGE: 'DELETE_EDGE',
+  SET_SELECTED_NODE: 'SET_SELECTED_NODE',
+  SET_SELECTED_EDGE: 'SET_SELECTED_EDGE',
+  CLEAR_SELECTION: 'CLEAR_SELECTION',
+  SET_NODES: 'SET_NODES',
+  SET_EDGES: 'SET_EDGES',
+  UPDATE_VIEWPORT: 'UPDATE_VIEWPORT',
+  RESET: 'RESET',
+  IMPORT_DATA: 'IMPORT_DATA'
+}
 
-  history: {
-    nodes: [initialNodes],
-    edges: [initialEdges],
-    currentIndex: 0
-  },
+function reducer(state, action) {
+  switch (action.type) {
+    case ActionType.NODES_CHANGE:
+      return {
+        ...state,
+        nodes: applyNodeChanges(action.payload, state.nodes)
+      }
 
-  onNodesChange: (changes) => {
-    set(state => ({
-      nodes: applyNodeChanges(changes, state.nodes)
-    }))
-  },
+    case ActionType.EDGES_CHANGE:
+      return {
+        ...state,
+        edges: applyEdgeChanges(action.payload, state.edges)
+      }
 
-  onEdgesChange: (changes) => {
-    set(state => ({
-      edges: applyEdgeChanges(changes, state.edges)
-    }))
-  },
+    case ActionType.CONNECT:
+      return {
+        ...state,
+        edges: addEdge({
+          ...action.payload,
+          id: generateId('edge'),
+          ...defaultEdgeOptions
+        }, state.edges)
+      }
 
-  onConnect: (connection) => {
-    set(state => ({
-      edges: addEdge({
-        ...connection,
-        id: generateId('edge'),
-        ...defaultEdgeOptions
-      }, state.edges)
-    }))
-  },
-
-  addNode: (type, position = { x: 300, y: 300 }) => {
-    const newNode = createDefaultNode(type, position)
-    set(state => ({
-      nodes: [...state.nodes, newNode],
-      selectedNodeId: newNode.id
-    }))
-    return newNode
-  },
-
-  updateNode: (nodeId, updates) => {
-    set(state => ({
-      nodes: state.nodes.map(n =>
-        n.id === nodeId ? { ...n, ...updates, data: { ...n.data, ...updates.data } } : n
-      )
-    }))
-  },
-
-  updateNodeData: (nodeId, dataUpdates) => {
-    set(state => ({
-      nodes: state.nodes.map(n =>
-        n.id === nodeId ? { ...n, data: { ...n.data, ...dataUpdates } } : n
-      )
-    }))
-  },
-
-  deleteNode: (nodeId) => {
-    set(state => ({
-      nodes: state.nodes.filter(n => n.id !== nodeId),
-      edges: state.edges.filter(e => e.source !== nodeId && e.target !== nodeId),
-      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId
-    }))
-  },
-
-  addEdge: (source, target, data = {}) => {
-    const newEdge = {
-      id: generateId('edge'),
-      source,
-      target,
-      ...defaultEdgeOptions,
-      data
+    case ActionType.ADD_NODE: {
+      const { type, position } = action.payload
+      const newNode = createDefaultNode(type, position)
+      return {
+        ...state,
+        nodes: [...state.nodes, newNode],
+        selectedNodeId: newNode.id
+      }
     }
-    set(state => ({
-      edges: [...state.edges, newEdge]
-    }))
-    return newEdge
-  },
 
-  updateEdge: (edgeId, updates) => {
-    set(state => ({
-      edges: state.edges.map(e =>
-        e.id === edgeId ? { ...e, ...updates } : e
-      )
-    }))
-  },
+    case ActionType.UPDATE_NODE: {
+      const { nodeId, updates } = action.payload
+      return {
+        ...state,
+        nodes: state.nodes.map(n =>
+          n.id === nodeId
+            ? { ...n, ...updates, data: { ...n.data, ...(updates.data || {}) } }
+            : n
+        )
+      }
+    }
 
-  deleteEdge: (edgeId) => {
-    set(state => ({
-      edges: state.edges.filter(e => e.id !== edgeId),
-      selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId
-    }))
-  },
+    case ActionType.UPDATE_NODE_DATA: {
+      const { nodeId, dataUpdates } = action.payload
+      return {
+        ...state,
+        nodes: state.nodes.map(n =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, ...dataUpdates } }
+            : n
+        )
+      }
+    }
 
-  setNodes: (nodes) => {
-    set({ nodes })
-  },
+    case ActionType.DELETE_NODE:
+      return {
+        ...state,
+        nodes: state.nodes.filter(n => n.id !== action.payload),
+        edges: state.edges.filter(e => e.source !== action.payload && e.target !== action.payload),
+        selectedNodeId: state.selectedNodeId === action.payload ? null : state.selectedNodeId
+      }
 
-  setEdges: (edges) => {
-    set({ edges })
-  },
+    case ActionType.ADD_EDGE: {
+      const { source, target, data } = action.payload
+      const newEdge = {
+        id: generateId('edge'),
+        source,
+        target,
+        ...defaultEdgeOptions,
+        data: data || {}
+      }
+      return {
+        ...state,
+        edges: [...state.edges, newEdge]
+      }
+    }
 
-  setSelectedNode: (nodeId) => {
-    set({ selectedNodeId: nodeId, selectedEdgeId: null })
-  },
+    case ActionType.UPDATE_EDGE: {
+      const { edgeId, updates } = action.payload
+      return {
+        ...state,
+        edges: state.edges.map(e =>
+          e.id === edgeId ? { ...e, ...updates } : e
+        )
+      }
+    }
 
-  setSelectedEdge: (edgeId) => {
-    set({ selectedEdgeId: edgeId, selectedNodeId: null })
-  },
+    case ActionType.DELETE_EDGE:
+      return {
+        ...state,
+        edges: state.edges.filter(e => e.id !== action.payload),
+        selectedEdgeId: state.selectedEdgeId === action.payload ? null : state.selectedEdgeId
+      }
 
-  clearSelection: () => {
-    set({ selectedNodeId: null, selectedEdgeId: null })
-  },
+    case ActionType.SET_SELECTED_NODE:
+      return {
+        ...state,
+        selectedNodeId: action.payload,
+        selectedEdgeId: null
+      }
 
-  updateViewport: (viewport) => {
-    set({ viewport })
-  },
+    case ActionType.SET_SELECTED_EDGE:
+      return {
+        ...state,
+        selectedEdgeId: action.payload,
+        selectedNodeId: null
+      }
 
-  reset: () => {
-    set({
-      nodes: initialNodes,
-      edges: initialEdges,
-      selectedNodeId: null,
-      selectedEdgeId: null
-    })
-  },
+    case ActionType.CLEAR_SELECTION:
+      return {
+        ...state,
+        selectedNodeId: null,
+        selectedEdgeId: null
+      }
 
-  importData: ({ nodes, edges }) => {
-    set({ nodes, edges })
-  },
+    case ActionType.SET_NODES:
+      return { ...state, nodes: action.payload }
 
-  exportData: () => {
-    const { nodes, edges } = get()
-    return { nodes, edges }
-  },
+    case ActionType.SET_EDGES:
+      return { ...state, edges: action.payload }
 
-  getNode: (nodeId) => {
-    return get().nodes.find(n => n.id === nodeId)
-  },
+    case ActionType.UPDATE_VIEWPORT:
+      return { ...state, viewport: action.payload }
 
-  getEdge: (edgeId) => {
-    return get().edges.find(e => e.id === edgeId)
-  },
+    case ActionType.RESET:
+      return {
+        ...initialState,
+        nodes: initialNodes,
+        edges: initialEdges
+      }
 
-  getSelectedNode: () => {
-    const { nodes, selectedNodeId } = get()
-    return nodes.find(n => n.id === selectedNodeId)
-  },
+    case ActionType.IMPORT_DATA: {
+      const { nodes, edges } = action.payload
+      return { ...state, nodes, edges }
+    }
 
-  getSelectedEdge: () => {
-    const { edges, selectedEdgeId } = get()
-    return edges.find(e => e.id === selectedEdgeId)
+    default:
+      return state
   }
-}))
+}
+
+/**
+ * Store hook
+ */
+export function useWorkflowStore() {
+  const [state, dispatch] = useReducer(reducer, initialState)
+
+  const onNodesChange = useCallback((changes) => {
+    dispatch({ type: ActionType.NODES_CHANGE, payload: changes })
+  }, [])
+
+  const onEdgesChange = useCallback((changes) => {
+    dispatch({ type: ActionType.EDGES_CHANGE, payload: changes })
+  }, [])
+
+  const onConnect = useCallback((connection) => {
+    dispatch({ type: ActionType.CONNECT, payload: connection })
+  }, [])
+
+  const addNode = useCallback((type, position = { x: 300, y: 300 }) => {
+    dispatch({ type: ActionType.ADD_NODE, payload: { type, position } })
+  }, [])
+
+  const updateNode = useCallback((nodeId, updates) => {
+    dispatch({ type: ActionType.UPDATE_NODE, payload: { nodeId, updates } })
+  }, [])
+
+  const updateNodeData = useCallback((nodeId, dataUpdates) => {
+    dispatch({ type: ActionType.UPDATE_NODE_DATA, payload: { nodeId, dataUpdates } })
+  }, [])
+
+  const deleteNode = useCallback((nodeId) => {
+    dispatch({ type: ActionType.DELETE_NODE, payload: nodeId })
+  }, [])
+
+  const addEdge = useCallback((source, target, data) => {
+    dispatch({ type: ActionType.ADD_EDGE, payload: { source, target, data } })
+  }, [])
+
+  const updateEdge = useCallback((edgeId, updates) => {
+    dispatch({ type: ActionType.UPDATE_EDGE, payload: { edgeId, updates } })
+  }, [])
+
+  const deleteEdge = useCallback((edgeId) => {
+    dispatch({ type: ActionType.DELETE_EDGE, payload: edgeId })
+  }, [])
+
+  const setNodes = useCallback((nodes) => {
+    dispatch({ type: ActionType.SET_NODES, payload: nodes })
+  }, [])
+
+  const setEdges = useCallback((edges) => {
+    dispatch({ type: ActionType.SET_EDGES, payload: edges })
+  }, [])
+
+  const setSelectedNode = useCallback((nodeId) => {
+    dispatch({ type: ActionType.SET_SELECTED_NODE, payload: nodeId })
+  }, [])
+
+  const setSelectedEdge = useCallback((edgeId) => {
+    dispatch({ type: ActionType.SET_SELECTED_EDGE, payload: edgeId })
+  }, [])
+
+  const clearSelection = useCallback(() => {
+    dispatch({ type: ActionType.CLEAR_SELECTION })
+  }, [])
+
+  const updateViewport = useCallback((viewport) => {
+    dispatch({ type: ActionType.UPDATE_VIEWPORT, payload: viewport })
+  }, [])
+
+  const reset = useCallback(() => {
+    dispatch({ type: ActionType.RESET })
+  }, [])
+
+  const importData = useCallback(({ nodes, edges }) => {
+    dispatch({ type: ActionType.IMPORT_DATA, payload: { nodes, edges } })
+  }, [])
+
+  const exportData = useCallback(() => {
+    return { nodes: state.nodes, edges: state.edges }
+  }, [state.nodes, state.edges])
+
+  const getNode = useCallback((nodeId) => {
+    return state.nodes.find(n => n.id === nodeId)
+  }, [state.nodes])
+
+  const getEdge = useCallback((edgeId) => {
+    return state.edges.find(e => e.id === edgeId)
+  }, [state.edges])
+
+  const getSelectedNode = useCallback(() => {
+    return state.nodes.find(n => n.id === state.selectedNodeId)
+  }, [state.nodes, state.selectedNodeId])
+
+  const getSelectedEdge = useCallback(() => {
+    return state.edges.find(e => e.id === state.selectedEdgeId)
+  }, [state.edges, state.selectedEdgeId])
+
+  return {
+    nodes: state.nodes,
+    edges: state.edges,
+    selectedNodeId: state.selectedNodeId,
+    selectedEdgeId: state.selectedEdgeId,
+    viewport: state.viewport,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    addNode,
+    updateNode,
+    updateNodeData,
+    deleteNode,
+    addEdge,
+    updateEdge,
+    deleteEdge,
+    setNodes,
+    setEdges,
+    setSelectedNode,
+    setSelectedEdge,
+    clearSelection,
+    updateViewport,
+    reset,
+    importData,
+    exportData,
+    getNode,
+    getEdge,
+    getSelectedNode,
+    getSelectedEdge
+  }
+}
 
 export default useWorkflowStore

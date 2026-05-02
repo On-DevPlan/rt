@@ -1,0 +1,64 @@
+/* Graph Info Styles */
+.info {
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.title h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.label {
+  color: #8c8c8c;
+}
+
+.value {
+  font-weight: 500;
+  color: #262626;
+}
+
+.warning {
+  color: #ff4d4f;
+}
+
+.small {
+  font-size: 11px;
+  color: #595959;
+}
+
+.roots,
+.leaves {
+  margin-top: 12px;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  padding: 2px 8px;
+  background: #e6f7ff;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #1890ff;
+}

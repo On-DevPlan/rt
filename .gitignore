@@ -8,3 +8,4 @@ dist
 # Cloned repositories (nested git repos)
 .claude/repo/
 
+.playwright-mcp
