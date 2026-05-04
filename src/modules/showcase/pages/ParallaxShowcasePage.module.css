@@ -1,0 +1,494 @@
+/* ── Custom Properties ── */
+:root {
+  --parallax-coral: #FF6B6B;
+  --parallax-amber: #FFB347;
+  --parallax-rose: #E85D75;
+  --parallax-sage: #7D9B76;
+  --parallax-sand: #D4A574;
+  --parallax-cream: #F5E6D3;
+}
+
+/* ── Scroll Container ── */
+.scrollContainer {
+  position: relative;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #12110f;
+  color: #e2e8f0;
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+.scrollContainer::-webkit-scrollbar { width: 6px; }
+.scrollContainer::-webkit-scrollbar-track { background: transparent; }
+.scrollContainer::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--parallax-coral), var(--parallax-amber));
+  border-radius: 3px;
+}
+
+/* ── 3D Background Scene ── */
+.bg3dScene {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bgOrb {
+  position: absolute;
+  left: var(--orb-x);
+  top: var(--orb-y);
+  width: var(--orb-size);
+  height: var(--orb-size);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    color-mix(in srgb, var(--orb-color) 40%, transparent),
+    color-mix(in srgb, var(--orb-color) 15%, transparent) 50%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  will-change: transform;
+}
+
+/* ── Hero Section ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  overflow: hidden;
+  will-change: opacity;
+}
+
+.heroContent {
+  text-align: center;
+  will-change: transform;
+  padding: 2rem;
+}
+
+/* ── 3D Shapes Stage ── */
+.hero3dStage {
+  perspective: 1200px;
+  width: clamp(300px, 60vw, 700px);
+  height: clamp(200px, 30vw, 350px);
+  margin: 0 auto 3rem;
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.heroShape {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.heroShape[data-shape="cube"] {
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}
+.heroShape[data-shape="torus"] { right: 10%; top: 20%; }
+.heroShape[data-shape="octahedron"] { left: 10%; bottom: 20%; }
+
+/* ── CSS 3D Cube — no auto-rotation, scroll-driven ── */
+.cube {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.cubeFace {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 1.5px solid var(--parallax-coral);
+  background: color-mix(in srgb, var(--parallax-coral) 8%, transparent);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--parallax-coral) 20%, transparent);
+}
+
+.cubeFront  { transform: translateZ(40px); }
+.cubeBack   { transform: rotateY(180deg) translateZ(40px); }
+.cubeLeft   { transform: rotateY(-90deg) translateZ(40px); }
+.cubeRight  { transform: rotateY(90deg) translateZ(40px); }
+.cubeTop    { transform: rotateX(90deg) translateZ(40px); }
+.cubeBottom { transform: rotateX(-90deg) translateZ(40px); }
+
+/* ── Torus — scroll-driven ── */
+.torus {
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--parallax-amber);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--parallax-amber) 5%, transparent);
+  box-shadow:
+    0 0 15px color-mix(in srgb, var(--parallax-amber) 30%, transparent),
+    inset 0 0 15px color-mix(in srgb, var(--parallax-amber) 15%, transparent);
+  will-change: transform;
+}
+
+/* ── Octahedron — scroll-driven ── */
+.octahedron {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--parallax-rose) 20%, transparent),
+    color-mix(in srgb, var(--parallax-rose) 5%, transparent)
+  );
+  border: 1.5px solid var(--parallax-rose);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--parallax-rose) 25%, transparent);
+  will-change: transform;
+}
+
+/* ── Hero Typography ── */
+.heroTitle {
+  font-size: clamp(2.5rem, 8vw, 6rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 1.5rem;
+}
+
+.titleLine {
+  display: block;
+  background: linear-gradient(135deg, #f5e6d3 30%, #c4a882);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.titleLineAccent {
+  display: block;
+  background: linear-gradient(135deg, var(--parallax-coral), var(--parallax-amber), var(--parallax-sand));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.15em;
+}
+
+.heroSub {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: #94a3b8;
+  max-width: 500px;
+  margin: 0 auto 3rem;
+  line-height: 1.6;
+}
+
+/* ── Scroll Hint ── */
+.scrollHint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: hintFadeIn 1.5s ease 1s both;
+}
+
+.scrollHintMouse {
+  width: 24px; height: 38px;
+  border: 2px solid #64748b;
+  border-radius: 12px;
+  position: relative;
+}
+
+.scrollHintWheel {
+  position: absolute;
+  top: 8px; left: 50%;
+  width: 4px; height: 8px;
+  margin-left: -2px;
+  background: #94a3b8;
+  border-radius: 2px;
+  animation: scrollWheel 2s ease-in-out infinite;
+}
+
+@keyframes scrollWheel {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(10px); }
+}
+
+@keyframes hintFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Parallax Sections ── */
+.parallaxSection {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  padding: 6rem 2rem;
+}
+
+.sectionVisible {
+  /* scroll-driven opacity handled inline */
+}
+
+/* ── Section Typography ── */
+.sectionContent {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.sectionLabel {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--parallax-amber);
+  margin-bottom: 1rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--parallax-amber) 30%, transparent);
+  border-radius: 100px;
+  background: color-mix(in srgb, var(--parallax-amber) 8%, transparent);
+  will-change: transform, opacity;
+}
+
+.sectionTitle {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.5rem;
+  background: linear-gradient(135deg, #f5e6d3, #d4a574);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  will-change: transform, opacity;
+}
+
+.sectionText {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: #94a3b8;
+  line-height: 1.7;
+  max-width: 600px;
+  margin: 0 auto 3rem;
+  will-change: transform, opacity;
+}
+
+/* ── Depth Demo ── */
+.depthDemo {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  perspective: 1000px;
+}
+
+.depthCard {
+  width: 180px;
+  height: 220px;
+  will-change: transform, opacity;
+}
+
+.depthCardInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--parallax-sage) calc(5% + var(--depth-index) * 5%), rgba(18, 17, 15, 0.9)),
+    color-mix(in srgb, var(--parallax-coral) calc(3% + var(--depth-index) * 3%), rgba(18, 17, 15, 0.9))
+  );
+  border: 1px solid color-mix(in srgb, var(--parallax-amber) calc(10% + var(--depth-index) * 8%), transparent);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.depthCard:hover .depthCardInner {
+  border-color: color-mix(in srgb, var(--parallax-amber) 50%, transparent);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--parallax-amber) 20%, transparent);
+}
+
+.depthCardLabel {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.depthCardSpeed {
+  font-size: 0.85rem;
+  color: #64748b;
+  padding: 0.3rem 0.8rem;
+  background: color-mix(in srgb, #ffffff 5%, transparent);
+  border-radius: 100px;
+}
+
+/* ── 3D Cards Grid ── */
+.cards3dGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.card3d {
+  position: relative;
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(135deg, rgba(18, 17, 15, 0.8), rgba(30, 25, 18, 0.6));
+  border: 1px solid color-mix(in srgb, var(--card-color) 20%, transparent);
+  backdrop-filter: blur(12px);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+.card3d:hover {
+  border-color: color-mix(in srgb, var(--card-color) 60%, transparent);
+}
+
+.card3dGlow {
+  position: absolute;
+  inset: -1px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 50%,
+    color-mix(in srgb, var(--card-color) 15%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.card3d:hover .card3dGlow { opacity: 1; }
+
+.card3dContent { position: relative; z-index: 1; }
+
+.card3dIcon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--card-color), color-mix(in srgb, var(--card-color) 60%, white));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card3dTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: #e2e8f0;
+}
+
+.card3dDesc {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Constellation Scene ── */
+.constellationScene {
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto 0;
+  position: relative;
+}
+
+.constellationSvg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--parallax-amber) 40%, transparent));
+}
+
+/* ── Wave Section ── */
+.sectionWave {
+  background: linear-gradient(180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--parallax-coral) 5%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+.waveContainer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 300px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.waveSvg {
+  position: absolute;
+  bottom: 0;
+  width: 100%; height: 100%;
+}
+
+/* ── Footer ── */
+.footer {
+  position: relative;
+  z-index: 1;
+  padding: 6rem 2rem 3rem;
+  text-align: center;
+  background: linear-gradient(180deg, transparent,
+    color-mix(in srgb, var(--parallax-coral) 5%, rgba(18, 17, 15, 0.8))
+  );
+}
+
+.footerContent { max-width: 400px; margin: 0 auto; }
+
+.footerText {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0 0 2rem;
+}
+
+.footerShapes {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.footerShape {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--shape-color);
+  opacity: 0.5;
+  animation: footerPulse 2s ease-in-out var(--shape-delay) infinite;
+}
+
+@keyframes footerPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 0.8; transform: scale(1.4); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .depthDemo { flex-direction: column; align-items: center; }
+  .cards3dGrid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .hero3dStage { width: 90vw; height: 200px; }
+  .cube { width: 50px; height: 50px; }
+  .cubeFace { width: 50px; height: 50px; }
+  .cubeFront  { transform: translateZ(25px); }
+  .cubeBack   { transform: rotateY(180deg) translateZ(25px); }
+  .cubeLeft   { transform: rotateY(-90deg) translateZ(25px); }
+  .cubeRight  { transform: rotateY(90deg) translateZ(25px); }
+  .cubeTop    { transform: rotateX(90deg) translateZ(25px); }
+  .cubeBottom { transform: rotateX(-90deg) translateZ(25px); }
+  .parallaxSection { padding: 4rem 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .cards3dGrid { grid-template-columns: 1fr; }
+}
