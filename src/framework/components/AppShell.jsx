@@ -4,6 +4,8 @@ import { registry } from '../registry.js'
 function SidebarLink({ page }) {
   return (
     <NavLink
+
+    
       to={page.route}
       className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
       onMouseEnter={() => page.preload?.()}
