@@ -3,9 +3,8 @@ name: project-index-reader
 description: 当用户要求实现功能时，先从 .claude/repo/ 仓库中寻找相关案例。读取 PROJECT_INDEX.md 快速扫描，主题相关再深入源码。禁止立即编码。此 skill 仅适用于 .claude/repo/ 下的仓库。
 version: 2.0.0
 ---
-# Project Index Reader
 
-## 先学习源码 ,然后对用户需求进行规范编码
+# Project Index Reader
 
 ## 核心原则
 
@@ -16,7 +15,6 @@ version: 2.0.0
 ### Step 1: 扫描仓库索引
 
 列出 `.claude/repo/` 下所有仓库的 `PROJECT_INDEX.md`，快速扫描：
-
 - 项目名称
 - 核心模块
 - 功能描述
@@ -32,10 +30,10 @@ version: 2.0.0
 
 ### Step 3: 判断深入
 
-| 情况                 | 操作             |
-| -------------------- | ---------------- |
+| 情况 | 操作 |
+|------|------|
 | 索引中有直接相关模块 | 深入读取相关源码 |
-| 索引中无相关信息     | 跳过             |
+| 索引中无相关信息 | 跳过 |
 
 ### Step 4: 开始实现
 
@@ -44,20 +42,17 @@ version: 2.0.0
 ## 寻找指令
 
 扫描仓库列表：
-
 ```
 Glob: */PROJECT_INDEX.md
 ```
 
 查看索引内容：
-
 ```
 Read: .claude/repo/<repo>/PROJECT_INDEX.md
 Read: .claude/repo/<repo>/PROJECT_INDEX.json
 ```
 
 搜索相关代码（如有索引不足）：
-
 ```
 Grep: liquid glass | blur | backdrop | glassmorphism
 Glob: **/*.dart

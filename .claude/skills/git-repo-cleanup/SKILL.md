@@ -1,9 +1,9 @@
 ---
 name: git-repo-cleanup
 description: |
-  Use when git status shows nested repos as "modified", gitlinks are tracked,
-  or git history contains cloned repositories that should be isolated.
-  Triggers: "清理git", "处理嵌套仓库", "git隔离", "保持干净", "不在历史显示".
+  清理git嵌套仓库，保持仓库隔离性，让 git add . 干净无污染。
+  当用户提到"清理git"、"处理嵌套仓库"、"git隔离"、"保持干净"时触发。
+  适用于 .claude/repo/ 或其他包含克隆仓库的目录。
 ---
 
 # git-repo-cleanup 工作流程
@@ -70,28 +70,6 @@ git commit -m "chore: ignore .claude/repo/ for cloned repos isolation"
 - `git status` 显示 `nothing to commit, working tree clean`
 - `git add .` 不会暂存 `.claude/repo/` 下的任何文件
 
-## 完全清除历史记录
-
-如果需要在 **Git 历史中** 完全移除某个嵌套仓库（不只是从跟踪中移除），使用 `git filter-branch`：
-
-```bash
-# 1. 先暂存当前工作区更改（filter-branch 要求工作区干净）
-git stash
-
-# 2. 执行历史重写，移除指定路径
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch -r .claude/repo/<目标仓库>" \
-  --prune-empty --tag-name-filter cat -- --all
-
-# 3. 恢复工作区
-git stash pop
-```
-
-**注意**：
-- 这会重写 Git 历史，请确认没有其他协作者依赖这些提交
-- 需要 `git push --force` 才能更新远程
-- `--ignore-unmatch` 防止路径不存在时出错
-
 ## 常见问题
 
 | 问题 | 解决 |
@@ -100,5 +78,3 @@ git stash pop
 | gitlink 被跟踪 | `git rm --cached -r <path>` |
 | 暂存区有删除记录 | `git reset HEAD <path>` |
 | 无法提交 .gitignore | `git add .gitignore` 显式添加 |
-| 历史中仍显示嵌套仓库 | 使用 git filter-branch 完全清除历史 |
-| filter-branch 失败 | 先 `git stash` 暂存更改 |
