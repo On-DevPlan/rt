@@ -11,7 +11,7 @@ RUN pnpm run build
 
 FROM python:3.11-alpine
 
-RUN apk add --no-cache nginx supervisor
+RUN apk add --no-cache nginx supervisor ca-certificates
 
 RUN pip install --no-cache-dir edge-tts aiohttp
 

@@ -29,9 +29,6 @@ jobs:
       - name: Docker Compose up
         run: docker compose up --abort-on-container-exit
 
-      - name: Show all logs on failure
+      - name: Show logs on failure
         if: failure()
-        run: |
-          docker compose logs --tail=200
-          echo "=== TTS stderr logs ==="
-          docker compose exec -T app cat /var/log/tts.err.log 2>/dev/null || echo "No TTS stderr log"
+        run: docker compose logs --tail=100
