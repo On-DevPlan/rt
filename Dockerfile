@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir edge-tts aiohttp
 
 WORKDIR /app
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY default.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY tts/ /app/tts/
 
 RUN mkdir -p /var/log /var/run && \
