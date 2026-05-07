@@ -167,10 +167,14 @@ async def voices_handler(request):
     ]
     return web.json_response({"voices": voices})
 
+async def health_handler(request):
+    return web.Response(text='ok', content_type='text/plain')
+
 app = web.Application(middlewares=[cors_middleware])
 app.router.add_post("/tts", tts_handler)
 app.router.add_post("/tts_with_timing", tts_with_timing_handler)
 app.router.add_get("/voices", voices_handler)
+app.router.add_get("/health", health_handler)
 
 if __name__ == "__main__":
     print("Edge TTS Server starting on port 8080...")

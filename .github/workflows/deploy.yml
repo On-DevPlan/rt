@@ -101,13 +101,16 @@ jobs:
 
             echo "Performing TTS backend check..."
             for i in {1..6}; do
-              if curl -f -X POST http://localhost:$PORT/tts/tts_with_timing -H "Content-Type: application/json" -d '{"text":"test"}'; then
+              RESP=$(curl -s -w "\n%{http_code}" -X POST http://localhost:$PORT/tts/tts_with_timing -H "Content-Type: application/json" -d '{"text":"test"}')
+              HTTP_CODE=$(echo "$RESP" | tail -1)
+              BODY=$(echo "$RESP" | sed '$d')
+              if [ "$HTTP_CODE" = "200" ]; then
                 echo "TTS backend check passed!"
                 echo "Deployment successful!"
                 echo "Application is running at: http://your-server-ip:$PORT"
                 exit 0
               fi
-              echo "TTS backend check attempt $i/6 failed, retrying in 10s..."
+              echo "TTS backend check attempt $i/6 failed (HTTP $HTTP_CODE): $BODY"
               sleep 10
             done
 
