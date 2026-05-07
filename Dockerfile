@@ -11,12 +11,9 @@ RUN pnpm run build
 
 FROM python:3.11-alpine
 
-RUN apk add --no-cache nginx supervisor ca-certificates curl
+RUN apk add --no-cache nginx supervisor ca-certificates
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    mv /root/.local/bin/uv /usr/local/bin/uv
-
-RUN uv pip install --system edge-tts aiohttp
+RUN pip install --no-cache-dir edge-tts aiohttp
 
 WORKDIR /app
 COPY --from=build /app/dist /usr/share/nginx/html
