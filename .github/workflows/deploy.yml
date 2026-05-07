@@ -114,6 +114,10 @@ jobs:
             echo "Health check failed after 6 attempts!"
             echo "=== Container logs ==="
             docker logs $CONTAINER_NAME
+            echo "=== TTS stderr ==="
+            docker exec $CONTAINER_NAME cat /var/log/tts.err.log 2>/dev/null || echo "No TTS stderr log"
+            echo "=== TTS stdout ==="
+            docker exec $CONTAINER_NAME cat /var/log/tts.out.log 2>/dev/null || echo "No TTS stdout log"
             echo "=== Container inspect ==="
             docker inspect $CONTAINER_NAME
             exit 1
