@@ -167,11 +167,36 @@ export default function SentenceReaderPage() {
     rate: '-10%',
   })
 
-  const intervalRef = useRef(0)
-  const timerRef = useRef(0)
+  const intervalRef = useRef(null)
+  const timerRef = useRef(null)
 
-  const handleEnter = (index) => setActiveIndex(index)
-  const handleLeave = () => setActiveIndex(null)
+  const handleEnter = useCallback((index) => {
+    setActiveIndex(index)
+    setProgress(0)
+    clearInterval(intervalRef.current)
+    clearTimeout(timerRef.current)
+
+    const start = Date.now()
+    intervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - start
+      const p = Math.min(elapsed / HOVER_DELAY_MS, 1)
+      setProgress(p)
+      if (p >= 1) clearInterval(intervalRef.current)
+    }, 50)
+
+    timerRef.current = setTimeout(() => {
+      setRevealedIndexes((prev) =>
+        prev.includes(index) ? prev : [...prev, index]
+      )
+    }, HOVER_DELAY_MS)
+  }, [])
+
+  const handleLeave = useCallback(() => {
+    setActiveIndex(null)
+    setProgress(0)
+    clearInterval(intervalRef.current)
+    clearTimeout(timerRef.current)
+  }, [])
 
   const handlePlay = useCallback((text, index) => {
     if (isPlaying) {
