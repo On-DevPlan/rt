@@ -2,11 +2,6 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { fetchWithTiming } from '../services/ttsApi'
 import { getCurrentWordIndex } from '../utils/wordHighlighter'
 
-/**
- * TTS Hook for sentence playback with word-level highlighting
- * @param {Object} options - Voice options
- * @returns {Object} TTS state and controls
- */
 export function useTTS(options = {}) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentWordIndex, setCurrentWordIndex] = useState(-1)
@@ -14,24 +9,7 @@ export function useTTS(options = {}) {
   const [error, setError] = useState(null)
 
   const audioRef = useRef(null)
-  const blobUrlRef = useRef(null)
-  const startTimeRef = useRef(null)
   const animationFrameRef = useRef(null)
-
-  const updateCurrentWord = useCallback(() => {
-    if (!audioRef.current || !startTimeRef.current || words.length === 0) return
-
-    const elapsed = audioRef.current.currentTime * 1000
-    const index = getCurrentWordIndex(elapsed, words)
-
-    if (index !== currentWordIndex) {
-      setCurrentWordIndex(index)
-    }
-
-    if (!audioRef.current.paused) {
-      animationFrameRef.current = requestAnimationFrame(updateCurrentWord)
-    }
-  }, [words, currentWordIndex])
 
   const play = useCallback(async (text) => {
     try {
@@ -44,44 +22,46 @@ export function useTTS(options = {}) {
       for (let i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i)
       }
-      const blob = new Blob([bytes], { type: 'audio/mpeg' })
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
-      const blobUrl = URL.createObjectURL(blob)
-      blobUrlRef.current = blobUrl
-      const audio = new Audio(blobUrl)
-      audioRef.current = audio
-      setWords(data.words || [])
 
-      audio.onplay = () => {
-        setIsPlaying(true)
-        startTimeRef.current = performance.now()
-        animationFrameRef.current = requestAnimationFrame(updateCurrentWord)
-      }
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const audioBuffer = await audioContext.decodeAudioData(bytes.buffer)
+      const source = audioContext.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(audioContext.destination)
+      audioRef.current = { source, audioContext }
+      const wordList = data.words || []
+      setWords(wordList)
 
-      audio.onended = () => {
+      const startMs = performance.now()
+      source.onended = () => {
         setIsPlaying(false)
         setCurrentWordIndex(-1)
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current)
-        }
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+        audioContext.close()
       }
 
-      audio.onerror = () => {
-        setError('Audio playback failed')
-        setIsPlaying(false)
-      }
+      source.start(0)
+      setIsPlaying(true)
 
-      await audio.play()
+      const tick = () => {
+        if (!audioRef.current) return
+        const elapsed = performance.now() - startMs
+        const index = getCurrentWordIndex(elapsed, wordList)
+        setCurrentWordIndex(prev => prev !== index ? index : prev)
+        animationFrameRef.current = requestAnimationFrame(tick)
+      }
+      animationFrameRef.current = requestAnimationFrame(tick)
     } catch (err) {
       setError(err.message)
       setIsPlaying(false)
     }
-  }, [options, updateCurrentWord])
+  }, [options])
 
   const stop = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
+      try { audioRef.current.source.stop() } catch {}
+      try { audioRef.current.audioContext.close() } catch {}
+      audioRef.current = null
     }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
@@ -93,24 +73,13 @@ export function useTTS(options = {}) {
 
   useEffect(() => {
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
       if (audioRef.current) {
-        audioRef.current.pause()
-      }
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current)
+        try { audioRef.current.source.stop() } catch {}
+        try { audioRef.current.audioContext.close() } catch {}
       }
     }
   }, [])
 
-  return {
-    isPlaying,
-    currentWordIndex,
-    words,
-    error,
-    play,
-    stop,
-  }
+  return { isPlaying, currentWordIndex, words, error, play, stop }
 }
