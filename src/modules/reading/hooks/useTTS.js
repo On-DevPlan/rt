@@ -14,6 +14,7 @@ export function useTTS(options = {}) {
   const [error, setError] = useState(null)
 
   const audioRef = useRef(null)
+  const blobUrlRef = useRef(null)
   const startTimeRef = useRef(null)
   const animationFrameRef = useRef(null)
 
@@ -38,7 +39,16 @@ export function useTTS(options = {}) {
       stop()
 
       const data = await fetchWithTiming(text, options)
-      const audio = new Audio(`data:audio/mp3;base64,${data.audio}`)
+      const binaryStr = atob(data.audio)
+      const bytes = new Uint8Array(binaryStr.length)
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'audio/mpeg' })
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
+      const blobUrl = URL.createObjectURL(blob)
+      blobUrlRef.current = blobUrl
+      const audio = new Audio(blobUrl)
       audioRef.current = audio
       setWords(data.words || [])
 
@@ -88,6 +98,9 @@ export function useTTS(options = {}) {
       }
       if (audioRef.current) {
         audioRef.current.pause()
+      }
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current)
       }
     }
   }, [])

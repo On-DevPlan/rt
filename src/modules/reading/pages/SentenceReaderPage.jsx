@@ -168,7 +168,7 @@ export default function SentenceReaderPage() {
   const [revealedIndexes, setRevealedIndexes] = useState([])
   const [cleanMode, setCleanMode] = useState(false)
 
-  const { isPlaying, currentWordIndex, play, stop } = useTTS({
+  const { isPlaying, currentWordIndex, error, play, stop } = useTTS({
     voice: 'en-US-AndrewNeural',
     rate: '-10%',
   })
@@ -216,6 +216,7 @@ export default function SentenceReaderPage() {
                 Stop
               </button>
             )}
+            {error && <span style={{ color: '#c44', fontSize: '0.85rem' }}>{error}</span>}
           </div>
         </header>
 
