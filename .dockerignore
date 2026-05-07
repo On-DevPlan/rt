@@ -3,3 +3,5 @@ dist
 .git
 .github
 README.md
+tts/.venv
+tts/__pycache__
