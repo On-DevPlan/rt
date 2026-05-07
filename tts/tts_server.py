@@ -164,6 +164,8 @@ async def tts_with_timing_handler(request):
         print(f"[tts_with_timing] Error: {e}", file=sys.stderr, flush=True)
         traceback.print_exc(file=sys.stderr)
         return web.json_response({"error": str(e)}, status=500)
+
+async def voices_handler(request):
     voices = [
         "en-US-AndrewNeural", "en-US-AriaNeural", "en-US-GuyNeural",
         "en-US-JennyNeural", "en-GB-RyanNeural", "en-GB-SoniaNeural",
