@@ -8,21 +8,6 @@ export function PageFrame({ page }) {
 
   return (
     <div className="page-stack">
-      <section className="hero-panel">
-        <span className="hero-topline">{page.moduleTitle}</span>
-        <h2>{page.title}</h2>
-        <p>{page.summary}</p>
-        <div className="hero-meta">
-          <span className="hero-chip">route: {page.route}</span>
-          <span className="hero-chip">entry: {page.entry}</span>
-          {page.tags.map((tag) => (
-            <span key={tag} className="tag">
-              #{tag}
-            </span>
-          ))}
-        </div>
-      </section>
-
       <div className="content-grid">
         <section className="panel">
           <Suspense fallback={<div className="screen-state">正在加载页面模块…</div>}>
