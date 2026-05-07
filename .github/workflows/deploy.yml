@@ -89,18 +89,32 @@ jobs:
             echo "Container status:"
             docker ps | grep $CONTAINER_NAME
 
-            echo "Performing health check..."
+            echo "Performing nginx health check..."
             for i in {1..6}; do
               if curl -f http://localhost:$PORT/health; then
+                echo "Nginx health check passed!"
+                break
+              fi
+              echo "Nginx health check attempt $i/6 failed, retrying in 10s..."
+              sleep 10
+            done
+
+            echo "Performing TTS backend check..."
+            for i in {1..6}; do
+              if curl -f -X POST http://localhost:$PORT/tts/tts_with_timing -H "Content-Type: application/json" -d '{"text":"test"}'; then
+                echo "TTS backend check passed!"
                 echo "Deployment successful!"
                 echo "Application is running at: http://your-server-ip:$PORT"
                 exit 0
               fi
-              echo "Health check attempt $i/6 failed, retrying in 10s..."
+              echo "TTS backend check attempt $i/6 failed, retrying in 10s..."
               sleep 10
             done
 
             echo "Health check failed after 6 attempts!"
+            echo "=== Container logs ==="
             docker logs $CONTAINER_NAME
+            echo "=== Container inspect ==="
+            docker inspect $CONTAINER_NAME
             exit 1
             '
