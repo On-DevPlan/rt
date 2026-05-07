@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { useTTS } from '../hooks/useTTS'
+import { tokenizeText } from '../utils/wordHighlighter'
 import styles from './SentenceReaderPage.module.css'
 
 const HOVER_DELAY_MS = 3000
@@ -69,12 +71,7 @@ function ProgressDot({ progress, hidden, isRevealed }) {
       position: 'relative',
     }}>
       <svg width="10" height="10" viewBox="0 0 10 10" style={{ position: 'absolute', top: 0, left: 0 }}>
-        <circle
-          cx="5"
-          cy="5"
-          r={radius}
-          fill="rgba(120, 80, 50, 0.15)"
-        />
+        <circle cx="5" cy="5" r={radius} fill="rgba(120, 80, 50, 0.15)" />
         <circle
           cx="5"
           cy="5"
@@ -97,7 +94,35 @@ function ProgressDot({ progress, hidden, isRevealed }) {
   )
 }
 
-function SentenceRow({ item, index, isActive, isRevealed, progress, onEnter, onLeave, cleanMode }) {
+function HighlightedSentence({ text, currentWordIndex, isPlaying }) {
+  const tokens = tokenizeText(text)
+
+  return (
+    <span className={styles.sentenceEn}>
+      {tokens.map((token, i) => {
+        const isHighlighted = isPlaying && currentWordIndex >= 0 && i === currentWordIndex
+        const prevWasHighlighted = isPlaying && currentWordIndex > 0 && i === currentWordIndex - 1
+        const nextIsHighlighted = isPlaying && i === currentWordIndex + 1
+
+        return (
+          <span
+            key={i}
+            className={`
+              ${styles.word}
+              ${isHighlighted ? styles.wordHighlighted : ''}
+              ${prevWasHighlighted ? styles.wordPassed : ''}
+              ${nextIsHighlighted && !isHighlighted ? styles.wordUpcoming : ''}
+            `}
+          >
+            {token.word}{i < tokens.length - 1 ? ' ' : ''}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
+function SentenceRow({ item, index, isActive, isRevealed, progress, onEnter, onLeave, cleanMode, isPlaying, currentWordIndex, onPlay }) {
   return (
     <div className={`${styles.line}${isActive ? ` ${styles.lineActive}` : ''}`}>
       <button
@@ -107,9 +132,18 @@ function SentenceRow({ item, index, isActive, isRevealed, progress, onEnter, onL
         onFocus={() => onEnter(index)}
         onMouseLeave={onLeave}
         onBlur={onLeave}
+        onClick={() => onPlay(item.en)}
       >
         <span className={styles.sentenceStack}>
-          <span className={styles.sentenceEn}>{item.en}</span>
+          {isPlaying && currentWordIndex >= 0 ? (
+            <HighlightedSentence
+              text={item.en}
+              currentWordIndex={currentWordIndex}
+              isPlaying={isPlaying}
+            />
+          ) : (
+            <span className={styles.sentenceEn}>{item.en}</span>
+          )}
           {!cleanMode && <ProgressDot progress={isActive ? progress : 0} isRevealed={isRevealed} />}
         </span>
       </button>
@@ -133,56 +167,34 @@ export default function SentenceReaderPage() {
   const [progress, setProgress] = useState(0)
   const [revealedIndexes, setRevealedIndexes] = useState([])
   const [cleanMode, setCleanMode] = useState(false)
+
+  const { isPlaying, currentWordIndex, play, stop } = useTTS({
+    voice: 'en-US-AndrewNeural',
+    rate: '-10%',
+  })
+
   const intervalRef = useRef(0)
   const timerRef = useRef(0)
-
-  useEffect(() => {
-    if (activeIndex === null) {
-      setProgress(0)
-      return undefined
-    }
-
-    setProgress(0)
-
-    const step = 50
-    let elapsed = 0
-
-    intervalRef.current = window.setInterval(() => {
-      elapsed += step
-      const newProgress = Math.min(elapsed / HOVER_DELAY_MS, 1)
-      setProgress(newProgress)
-
-      if (newProgress >= 1) {
-        window.clearInterval(intervalRef.current)
-      }
-    }, step)
-
-    timerRef.current = window.setTimeout(() => {
-      setProgress(1)
-      setRevealedIndexes((current) =>
-        current.includes(activeIndex) ? current : [...current, activeIndex]
-      )
-    }, HOVER_DELAY_MS)
-
-    return () => {
-      window.clearInterval(intervalRef.current)
-      window.clearTimeout(timerRef.current)
-    }
-  }, [activeIndex])
 
   const handleEnter = (index) => setActiveIndex(index)
   const handleLeave = () => setActiveIndex(null)
 
-  const handleContextMenu = (e) => {
-    e.preventDefault()
-    setCleanMode((prev) => !prev)
-  }
+  const handlePlay = useCallback((text) => {
+    if (isPlaying) {
+      stop()
+    } else {
+      play(text)
+    }
+  }, [isPlaying, play, stop])
 
   return (
     <div className="page-stack">
       <section
         className={`${styles.shell}${cleanMode ? ` ${styles.cleanMode}` : ''}`}
-        onContextMenu={handleContextMenu}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          setCleanMode((prev) => !prev)
+        }}
       >
         <header className={styles.header}>
           <div>
@@ -199,6 +211,11 @@ export default function SentenceReaderPage() {
               <strong>{revealedIndexes.length}</strong>
               <span>revealed</span>
             </div>
+            {isPlaying && (
+              <button className={styles.stopButton} onClick={stop}>
+                Stop
+              </button>
+            )}
           </div>
         </header>
 
@@ -214,6 +231,9 @@ export default function SentenceReaderPage() {
               onEnter={handleEnter}
               onLeave={handleLeave}
               cleanMode={cleanMode}
+              isPlaying={isPlaying && revealedIndexes.includes(index)}
+              currentWordIndex={currentWordIndex}
+              onPlay={handlePlay}
             />
           ))}
         </div>
