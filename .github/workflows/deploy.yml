@@ -103,7 +103,7 @@ jobs:
             for i in {1..6}; do
               RESP=$(curl -s -w "\n%{http_code}" -X POST http://localhost:$PORT/tts/tts_with_timing -H "Content-Type: application/json" -d '{"text":"test"}')
               HTTP_CODE=$(echo "$RESP" | tail -1)
-              BODY=$(echo "$RESP" | sed '$d')
+              BODY=$(echo "$RESP" | sed -e '$d')
               if [ "$HTTP_CODE" = "200" ]; then
                 echo "TTS backend check passed!"
                 echo "Deployment successful!"
