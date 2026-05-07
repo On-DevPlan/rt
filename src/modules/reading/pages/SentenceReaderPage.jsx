@@ -167,6 +167,7 @@ export default function SentenceReaderPage() {
   const [progress, setProgress] = useState(0)
   const [revealedIndexes, setRevealedIndexes] = useState([])
   const [cleanMode, setCleanMode] = useState(false)
+  const [playingIndex, setPlayingIndex] = useState(null)
 
   const { isPlaying, currentWordIndex, error, play, stop } = useTTS({
     voice: 'en-US-AndrewNeural',
@@ -179,11 +180,13 @@ export default function SentenceReaderPage() {
   const handleEnter = (index) => setActiveIndex(index)
   const handleLeave = () => setActiveIndex(null)
 
-  const handlePlay = useCallback((text) => {
+  const handlePlay = useCallback((text, index) => {
     if (isPlaying) {
       stop()
+      setPlayingIndex(null)
     } else {
       play(text)
+      setPlayingIndex(index)
     }
   }, [isPlaying, play, stop])
 
@@ -212,7 +215,7 @@ export default function SentenceReaderPage() {
               <span>revealed</span>
             </div>
             {isPlaying && (
-              <button className={styles.stopButton} onClick={stop}>
+              <button className={styles.stopButton} onClick={() => { stop(); setPlayingIndex(null) }}>
                 Stop
               </button>
             )}
@@ -232,9 +235,9 @@ export default function SentenceReaderPage() {
               onEnter={handleEnter}
               onLeave={handleLeave}
               cleanMode={cleanMode}
-              isPlaying={isPlaying && revealedIndexes.includes(index)}
+              isPlaying={isPlaying && playingIndex === index}
               currentWordIndex={currentWordIndex}
-              onPlay={handlePlay}
+              onPlay={(text) => handlePlay(text, index)}
             />
           ))}
         </div>
