@@ -5,7 +5,9 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "tts": "cd tts && uv run python tts_server.py",
     "dev": "vite --host 0.0.0.0 --port 81",
+    "dev:all": "npx concurrently \"pnpm tts\" \"pnpm dev\"",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4181"
   },

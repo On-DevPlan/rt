@@ -101,18 +101,11 @@ function HighlightedSentence({ text, currentWordIndex, isPlaying }) {
     <span className={styles.sentenceEn}>
       {tokens.map((token, i) => {
         const isHighlighted = isPlaying && currentWordIndex >= 0 && i === currentWordIndex
-        const prevWasHighlighted = isPlaying && currentWordIndex > 0 && i === currentWordIndex - 1
-        const nextIsHighlighted = isPlaying && i === currentWordIndex + 1
 
         return (
           <span
             key={i}
-            className={`
-              ${styles.word}
-              ${isHighlighted ? styles.wordHighlighted : ''}
-              ${prevWasHighlighted ? styles.wordPassed : ''}
-              ${nextIsHighlighted && !isHighlighted ? styles.wordUpcoming : ''}
-            `}
+            className={`${styles.word} ${isHighlighted ? styles.wordHighlighted : ''}`}
           >
             {token.word}{i < tokens.length - 1 ? ' ' : ''}
           </span>
