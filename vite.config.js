@@ -7,7 +7,10 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 81,
     proxy: {
-      '/tts': 'http://127.0.0.1:8080'
+      '/tts': {
+        target: 'http://127.0.0.1:8080',
+        rewrite: (path) => path.replace(/^\/tts/, '')
+      }
     }
   },
   preview: {
