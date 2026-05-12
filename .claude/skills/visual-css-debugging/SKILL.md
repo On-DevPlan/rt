@@ -2,7 +2,6 @@
 name: visual-css-debugging
 description: Use when frontend has CSS styling issues, visual bugs, runtime errors, or page load failures - combines Playwright for page control with mmxcli for AI image analysis in feedback loops
 ---
-
 # Visual CSS Debugging with Playwright + mmxcli
 
 ## Overview
@@ -10,6 +9,7 @@ description: Use when frontend has CSS styling issues, visual bugs, runtime erro
 Debug frontend issues using a feedback loop: Playwright navigates and captures, mmxcli analyzes visually, you fix based on feedback. Repeat until correct.
 
 **Two debugging modes:**
+
 1. **Runtime check** - Page load errors, console errors, React crashes
 2. **Visual check** - CSS not applying, layout issues, missing styles
 
@@ -65,43 +65,48 @@ digraph debugging_flow {
 
 ## Quick Reference
 
-| Step | Command | Purpose |
-|------|---------|---------|
-| Navigate | `mcp__plugin_playwright_playwright__browser_navigate` | Open URL |
-| Screenshot | `mcp__plugin_playwright_playwright__browser_take_screenshot` | Capture visual |
-| Snapshot | `mcp__plugin_playwright_playwright__browser_snapshot` | DOM structure |
-| Console | `mcp__plugin_playwright_playwright__browser_console_messages` | Check errors |
-| Analyze | `mmx vision describe --image <path>` | AI visual analysis |
-| Wait | `mcp__plugin_playwright_playwright__browser_wait_for` | Wait for render |
+| Step       | Command                                                         | Purpose            |
+| ---------- | --------------------------------------------------------------- | ------------------ |
+| Navigate   | `mcp__plugin_playwright_playwright__browser_navigate`         | Open URL           |
+| Screenshot | `mcp__plugin_playwright_playwright__browser_take_screenshot`  | Capture visual     |
+| Snapshot   | `mcp__plugin_playwright_playwright__browser_snapshot`         | DOM structure      |
+| Console    | `mcp__plugin_playwright_playwright__browser_console_messages` | Check errors       |
+| Analyze    | `mmx vision describe --image <path>`                          | AI visual analysis |
+| Wait       | `mcp__plugin_playwright_playwright__browser_wait_for`         | Wait for render    |
 
 ## Step 1: Runtime Error Detection
 
 Before visual debugging, check for runtime errors that prevent page from loading.
 
 ### Navigate to page
+
 ```
 mcp__plugin_playwright_playwright__browser_navigate
   url: "http://localhost:<port>/<path>"
 ```
 
 ### Wait for initial render
+
 ```
 mcp__plugin_playwright_playwright__browser_wait_for
   time: 3
 ```
 
 ### Check console errors immediately
+
 ```
 mcp__plugin_playwright_playwright__browser_console_messages
   level: "error"
 ```
 
 ### Snapshot check for error boundary
+
 ```
 mcp__plugin_playwright_playwright__browser_snapshot
 ```
 
 Look for:
+
 - `Unexpected Application Error` heading
 - Error message details
 - Stack trace location
@@ -121,13 +126,13 @@ Look for:
 
 ### Common Runtime Errors
 
-| Error Message | Likely Cause | Fix |
-|--------------|--------------|-----|
-| "Should have a queue. You are likely calling Hooks conditionally" | useCallback inside useMemo | Move hooks to top level |
-| "Cannot read properties of null (reading 'useEffect')" | React version mismatch, module not loaded | Check imports, React version |
-| "Failed to fetch dynamically imported module" | Stale Vite cache, module not found | Clear .vite cache, restart dev server |
-| "is not exported by module" | Wrong import path | Check export/import paths |
-| "TypeError: Failed to fetch" | Network error, port issue | Restart dev server |
+| Error Message                                                     | Likely Cause                              | Fix                                   |
+| ----------------------------------------------------------------- | ----------------------------------------- | ------------------------------------- |
+| "Should have a queue. You are likely calling Hooks conditionally" | useCallback inside useMemo                | Move hooks to top level               |
+| "Cannot read properties of null (reading 'useEffect')"            | React version mismatch, module not loaded | Check imports, React version          |
+| "Failed to fetch dynamically imported module"                     | Stale Vite cache, module not found        | Clear .vite cache, restart dev server |
+| "is not exported by module"                                       | Wrong import path                         | Check export/import paths             |
+| "TypeError: Failed to fetch"                                      | Network error, port issue                 | Restart dev server                    |
 
 ### For Stubborn Runtime Errors
 
@@ -147,6 +152,7 @@ When errors persist after applying standard fixes:
 After confirming no runtime errors, proceed to visual verification.
 
 ### Take screenshot
+
 ```
 mcp__plugin_playwright_playwright__browser_take_screenshot
   type: "png"
@@ -154,6 +160,7 @@ mcp__plugin_playwright_playwright__browser_take_screenshot
 ```
 
 ### Analyze with mmxcli
+
 ```bash
 mmx vision describe --image "<screenshot-path>" --prompt "详细描述:1.整体布局 2.组件样式问题 3.缺少的视觉元素" --output json --quiet
 ```
@@ -161,11 +168,13 @@ mmx vision describe --image "<screenshot-path>" --prompt "详细描述:1.整体�
 ### Fix CSS based on feedback
 
 ### Rebuild
+
 ```bash
 pnpm run build  # MANDATORY before retest
 ```
 
 ### Restart dev server if needed
+
 ```bash
 pkill -f "vite"  # Kill existing
 npm run dev      # Restart
@@ -192,6 +201,7 @@ When CSS seems to have "no effect":
 **Root cause:** Component using global class names instead of CSS module classes
 
 **Debug loop:**
+
 1. `browser_navigate` → page loads
 2. `browser_take_screenshot` → capture "unstyled" page
 3. `mmx vision describe` → confirms "纯HTML结构"
@@ -204,16 +214,19 @@ When CSS seems to have "no effect":
 ## mmx Prompt Templates
 
 **General analysis:**
+
 ```
 详细描述:1.页面的整体布局 2.各个组件的样式问题 3.缺少哪些视觉样式
 ```
 
 **CSS fix verification:**
+
 ```
 CSS样式修复后,请描述:1.页面整体视觉效果 2.各个组件的样式是否正确应用 3.是否还有样式问题
 ```
 
 **Specific component:**
+
 ```
 描述这个组件的样式,指出:1.颜色/字体/间距问题 2.布局问题 3.交互反馈缺失
 ```
@@ -228,24 +241,26 @@ CSS样式修复后,请描述:1.页面整体视觉效果 2.各个组件的样式�
 
 ## Common CSS Module Fixes
 
-| Problem | Wrong | Correct |
-|---------|-------|---------|
-| Global class | `className="btn"` | `className={styles.btn}` |
-| Missing import | No import | `import styles from './X.module.css'` |
-| Wrong path | `import './style.css'` | `import styles from './X.module.css'` |
-| File naming | `component.css` | `component.module.css` |
+| Problem        | Wrong                    | Correct                                 |
+| -------------- | ------------------------ | --------------------------------------- |
+| Global class   | `className="btn"`      | `className={styles.btn}`              |
+| Missing import | No import                | `import styles from './X.module.css'` |
+| Wrong path     | `import './style.css'` | `import styles from './X.module.css'` |
+| File naming    | `component.css`        | `component.module.css`                |
 
 ## Real-World Example
 
 **Workflow module debugging session:**
 
 ### Round 1: Runtime Error
+
 - Error: "Should have a queue. You are likely calling Hooks conditionally"
 - Root cause: `useCallback` inside `useMemo` in store.js
 - Fix: Move all `useCallback` outside `useMemo`
 - Restart dev server
 
 ### Round 2: Visual Check
+
 - Screenshot shows "CSS almost missing"
 - mmx analysis: "纯HTML结构,缺乏现代Web应用质感"
 - Root cause: Components using `className="global"` instead of CSS module `className={styles.class}`
@@ -253,4 +268,5 @@ CSS样式修复后,请描述:1.页面整体视觉效果 2.各个组件的样式�
 - 3 iterations to finalize
 
 ### Final Result
+
 "已达到上线使用的视觉标准" - Modern flat design, proper layout, all components styled
