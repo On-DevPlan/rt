@@ -29,6 +29,17 @@ export default defineModule({
       tags: ['admin', 'dashboard', 'management'],
       showcase: true,
       fullscreen: true
+    }),
+    definePage({
+      id: 'enrollment-protable',
+      title: 'ProTable 案例',
+      route: '/enrollment/protable',
+      entry: './pages/ProTablePage.jsx',
+      summary: 'Advanced table with search, sort, selection, density, pagination',
+      order: 2,
+      tags: ['protable', 'table', 'advanced'],
+      showcase: true,
+      fullscreen: true
     })
   ],
   widgets: []
