@@ -40,6 +40,17 @@ export default defineModule({
       tags: ['protable', 'table', 'advanced'],
       showcase: true,
       fullscreen: true
+    }),
+    definePage({
+      id: 'enrollment-competition',
+      title: '赛事报名',
+      route: '/enrollment/competition',
+      entry: './pages/CompetitionPage.jsx',
+      summary: 'Competition registration with rules, prize, news timeline, address and cascading region select',
+      order: 3,
+      tags: ['competition', 'registration', 'cascader'],
+      showcase: true,
+      fullscreen: true
     })
   ],
   widgets: []
