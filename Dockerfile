@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY nginx.conf /etc/nginx/nginx.conf
 
 WORKDIR /app/backend
+ENV PYTHONPATH=/app/backend/src
 RUN uv sync --no-dev --frozen
 
 EXPOSE 80
