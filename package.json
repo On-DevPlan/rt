@@ -5,9 +5,10 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "tts": "cd tts && uv run python tts_server.py",
+    "backend": "cd backend && uv run uvicorn rt_backend.main:app --reload --port 8080",
+    "tts": "pnpm backend",
     "dev": "vite --host 0.0.0.0 --port 81",
-    "dev:all": "npx concurrently \"pnpm tts\" \"pnpm dev\"",
+    "dev:all": "npx concurrently \"pnpm backend\" \"pnpm dev\"",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4181"
   },

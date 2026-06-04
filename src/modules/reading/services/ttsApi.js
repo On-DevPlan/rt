@@ -3,7 +3,7 @@
  * Calls backend edge_tts server for audio with word timings
  */
 
-const API_BASE = '/tts'
+const API_BASE = '/api/tts'
 
 /**
  * Fetch audio with word timings for synchronized highlighting

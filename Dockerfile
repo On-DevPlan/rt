@@ -1,4 +1,5 @@
-FROM node:20-alpine AS build
+# Stage 1: build the React frontend
+FROM node:20-alpine AS frontend
 
 WORKDIR /app
 RUN corepack enable
@@ -9,21 +10,25 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 
-FROM python:3.11-alpine
+# Stage 2: FastAPI backend
+FROM python:3.12-slim
 
-RUN apk add --no-cache nginx supervisor ca-certificates curl
+RUN pip install --no-cache-dir uv
 
-RUN pip install --no-cache-dir uv && \
-    uv pip install --system edge-tts aiohttp
+COPY --from=frontend /app/dist /usr/share/nginx/html
+COPY supervisord.conf /etc/supervisord.conf
+COPY backend/ /app/backend/
 
-WORKDIR /app
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx supervisor ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/log /var/run
+
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY tts/ /app/tts/
 
-RUN mkdir -p /var/log /var/run && \
-    chown -R nginx:nginx /var/log /var/run
+WORKDIR /app/backend
+RUN uv sync --no-dev --frozen
 
 EXPOSE 80
 
-CMD ["sh", "-c", "supervisord -c /app/tts/supervisord.conf & nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "supervisord -c /etc/supervisord.conf & nginx -g 'daemon off;'"]
