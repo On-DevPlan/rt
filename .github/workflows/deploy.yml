@@ -99,27 +99,27 @@ jobs:
               sleep 10
             done
 
-            echo "Performing TTS backend check..."
+            echo "Performing backend health check..."
             for i in {1..6}; do
-              BODY=$(curl -s -X POST http://localhost:$PORT/tts/tts_with_timing -H "Content-Type: application/json" -d "{\"text\":\"test\"}")
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:$PORT/tts/tts_with_timing -H "Content-Type: application/json" -d "{\"text\":\"test\"}")
+              BODY=$(curl -s -X POST http://localhost:$PORT/api/tts/with-timing -H "Content-Type: application/json" -d "{\"text\":\"test\"}")
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:$PORT/api/tts/with-timing -H "Content-Type: application/json" -d "{\"text\":\"test\"}")
               if [ "$HTTP_CODE" = "200" ]; then
-                echo "TTS backend check passed!"
+                echo "Backend check passed!"
                 echo "Deployment successful!"
                 echo "Application is running at: http://your-server-ip:$PORT"
                 exit 0
               fi
-              echo "TTS backend check attempt $i/6 failed (HTTP $HTTP_CODE): $BODY"
+              echo "Backend check attempt $i/6 failed (HTTP $HTTP_CODE): $BODY"
               sleep 10
             done
 
             echo "Health check failed after 6 attempts!"
             echo "=== Container logs ==="
             docker logs $CONTAINER_NAME
-            echo "=== TTS stderr ==="
-            docker exec $CONTAINER_NAME cat /var/log/tts.err.log 2>/dev/null || echo "No TTS stderr log"
-            echo "=== TTS stdout ==="
-            docker exec $CONTAINER_NAME cat /var/log/tts.out.log 2>/dev/null || echo "No TTS stdout log"
+            echo "=== Backend stderr ==="
+            docker exec $CONTAINER_NAME cat /var/log/backend.err.log 2>/dev/null || echo "No backend stderr log"
+            echo "=== Backend stdout ==="
+            docker exec $CONTAINER_NAME cat /var/log/backend.out.log 2>/dev/null || echo "No backend stdout log"
             echo "=== Container inspect ==="
             docker inspect $CONTAINER_NAME
             exit 1
