@@ -26,7 +26,16 @@ visualizationType = "intro"
 id = 1
 title = "函数签名"
 titleEn = "Function Signature"
-code = """/**
+code = """// 两数之和 (Two Sum)
+// 给定一个整数数组 nums 和一个整数目标值 target
+// 找出数组中和为 target 的两个数，返回它们的下标
+//
+// 示例:
+//   nums = [2, 7, 11, 15], target = 9
+//   因为 nums[0] + nums[1] = 2 + 7 = 9
+//   所以返回 [0, 1]
+
+/**
  * @param {number[]} nums
  * @param {number} target
  * @return {number[]}
@@ -34,21 +43,30 @@ code = """/**
 function twoSum(nums, target) {
     // 待实现
 }"""
-explanation = "**第 1 步：编写函数签名**\n\n- 定义函数 `twoSum`，接收两个参数\n- `nums`：输入的整数数组\n- `target`：目标值\n\n**返回值约定**\n返回两个索引组成的数组 `[index1, index2]`\n\n> 先写好结构，再填充逻辑——这是\"自顶向下\"的编码方式。"
+explanation = "**第 1 步：编写函数签名**\n\n- 定义函数 `twoSum`，接收两个参数\n- `nums`：输入的整数数组\n- `target`：目标值\n\n**返回值约定**\n返回两个索引组成的数组 `[index1, index2]`\n\n> 先写好结构，再填充逻辑——这是「自顶向下」的编码方式。"
 visualizationType = "code-only"
 
 [[algorithm.steps]]
 id = 2
 title = "初始化哈希映射"
 titleEn = "Initialize Hash Map"
-code = """/**
+code = """// 两数之和 (Two Sum)
+// 给定一个整数数组 nums 和一个整数目标值 target
+// 找出数组中和为 target 的两个数，返回它们的下标
+//
+// 示例:
+//   nums = [2, 7, 11, 15], target = 9
+//   因为 nums[0] + nums[1] = 2 + 7 = 9
+//   所以返回 [0, 1]
+
+/**
  * @param {number[]} nums
  * @param {number} target
  * @return {number[]}
  */
 function twoSum(nums, target) {
     const map = new Map();
-    // map 用于存储: 已遍历的值 → 对应的索引
+    // map 存储: 已遍历的值 -> 对应的索引
 }"""
 explanation = "**第 2 步：创建 Map**\n\n```\nmap = {}  ← 空的哈希表\n```\n\n**为什么用 Map？**\n\n| 操作 | 数组 | Map |\n|------|------|-----|\n| 查找 | O(n) | O(1) |\n| 插入 | O(1) | O(1) |\n\n- 以空间换时间，将查找从 O(n²) 降为 O(n)\n- 键：数组元素的值\n- 值：该元素在数组中的索引"
 visualizationType = "map-create"
@@ -56,71 +74,109 @@ visualizationData = { mapContents = "{}", arrayState = "[2, 7, 11, 15]", current
 
 [[algorithm.steps]]
 id = 3
-title = "遍历数组"
-titleEn = "Iterate Array"
-code = """function twoSum(nums, target) {
+title = "遍历数组与查找"
+titleEn = "Iterate & Find Complement"
+code = """// 两数之和 (Two Sum)
+// 给定一个整数数组 nums 和一个整数目标值 target
+// 找出数组中和为 target 的两个数，返回它们的下标
+//
+// 示例:
+//   nums = [2, 7, 11, 15], target = 9
+//   因为 nums[0] + nums[1] = 2 + 7 = 9
+//   所以返回 [0, 1]
+
+/**
+ * @param {number[]} nums
+ * @param {number} target
+ * @return {number[]}
+ */
+function twoSum(nums, target) {
     const map = new Map();
+    // map 存储: 已遍历的值 -> 对应的索引
+
     for (let i = 0; i < nums.length; i++) {
-        // i = 0, nums[0] = 2
         const complement = target - nums[i];
-        // complement = 9 - 2 = 7
+        // 检查 complement 是否已在 map 中
+        if (map.has(complement)) {
+            return [map.get(complement), i];
+        }
+        map.set(nums[i], i);
     }
+    return [];
 }"""
-explanation = "**第 3 步：开始遍历**\n\n当前 `i = 0`，`nums[0] = 2`\n\n计算补数：\n```\ncomplement = target - nums[i]\n           = 9 - 2\n           = 7\n```\n\n**逻辑**\n- 如果 `7` 在 Map 中，说明之前遍历过值为 7 的元素\n- Map 目前为空，所以 `7` 不在 Map 中\n- 继续下一步"
+explanation = "**第 3 步：编写核心逻辑**\n\n遍历数组，对每个元素：\n\n1. **计算补数**：`complement = target - nums[i]`\n2. **查找 Map**：`map.has(complement)`\n   - 找到 → 返回 `[map.get(complement), i]`\n   - 未找到 → 将 `nums[i]` 和 `i` 存入 Map\n3. **遍历结束**仍未找到 → 返回 `[]`\n\n**以 `i=0`, `nums[0]=2` 为例：**\n```\ncomplement = 9 - 2 = 7\nmap.has(7) = false → map.set(2, 0)\n// map = { 2: 0 }\n```"
 visualizationType = "array-iteration"
 visualizationData = { mapContents = "{}", arrayState = "[2, 7, 11, 15]", currentIndex = 0, currentValue = 2, complement = 7, found = false }
 
 [[algorithm.steps]]
 id = 4
-title = "存储当前元素"
-titleEn = "Store Current Element"
-code = """function twoSum(nums, target) {
-    const map = new Map();
-    for (let i = 0; i < nums.length; i++) {
-        const complement = target - nums[i];
-        // complement = 7 不在 map 中
-        map.set(nums[i], i);
-        // map = { 2 → 0 }
-    }
-}"""
-explanation = "**第 4 步：存储当前值**\n\n`complement = 7` 不在 Map 中，将当前元素存入 Map：\n\n```\nmap.set(nums[0], 0)\n→ map = { 2: 0 }\n```\n\n**Map 状态**\n```\n┌─────┬─────┐\n│ Key │ Val │\n├─────┼─────┤\n│  2  │  0  │\n└─────┴─────┘\n```\n\n> 存储是为了未来的查找。当遍历到后面的元素时，就知道前面出现过哪些值。"
-visualizationType = "map-add"
-visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", currentIndex = 0, currentValue = 2, complement = 7, mapKey = 2, mapValue = 0 }
-
-[[algorithm.steps]]
-id = 5
-title = "继续遍历"
+title = "遍历继续"
 titleEn = "Continue Iteration"
-code = """function twoSum(nums, target) {
+code = """// 两数之和 (Two Sum)
+// 给定一个整数数组 nums 和一个整数目标值 target
+// 找出数组中和为 target 的两个数，返回它们的下标
+//
+// 示例:
+//   nums = [2, 7, 11, 15], target = 9
+//   因为 nums[0] + nums[1] = 2 + 7 = 9
+//   所以返回 [0, 1]
+
+/**
+ * @param {number[]} nums
+ * @param {number} target
+ * @return {number[]}
+ */
+function twoSum(nums, target) {
     const map = new Map();
+    // map 存储: 已遍历的值 -> 对应的索引
+
     for (let i = 0; i < nums.length; i++) {
         const complement = target - nums[i];
+        // 检查 complement 是否已在 map 中
         if (map.has(complement)) {
             return [map.get(complement), i];
         }
         map.set(nums[i], i);
     }
+    return [];
 }"""
-explanation = "**第 5 步：检查并存储**\n\n`i = 1`，`nums[1] = 7`\n\n```\ncomplement = 9 - 7 = 2\nmap.has(2) = ✅ true!\n```\n\n**找到匹配！**\n- `map.get(2) = 0`（之前存储的值 2 的索引）\n- 当前 `i = 1`（值为 7 的索引）\n- 返回 `[0, 1]`\n\n```\nmap = { 2: 0 }  ← 之前存入了 2\n         ↑\n       7 的补数是 2，命中！\n```"
+explanation = "**第 4 步：继续遍历 — `i=1`, `nums[1]=7`**\n\n```\ncomplement = 9 - 7 = 2\nmap.has(2) = true!   ← 之前存入了 {2: 0}\n```\n\n✅ **命中！**\n- `map.get(2)` = 0\n- 当前索引 `i` = 1\n- 返回 `[0, 1]`\n\n**Map 状态**\n```\n┌─────┬─────┐\n│ Key │ Val │\n├─────┼─────┤\n│  2  │  0  │  ← 上一轮存入\n└─────┴─────┘\n```\n\n遍历到 7 时，它的补数 2 已经在 Map 中，立即得到答案！"
 visualizationType = "map-found"
 visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", currentIndex = 1, currentValue = 7, complement = 2, found = true, foundIndex = 0, result = "[0, 1]" }
 
 [[algorithm.steps]]
-id = 6
-title = "返回结果"
-titleEn = "Return Result"
-code = """function twoSum(nums, target) {
+id = 5
+title = "完成"
+titleEn = "Complete"
+code = """// 两数之和 (Two Sum)
+// 给定一个整数数组 nums 和一个整数目标值 target
+// 找出数组中和为 target 的两个数，返回它们的下标
+//
+// 示例:
+//   nums = [2, 7, 11, 15], target = 9
+//   因为 nums[0] + nums[1] = 2 + 7 = 9
+//   所以返回 [0, 1]
+
+/**
+ * @param {number[]} nums
+ * @param {number} target
+ * @return {number[]}
+ */
+function twoSum(nums, target) {
     const map = new Map();
+    // map 存储: 已遍历的值 -> 对应的索引
+
     for (let i = 0; i < nums.length; i++) {
         const complement = target - nums[i];
+        // 检查 complement 是否已在 map 中
         if (map.has(complement)) {
             return [map.get(complement), i];
         }
         map.set(nums[i], i);
     }
-    return []; // 无解时返回空数组
+    return [];
 }"""
-explanation = "**最终结果**\n\n✅ 找到答案：`[0, 1]`\n\n```\nnums[0] + nums[1] = 2 + 7 = 9 = target\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 只遍历一次 |\n| 空间复杂度 | O(n) — Map 最多存储 n 个元素 |\n\n**对比暴力法**\n- 暴力法：O(n²) 时间，O(1) 空间\n- 哈希表法：O(n) 时间，O(n) 空间\n\n> 在 LeetCode 中，时间往往比空间更宝贵——用 Map 是典型的\"空间换时间\"策略。"
+explanation = "**最终结果**\n\n✅ `nums[0] + nums[1] = 2 + 7 = 9` → `[0, 1]`\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 只遍历一次 |\n| 空间复杂度 | O(n) — Map 最多存储 n 个元素 |\n\n**对比暴力法**\n- 暴力法：O(n²) 时间，O(1) 空间\n- 哈希表法：O(n) 时间，O(n) 空间\n\n> 在 LeetCode 中，时间往往比空间更宝贵——用 Map 是典型的「空间换时间」策略。"
 visualizationType = "result"
 visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", result = "[0, 1]", highlightedIndices = [0, 1] }
 

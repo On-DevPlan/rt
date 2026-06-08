@@ -168,7 +168,7 @@
   min-width: 320px;
 }
 
-/* ─── Code Display ──────────────────────────────────────────────────────────── */
+/* ─── Code Display (Git Diff + Typewriter) ──────────────────────────────────── */
 
 .codeDisplay {
   height: 100%;
@@ -210,7 +210,7 @@
 .codeBlock {
   flex: 1;
   margin: 0;
-  padding: 14px 0;
+  padding: 12px 0;
   overflow: auto;
   font-family: inherit;
   font-size: 13px;
@@ -218,27 +218,108 @@
   tab-size: 2;
 }
 
+/* ─── Code Lines ─────────────────────────────────────────────────────────── */
+
 .codeLine {
   display: flex;
-  padding: 0 14px;
-  transition: background 0.3s;
+  padding: 0 8px;
   min-height: 1.7em;
-}
-
-.codeLine:hover {
-  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.15s;
 }
 
 .lineNumber {
-  width: 32px;
+  width: 28px;
   text-align: right;
-  padding-right: 14px;
+  padding-right: 8px;
   color: var(--algo-textDim);
   font-size: 11px;
   user-select: none;
   flex-shrink: 0;
-  opacity: 0.6;
+  opacity: 0.5;
 }
+
+/* ─── Git Diff Gutter ────────────────────────────────────────────────────── */
+
+.lineGutter {
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  user-select: none;
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+}
+
+.gutterAdd {
+  color: var(--algo-green);
+}
+
+.gutterDel {
+  color: #f85149;
+}
+
+/* ─── Line Types ──────────────────────────────────────────────────────────── */
+
+.lineTypeAdd {
+  background: rgba(0, 255, 135, 0.06);
+}
+
+.lineTypeAdd:hover {
+  background: rgba(0, 255, 135, 0.10);
+}
+
+.lineTypeDel {
+  background: rgba(248, 81, 73, 0.06);
+}
+
+.lineTypeDel:hover {
+  background: rgba(248, 81, 73, 0.10);
+}
+
+/* Actively typing — brighter background + left border accent */
+.lineAddTyping {
+  background: rgba(0, 255, 135, 0.12);
+  border-left: 3px solid var(--algo-green);
+  padding-left: 5px;
+  box-shadow: inset 0 0 20px rgba(0, 255, 135, 0.05);
+}
+
+/* Actively deleting — brighter background + left border accent */
+.lineDelTyping {
+  background: rgba(248, 81, 73, 0.12);
+  border-left: 3px solid #f85149;
+  padding-left: 5px;
+  box-shadow: inset 0 0 20px rgba(248, 81, 73, 0.05);
+}
+
+/* Fully deleted — dimmed out */
+.lineDeleted {
+  opacity: 0.3;
+  text-decoration: line-through;
+}
+
+/* Line being animated — extra pull */
+.lineAnimating {
+  transition: none;
+}
+
+/* ─── Typewriter Cursor ───────────────────────────────────────────────────── */
+
+.typeCursor {
+  display: inline-block;
+  margin-left: 1px;
+  font-weight: 300;
+  color: var(--algo-cyan);
+  animation: cursorBlink 0.7s step-end infinite;
+  line-height: 1;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ─── Line Content ────────────────────────────────────────────────────────── */
 
 .lineContent {
   flex: 1;
@@ -249,47 +330,6 @@
 .emptyLine {
   display: inline-block;
   width: 1px;
-}
-
-/* New line animation */
-.codeLineNew {
-  animation: lineGlowIn 0.6s ease-out both;
-  animation-delay: var(--line-delay, 0s);
-}
-
-.codeLineNew .lineContent {
-  position: relative;
-}
-
-.codeLineNew .lineContent::before {
-  content: '';
-  position: absolute;
-  left: -14px;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--algo-cyan);
-  box-shadow: 0 0 8px var(--algo-cyan);
-  opacity: 0.8;
-  animation: pulseGlow 1.5s ease-in-out infinite;
-}
-
-@keyframes lineGlowIn {
-  from {
-    opacity: 0;
-    transform: translateX(-8px);
-    background: rgba(0, 240, 255, 0.08);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-    background: transparent;
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
 }
 
 /* ─── Visualization Area ──────────────────────────────────────────────────── */

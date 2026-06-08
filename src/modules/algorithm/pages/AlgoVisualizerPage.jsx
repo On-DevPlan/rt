@@ -143,28 +143,143 @@ function ResultVisualizer({ result, highlightedIndices }) {
   )
 }
 
-// ─── Code Display with Line Diff ─────────────────────────────────────────────
+// ─── Line Diff Engine ────────────────────────────────────────────────────────
 
-function CodeDisplay({ code, prevCode }) {
-  const codeRef = useRef(null)
-  const [visibleLines, setVisibleLines] = useState(new Set())
+/**
+ * Compute a simple line diff between two code strings.
+ * Returns diff entries: { type: 'same'|'add'|'del', text: string }
+ * Uses common-prefix/suffix detection — works well for sequential code building.
+ */
+function computeLineDiff(prevCode, currentCode) {
+  const prevLines = (prevCode || '').split('\n')
+  const currLines = currentCode.split('\n')
+  const result = []
+  const minLen = Math.min(prevLines.length, currLines.length)
 
-  const currentLines = useMemo(() => code.split('\n'), [code])
-  const prevLines = useMemo(() => (prevCode || '').split('\n'), [prevCode])
+  // 1. Common prefix
+  let i = 0
+  while (i < minLen && prevLines[i] === currLines[i]) {
+    result.push({ type: 'same', text: prevLines[i] })
+    i++
+  }
 
+  // 2. Find common suffix (from end inward)
+  let p = prevLines.length - 1
+  let c = currLines.length - 1
+  while (p >= i && c >= i && prevLines[p] === currLines[c]) {
+    p--
+    c--
+  }
+
+  // 3. Removed lines (between prefix and suffix in old)
+  for (let j = i; j <= p; j++) {
+    result.push({ type: 'del', text: prevLines[j] })
+  }
+
+  // 4. Added lines (between prefix and suffix in new)
+  for (let j = i; j <= c; j++) {
+    result.push({ type: 'add', text: currLines[j] })
+  }
+
+  // 5. Common suffix
+  for (let j = p + 1; j < prevLines.length; j++) {
+    result.push({ type: 'same', text: prevLines[j] })
+  }
+
+  return result
+}
+
+// ─── Typewriter Code with Git Diff ──────────────────────────────────────────
+
+const TYPING_MS = 32        // ms per character typed
+const LINE_PAUSE_MS = 280   // pause between lines after fully typed
+
+function CodeDisplay({ code, prevCode, onAnimationDone }) {
+  const [diffEntries, setDiffEntries] = useState([])
+  const [animState, setAnimState] = useState({
+    diffIndex: -1,
+    charProgress: 0,
+    phase: 'idle',  // 'idle' | 'same' | 'typing' | 'deleting' | 'done'
+  })
+  const timerRef = useRef(null)
+  const mountedRef = useRef(true)
+
+  // Reset and start animation when code changes
   useEffect(() => {
-    if (!codeRef.current) return
-    // Animate lines appearing
-    const newLines = new Set()
-    currentLines.forEach((line, i) => {
-      const isNew = i >= prevLines.length || currentLines[i] !== (prevLines[i] || '')
-      if (isNew) newLines.add(i)
-    })
-    setVisibleLines(newLines)
-  }, [code, prevLines, currentLines])
+    mountedRef.current = true
+    const diff = computeLineDiff(prevCode, code)
+    setDiffEntries(diff)
+    setAnimState({ diffIndex: -1, charProgress: 0, phase: 'idle' })
+
+    // Kick off animation after a small delay
+    const t = setTimeout(() => {
+      if (!mountedRef.current) return
+      const idx = diff.findIndex(e => e.type !== 'same')
+      if (idx === -1) {
+        setAnimState({ diffIndex: diff.length - 1, charProgress: 0, phase: 'done' })
+        onAnimationDone?.()
+        return
+      }
+      // Show leading 'same' entries instantly
+      setAnimState({ diffIndex: idx - 1, charProgress: 0, phase: 'same' })
+      // Begin first animated entry
+      const t2 = setTimeout(() => animateNext(diff, idx), 60)
+      timerRef.current = t2
+      return () => clearTimeout(t2)
+    }, 80)
+    timerRef.current = t
+    return () => {
+      mountedRef.current = false
+      clearTimeout(timerRef.current)
+    }
+  }, [code, prevCode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const animateNext = useCallback((diff, idx) => {
+    if (!mountedRef.current || idx >= diff.length) {
+      setAnimState(prev => ({ ...prev, phase: 'done' }))
+      onAnimationDone?.()
+      return
+    }
+    const entry = diff[idx]
+    if (entry.type === 'same') {
+      setAnimState({ diffIndex: idx, charProgress: 0, phase: 'same' })
+      timerRef.current = setTimeout(() => animateNext(diff, idx + 1), 40)
+    } else if (entry.type === 'add') {
+      setAnimState({ diffIndex: idx, charProgress: 0, phase: 'typing' })
+      typeStep(diff, idx, 0)
+    } else if (entry.type === 'del') {
+      setAnimState({ diffIndex: idx, charProgress: 0, phase: 'deleting' })
+      deleteStep(diff, idx, 0)
+    }
+  }, [onAnimationDone])
+
+  const typeStep = useCallback((diff, idx, progress) => {
+    if (!mountedRef.current) return
+    const text = diff[idx].text
+    if (progress >= text.length) {
+      setAnimState({ diffIndex: idx, charProgress: text.length, phase: 'typing' })
+      timerRef.current = setTimeout(() => animateNext(diff, idx + 1), LINE_PAUSE_MS)
+      return
+    }
+    setAnimState({ diffIndex: idx, charProgress: progress + 1, phase: 'typing' })
+    timerRef.current = setTimeout(() => typeStep(diff, idx, progress + 1), TYPING_MS)
+  }, [animateNext])
+
+  const deleteStep = useCallback((diff, idx, progress) => {
+    if (!mountedRef.current) return
+    const text = diff[idx].text
+    if (progress >= text.length) {
+      // Line fully erased — output empty text
+      setAnimState({ diffIndex: idx, charProgress: text.length, phase: 'deleting' })
+      timerRef.current = setTimeout(() => animateNext(diff, idx + 1), LINE_PAUSE_MS)
+      return
+    }
+    setAnimState({ diffIndex: idx, charProgress: progress + 1, phase: 'deleting' })
+    timerRef.current = setTimeout(() => deleteStep(diff, idx, progress + 1), TYPING_MS)
+  }, [animateNext])
 
   return (
-    <div className={styles.codeDisplay} ref={codeRef}>
+    <div className={styles.codeDisplay}>
       <div className={styles.codeHeader}>
         <span className={styles.codeLang}>JavaScript</span>
         <div className={styles.codeDots}>
@@ -175,18 +290,66 @@ function CodeDisplay({ code, prevCode }) {
       </div>
       <pre className={styles.codeBlock}>
         <code>
-          {currentLines.map((line, i) => (
-            <div
-              key={i}
-              className={`${styles.codeLine} ${visibleLines.has(i) ? styles.codeLineNew : ''}`}
-              style={{ '--line-delay': `${i * 0.04}s` }}
-            >
-              <span className={styles.lineNumber}>{i + 1}</span>
-              <span className={styles.lineContent}>
-                {line || <span className={styles.emptyLine}>&nbsp;</span>}
-              </span>
+          {diffEntries.length === 0 ? (
+            <div className={styles.codeLine}>
+              <span className={styles.lineNumber}>1</span>
+              <span className={styles.lineGutter}>&nbsp;</span>
+              <span className={styles.lineContent}><span className={styles.emptyLine}>&nbsp;</span></span>
             </div>
-          ))}
+          ) : diffEntries.map((entry, idx) => {
+            const isPast = idx < animState.diffIndex
+            const isCurrent = idx === animState.diffIndex
+            const isFuture = idx > animState.diffIndex && entry.type !== 'same'
+            const isAnimating = isCurrent && (animState.phase === 'typing' || animState.phase === 'deleting')
+            const isReady = isPast || (isCurrent && animState.phase === 'same') || (isPast && animState.phase === 'done')
+
+            // Determine display text
+            let displayText
+            if (isReady || (isCurrent && animState.phase === 'same')) {
+              displayText = entry.text
+            } else if (isCurrent && animState.phase === 'typing') {
+              displayText = entry.text.substring(0, animState.charProgress)
+            } else if (isCurrent && animState.phase === 'deleting') {
+              displayText = entry.text.substring(0, entry.text.length - animState.charProgress)
+            } else if (isFuture && entry.type === 'add') {
+              displayText = ''   // Future additions not shown yet
+            } else if (isFuture && entry.type === 'del') {
+              displayText = entry.text  // Show future deletions as still present
+            } else {
+              displayText = entry.text
+            }
+
+            // Determine CSS classes
+            const lineCls = [
+              styles.codeLine,
+              entry.type === 'add' ? styles.lineTypeAdd : '',
+              entry.type === 'del' ? styles.lineTypeDel : '',
+              isAnimating ? styles.lineAnimating : '',
+              isCurrent && animState.phase === 'typing' ? styles.lineAddTyping : '',
+              isCurrent && animState.phase === 'deleting' ? styles.lineDelTyping : '',
+              !isFuture && entry.type === 'del' ? styles.lineDeleted : '',
+            ].filter(Boolean).join(' ')
+
+            const gutter = entry.type === 'add' ? '+' : entry.type === 'del' ? '-' : ' '
+            const gutterCls = [
+              styles.lineGutter,
+              entry.type === 'add' ? styles.gutterAdd : '',
+              entry.type === 'del' ? styles.gutterDel : '',
+            ].filter(Boolean).join(' ')
+
+            const showCursor = isAnimating
+
+            return (
+              <div key={idx} className={lineCls}>
+                <span className={styles.lineNumber}>{idx + 1}</span>
+                <span className={gutterCls}>{gutter}</span>
+                <span className={styles.lineContent}>
+                  {displayText || <span className={styles.emptyLine}>&nbsp;</span>}
+                  {showCursor && <span className={styles.typeCursor}>|</span>}
+                </span>
+              </div>
+            )
+          })}
         </code>
       </pre>
     </div>
@@ -316,10 +479,13 @@ export default function AlgoVisualizerPage() {
   useDocumentTitle('Algorithm Lab - 算法可视化')
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [playSpeed, setPlaySpeed] = useState(2000)
+  const [playSpeed, setPlaySpeed] = useState(3500)
   const [direction, setDirection] = useState('forward')
+  const [animDone, setAnimDone] = useState(false)
   const playRef = useRef(null)
   const [fadeKey, setFadeKey] = useState(0)
+  const stepRef = useRef(currentStep)
+  stepRef.current = currentStep
 
   const algorithms = algoIndex
   const currentAlgo = algoData
@@ -328,72 +494,78 @@ export default function AlgoVisualizerPage() {
   const hasPrev = currentStep > 0
   const hasNext = currentStep < totalSteps - 1
 
+  // Reset animation state on step change
+  const handleStepChange = useCallback((idx) => {
+    setCurrentStep(idx)
+    setAnimDone(false)
+    setFadeKey(f => f + 1)
+  }, [])
+
+  // Called by CodeDisplay when typewriter animation finishes
+  const handleAnimDone = useCallback(() => {
+    setAnimDone(true)
+  }, [])
+
   // Keyboard navigation
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault()
-        goNext()
+        if (hasNext) handleStepChange(currentStep + 1)
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault()
-        goPrev()
+        if (hasPrev) handleStepChange(currentStep - 1)
       } else if (e.key === ' ') {
         e.preventDefault()
-        togglePlay()
+        setIsPlaying(p => !p)
+        if (isPlaying) {
+          setAnimDone(true)
+        }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [currentStep, totalSteps, isPlaying])
+  }, [currentStep, totalSteps, isPlaying, hasNext, hasPrev, handleStepChange])
 
   const goTo = useCallback((idx) => {
     if (idx < 0 || idx >= totalSteps) return
-    setCurrentStep(idx)
-    setFadeKey(f => f + 1)
-  }, [totalSteps])
+    handleStepChange(idx)
+  }, [totalSteps, handleStepChange])
 
   const goNext = useCallback(() => {
-    if (hasNext) goTo(currentStep + 1)
-  }, [hasNext, currentStep, goTo])
+    if (hasNext) handleStepChange(currentStep + 1)
+  }, [hasNext, currentStep, handleStepChange])
 
   const goPrev = useCallback(() => {
-    if (hasPrev) goTo(currentStep - 1)
-  }, [hasPrev, currentStep, goTo])
+    if (hasPrev) handleStepChange(currentStep - 1)
+  }, [hasPrev, currentStep, handleStepChange])
 
   const togglePlay = useCallback(() => {
-    setIsPlaying(p => !p)
+    setIsPlaying(p => {
+      if (p) setAnimDone(true)
+      return !p
+    })
   }, [])
 
-  // Auto-play
+  // Auto-play — waits for animation to finish, then advances
   useEffect(() => {
     if (!isPlaying) {
       if (playRef.current) clearTimeout(playRef.current)
       return
     }
+    // Wait for typewriter animation to finish
+    if (!animDone) return
 
     const tick = () => {
-      if (direction === 'forward') {
-        if (hasNext) {
-          goTo(currentStep + 1)
-        } else {
-          if (playRef.current) clearTimeout(playRef.current)
-          setIsPlaying(false)
-          return
-        }
+      if (stepRef.current < totalSteps - 1) {
+        handleStepChange(stepRef.current + 1)
       } else {
-        if (hasPrev) {
-          goTo(currentStep - 1)
-        } else {
-          if (playRef.current) clearTimeout(playRef.current)
-          setIsPlaying(false)
-          return
-        }
+        setIsPlaying(false)
       }
     }
-
     playRef.current = setTimeout(tick, playSpeed)
     return () => { if (playRef.current) clearTimeout(playRef.current) }
-  }, [isPlaying, currentStep, hasNext, hasPrev, direction, playSpeed, goTo])
+  }, [isPlaying, animDone, totalSteps, playSpeed, handleStepChange])
 
   const step = steps[currentStep]
 
@@ -428,6 +600,7 @@ export default function AlgoVisualizerPage() {
             <CodeDisplay
               code={step?.code || ''}
               prevCode={currentStep > 0 ? steps[currentStep - 1]?.code : ''}
+              onAnimationDone={handleAnimDone}
             />
           </div>
           <div className={styles.vizSection} key={`viz-${fadeKey}`}>
