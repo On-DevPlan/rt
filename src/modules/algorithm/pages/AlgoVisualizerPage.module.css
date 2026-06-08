@@ -1,0 +1,951 @@
+/* ─── Theme Variables ────────────────────────────────────────────────────── */
+
+:root {
+  --algo-bg: #0a0e1a;
+  --algo-surface: #111827;
+  --algo-surface2: #1a2332;
+  --algo-border: #1e293b;
+  --algo-text: #e2e8f0;
+  --algo-textDim: #64748b;
+  --algo-cyan: #00f0ff;
+  --algo-pink: #ff6b9d;
+  --algo-green: #00ff87;
+  --algo-amber: #ffd93d;
+  --algo-codeBg: #0d1117;
+}
+
+/* ─── Page Layout ────────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--algo-bg);
+  color: var(--algo-text);
+  font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
+  overflow: hidden;
+}
+
+/* ─── Top Bar ──────────────────────────────────────────────────────────────── */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--algo-surface);
+  border-bottom: 1px solid var(--algo-border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--algo-cyan), var(--algo-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.algoMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.algoName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--algo-text);
+}
+
+.diffBadge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.diffBadge.easy {
+  background: rgba(0, 255, 135, 0.15);
+  color: var(--algo-green);
+  border: 1px solid rgba(0, 255, 135, 0.3);
+}
+
+.testCase {
+  font-size: 11px;
+  color: var(--algo-textDim);
+  background: var(--algo-surface2);
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--algo-border);
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--algo-textDim);
+}
+
+.keyHint {
+  background: var(--algo-surface2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--algo-border);
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.keyHintLabel {
+  margin-right: 8px;
+}
+
+.keyDivider {
+  color: var(--algo-border);
+  margin: 0 4px;
+}
+
+/* ─── Main Content ──────────────────────────────────────────────────────────── */
+
+.mainContent {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Left Panel ──────────────────────────────────────────────────────────── */
+
+.leftPanel {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--algo-border);
+}
+
+.codeSection {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 20px;
+  background: var(--algo-codeBg);
+  animation: fadeSlideIn 0.5s ease-out both;
+}
+
+.vizSection {
+  flex-shrink: 0;
+  padding: 16px 20px;
+  background: var(--algo-surface);
+  border-top: 1px solid var(--algo-border);
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  animation: fadeSlideUp 0.5s 0.2s ease-out both;
+}
+
+/* ─── Right Panel ──────────────────────────────────────────────────────────── */
+
+.rightPanel {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--algo-surface);
+  padding: 28px 24px;
+  min-width: 320px;
+}
+
+/* ─── Code Display ──────────────────────────────────────────────────────────── */
+
+.codeDisplay {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--algo-border);
+  background: var(--algo-codeBg);
+}
+
+.codeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #161b22;
+  border-bottom: 1px solid var(--algo-border);
+}
+
+.codeLang {
+  font-size: 11px;
+  color: var(--algo-textDim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.codeDots {
+  display: flex;
+  gap: 6px;
+}
+
+.codeDots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.codeBlock {
+  flex: 1;
+  margin: 0;
+  padding: 14px 0;
+  overflow: auto;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.codeLine {
+  display: flex;
+  padding: 0 14px;
+  transition: background 0.3s;
+  min-height: 1.7em;
+}
+
+.codeLine:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.lineNumber {
+  width: 32px;
+  text-align: right;
+  padding-right: 14px;
+  color: var(--algo-textDim);
+  font-size: 11px;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.lineContent {
+  flex: 1;
+  white-space: pre;
+  color: #c9d1d9;
+}
+
+.emptyLine {
+  display: inline-block;
+  width: 1px;
+}
+
+/* New line animation */
+.codeLineNew {
+  animation: lineGlowIn 0.6s ease-out both;
+  animation-delay: var(--line-delay, 0s);
+}
+
+.codeLineNew .lineContent {
+  position: relative;
+}
+
+.codeLineNew .lineContent::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--algo-cyan);
+  box-shadow: 0 0 8px var(--algo-cyan);
+  opacity: 0.8;
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes lineGlowIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+    background: rgba(0, 240, 255, 0.08);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    background: transparent;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ─── Visualization Area ──────────────────────────────────────────────────── */
+
+.arrayViz, .mapViz, .resultViz {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vizLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--algo-textDim);
+  font-weight: 600;
+}
+
+.arrayBoxes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.arrayBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+  padding: 8px 0 4px;
+  background: var(--algo-surface2);
+  border: 1px solid var(--algo-border);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  animation: boxAppear 0.3s ease-out both;
+  animation-delay: calc(var(--idx, 0) * 0.06s);
+}
+
+.arrayBox.current {
+  border-color: var(--algo-cyan);
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.arrayBox.highlighted {
+  border-color: var(--algo-green);
+  background: rgba(0, 255, 135, 0.1);
+  box-shadow: 0 0 12px rgba(0, 255, 135, 0.2);
+  transform: translateY(-2px);
+}
+
+.arrayValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--algo-text);
+}
+
+.arrayIndex {
+  font-size: 9px;
+  color: var(--algo-textDim);
+  margin-top: 2px;
+}
+
+@keyframes boxAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Map Visualization */
+.mapEmpty {
+  font-size: 20px;
+  color: var(--algo-textDim);
+  padding: 12px 0;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.mapTable {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.mapTable th {
+  padding: 4px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--algo-border);
+  color: var(--algo-textDim);
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mapTable td {
+  padding: 5px 12px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+}
+
+.mapRow {
+  animation: mapRowIn 0.3s ease-out both;
+  animation-delay: calc(var(--row, 0) * 0.1s);
+}
+
+.mapRow:last-child td {
+  border-bottom: none;
+}
+
+.mapKey {
+  color: var(--algo-cyan);
+  font-weight: 600;
+}
+
+.mapVal {
+  color: var(--algo-amber);
+}
+
+@keyframes mapRowIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Result Badge */
+.resultBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(0, 255, 135, 0.08);
+  border: 1px solid rgba(0, 255, 135, 0.3);
+  border-radius: 8px;
+  animation: badgePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.resultArrow {
+  font-size: 18px;
+  color: var(--algo-green);
+}
+
+.resultValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--algo-green);
+  text-shadow: 0 0 20px rgba(0, 255, 135, 0.5);
+}
+
+.resultExplanation {
+  font-size: 12px;
+  color: var(--algo-textDim);
+  padding-top: 4px;
+}
+
+@keyframes badgePop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Complement badge */
+.complementBadge {
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: var(--algo-surface2);
+  border: 1px solid var(--algo-border);
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeSlideIn 0.3s 0.1s ease-out both;
+}
+
+.foundTag {
+  color: var(--algo-green);
+  font-weight: 700;
+}
+
+.missTag {
+  color: var(--algo-textDim);
+}
+
+.mapAction, .mapActionSuccess {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  animation: fadeSlideIn 0.3s 0.1s ease-out both;
+}
+
+.mapAction {
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  color: var(--algo-cyan);
+}
+
+.mapActionSuccess {
+  background: rgba(0, 255, 135, 0.1);
+  border: 1px solid rgba(0, 255, 135, 0.3);
+  color: var(--algo-green);
+  font-weight: 600;
+}
+
+/* Split visualization */
+.vizSplit {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.vizIntro, .vizHint {
+  padding: 14px 20px;
+  background: var(--algo-surface2);
+  border: 1px solid var(--algo-border);
+  border-radius: 8px;
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+.vizIntro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vizIntroIcon {
+  font-size: 24px;
+  opacity: 0.6;
+}
+
+.vizIntroText {
+  font-size: 14px;
+  color: var(--algo-textDim);
+}
+
+.vizHint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vizHintIcon {
+  font-size: 18px;
+  color: var(--algo-amber);
+}
+
+/* ─── Explanation Panel ──────────────────────────────────────────────────── */
+
+.explanationPanel {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.explanationPanel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stepCounter {
+  font-size: 11px;
+  color: var(--algo-textDim);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.stepNum {
+  font-weight: 700;
+  color: var(--algo-cyan);
+  font-size: 14px;
+}
+
+.stepTotal {
+  font-size: 11px;
+}
+
+.stepTitles {
+  margin-bottom: 16px;
+}
+
+.stepTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--algo-text);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.stepTitleEn {
+  font-size: 12px;
+  color: var(--algo-textDim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stepProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 4px;
+  background: var(--algo-surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--algo-cyan), var(--algo-pink));
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.progressPct {
+  font-size: 11px;
+  color: var(--algo-textDim);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Markdown rendered explanation */
+.explanationContent {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #c9d1d9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.explanationContent p {
+  margin: 0 0 12px;
+}
+
+.explanationContent strong {
+  color: var(--algo-text);
+  font-weight: 700;
+}
+
+.explanationContent code {
+  background: var(--algo-surface2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--algo-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+}
+
+.explanationContent pre {
+  background: var(--algo-codeBg);
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--algo-border);
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.explanationContent pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #c9d1d9;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.explanationContent blockquote {
+  margin: 12px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--algo-cyan);
+  background: rgba(0, 240, 255, 0.05);
+  border-radius: 0 6px 6px 0;
+  color: var(--algo-textDim);
+  font-style: italic;
+}
+
+.explanationContent ul {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.explanationContent li {
+  margin-bottom: 4px;
+}
+
+.explanationContent table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12px;
+}
+
+.explanationContent th {
+  background: var(--algo-surface2);
+  padding: 6px 10px;
+  text-align: left;
+  border: 1px solid var(--algo-border);
+  color: var(--algo-text);
+  font-weight: 600;
+}
+
+.explanationContent td {
+  padding: 6px 10px;
+  border: 1px solid var(--algo-border);
+  color: #c9d1d9;
+}
+
+/* ─── Bottom Bar ──────────────────────────────────────────────────────────── */
+
+.bottomBar {
+  flex-shrink: 0;
+  padding: 12px 24px;
+  background: var(--algo-surface);
+  border-top: 1px solid var(--algo-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.navControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--algo-surface2);
+  border: 1px solid var(--algo-border);
+  border-radius: 6px;
+  color: var(--algo-text);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.navBtn:hover:not(.disabled) {
+  background: var(--algo-border);
+  border-color: var(--algo-textDim);
+}
+
+.navBtn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.playBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 6px;
+  color: var(--algo-cyan);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.playBtn:hover {
+  background: rgba(0, 240, 255, 0.2);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+}
+
+.playBtn.isPlaying {
+  background: rgba(255, 107, 157, 0.1);
+  border-color: rgba(255, 107, 157, 0.3);
+  color: var(--algo-pink);
+}
+
+.playBtn.isPlaying:hover {
+  background: rgba(255, 107, 157, 0.2);
+  box-shadow: 0 0 12px rgba(255, 107, 157, 0.2);
+}
+
+/* Speed control */
+.speedControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.speedLabel {
+  font-size: 10px;
+  color: var(--algo-textDim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.speedSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 60px;
+  height: 3px;
+  background: var(--algo-surface2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.speedSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--algo-cyan);
+  border: 2px solid var(--algo-bg);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+  cursor: pointer;
+}
+
+.speedValue {
+  font-size: 11px;
+  color: var(--algo-textDim);
+  min-width: 32px;
+}
+
+/* Step dots */
+.stepDots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--algo-border);
+  background: var(--algo-surface2);
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.stepDot.active {
+  background: var(--algo-cyan);
+  border-color: var(--algo-cyan);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+  transform: scale(1.3);
+}
+
+.stepDot.done {
+  background: rgba(0, 240, 255, 0.3);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.stepDot:hover {
+  border-color: var(--algo-textDim);
+}
+
+.dotTooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: var(--algo-surface2);
+  border: 1px solid var(--algo-border);
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--algo-text);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.stepDot:hover .dotTooltip {
+  display: block;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+
+.rightPanel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.rightPanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rightPanel::-webkit-scrollbar-thumb {
+  background: var(--algo-border);
+  border-radius: 2px;
+}
+
+.rightPanel::-webkit-scrollbar-thumb:hover {
+  background: var(--algo-textDim);
+}
+
+.codeBlock::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.codeBlock::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.codeBlock::-webkit-scrollbar-thumb {
+  background: var(--algo-border);
+  border-radius: 2px;
+}

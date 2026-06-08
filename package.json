@@ -10,7 +10,9 @@
     "dev": "vite --host 0.0.0.0 --port 81",
     "dev:all": "npx concurrently \"pnpm backend\" \"pnpm dev\"",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 4181"
+    "preview": "vite preview --host 0.0.0.0 --port 4181",
+    "parse:algos": "python scripts/parse_algo.py",
+    "parse:algos:watch": "python scripts/parse_algo.py --watch"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.2",

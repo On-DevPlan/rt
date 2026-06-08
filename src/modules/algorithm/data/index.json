@@ -1,0 +1,13 @@
+[
+  {
+    "id": "two-sum",
+    "title": "两数之和",
+    "titleEn": "Two Sum",
+    "difficulty": "easy",
+    "tags": [
+      "array",
+      "hash-table"
+    ],
+    "dataFile": "two-sum.json"
+  }
+]
