@@ -344,7 +344,7 @@ function CodeDisplay({ code, prevCode, codeHtml, onAnimationDone }) {
                 <span className={styles.lineNumber}>{idx + 1}</span>
                 <span className={gutterCls}>{gutter}</span>
                 <span className={styles.lineContent}>
-                  {isReady && codeHtml && entry.lineIdx >= 0 && codeHtml[entry.lineIdx]
+                  {(entry.type === 'same' || isReady) && codeHtml && entry.lineIdx >= 0 && codeHtml[entry.lineIdx]
                     ? <span dangerouslySetInnerHTML={{ __html: codeHtml[entry.lineIdx] }} />
                     : <span>{displayText || <span className={styles.emptyLine}>&nbsp;</span>}</span>}
                   {showCursor && <span className={styles.typeCursor}>|</span>}
@@ -361,18 +361,10 @@ function CodeDisplay({ code, prevCode, codeHtml, onAnimationDone }) {
 // ─── Explanation Panel ───────────────────────────────────────────────────────
 
 function ExplanationPanel({ step, current, total }) {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    setVisible(false)
-    const t = setTimeout(() => setVisible(true), 150)
-    return () => clearTimeout(t)
-  }, [current])
-
   if (!step) return null
 
   return (
-    <div className={`${styles.explanationPanel} ${visible ? styles.visible : ''}`}>
+    <div className={styles.explanationPanel}>
       <div className={styles.stepCounter}>
         <span className={styles.stepNum}>Step {current + 1}</span>
         <span className={styles.stepTotal}>/ {total}</span>
@@ -485,7 +477,6 @@ export default function AlgoVisualizerPage() {
   const [direction, setDirection] = useState('forward')
   const [animDone, setAnimDone] = useState(false)
   const playRef = useRef(null)
-  const [fadeKey, setFadeKey] = useState(0)
   const stepRef = useRef(currentStep)
   stepRef.current = currentStep
 
@@ -500,7 +491,6 @@ export default function AlgoVisualizerPage() {
   const handleStepChange = useCallback((idx) => {
     setCurrentStep(idx)
     setAnimDone(false)
-    setFadeKey(f => f + 1)
   }, [])
 
   // Called by CodeDisplay when typewriter animation finishes
@@ -598,7 +588,7 @@ export default function AlgoVisualizerPage() {
       <div className={styles.mainContent}>
         {/* Left Panel */}
         <div className={styles.leftPanel}>
-          <div className={styles.codeSection} key={`code-${fadeKey}`}>
+          <div className={styles.codeSection}>
             <CodeDisplay
               code={step?.code || ''}
               prevCode={currentStep > 0 ? steps[currentStep - 1]?.code : ''}
@@ -606,13 +596,13 @@ export default function AlgoVisualizerPage() {
               onAnimationDone={handleAnimDone}
             />
           </div>
-          <div className={styles.vizSection} key={`viz-${fadeKey}`}>
+          <div className={styles.vizSection}>
             <AlgorithmVisualization step={step} />
           </div>
         </div>
 
         {/* Right Panel */}
-        <div className={styles.rightPanel} key={`right-${fadeKey}`}>
+        <div className={styles.rightPanel}>
           <ExplanationPanel
             step={step}
             current={currentStep}
