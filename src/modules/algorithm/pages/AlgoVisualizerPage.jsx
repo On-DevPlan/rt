@@ -51,8 +51,10 @@ function mdToHtml(text) {
 
 // ─── Algorithm Data ──────────────────────────────────────────────────────────
 
-import algoData from '../data/two-sum.json'
 import algoIndex from '../data/index.json'
+
+// Lazy-load all algorithm JSON files — add files to data/ and they auto-register
+const algoLoaders = import.meta.glob('../data/*.json', { eager: false })
 
 // ─── Visualization Components ────────────────────────────────────────────────
 
@@ -470,7 +472,9 @@ function AlgorithmVisualization({ step }) {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function AlgoVisualizerPage() {
-  useDocumentTitle('Algorithm Lab - 算法可视化')
+  const [currentAlgoId, setCurrentAlgoId] = useState(algoIndex[0]?.id || '')
+  const [currentAlgo, setCurrentAlgo] = useState(null)
+  const [algoLoading, setAlgoLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playSpeed, setPlaySpeed] = useState(3500)
@@ -480,8 +484,27 @@ export default function AlgoVisualizerPage() {
   const stepRef = useRef(currentStep)
   stepRef.current = currentStep
 
+  // Load algorithm data when selection changes
+  useEffect(() => {
+    if (!currentAlgoId) return
+    setAlgoLoading(true)
+    setCurrentStep(0)
+    setAnimDone(false)
+
+    const loader = algoLoaders[`../data/${currentAlgoId}.json`]
+    if (!loader) {
+      console.warn(`Unknown algorithm: ${currentAlgoId}`)
+      setAlgoLoading(false)
+      return
+    }
+
+    loader().then(mod => {
+      setCurrentAlgo(mod.default)
+      setAlgoLoading(false)
+    })
+  }, [currentAlgoId])
+
   const algorithms = algoIndex
-  const currentAlgo = algoData
   const steps = currentAlgo?.steps || []
   const totalSteps = steps.length
   const hasPrev = currentStep > 0
@@ -559,6 +582,13 @@ export default function AlgoVisualizerPage() {
     return () => { if (playRef.current) clearTimeout(playRef.current) }
   }, [isPlaying, animDone, totalSteps, playSpeed, handleStepChange])
 
+  // Update document title
+  useEffect(() => {
+    document.title = currentAlgo
+      ? `${currentAlgo.title} — Algorithm Lab`
+      : 'Algorithm Lab'
+  }, [currentAlgo])
+
   const step = steps[currentStep]
 
   return (
@@ -567,12 +597,26 @@ export default function AlgoVisualizerPage() {
       <header className={styles.topBar}>
         <div className={styles.topLeft}>
           <h1 className={styles.topTitle}>Algorithm Lab</h1>
-          <div className={styles.algoMeta}>
-            <span className={styles.algoName}>{currentAlgo.title}</span>
-            <span className={`${styles.diffBadge} ${styles[currentAlgo.difficulty]}`}>
-              {currentAlgo.difficulty}
-            </span>
-            <span className={styles.testCase}>{currentAlgo.testCase}</span>
+          <div className={styles.algoSelector}>
+            <select
+              className={styles.algoSelect}
+              value={currentAlgoId}
+              onChange={e => setCurrentAlgoId(e.target.value)}
+            >
+              {algoIndex.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.title} ({a.titleEn})
+                </option>
+              ))}
+            </select>
+            {currentAlgo && (
+              <div className={styles.algoMeta}>
+                <span className={`${styles.diffBadge} ${styles[currentAlgo.difficulty]}`}>
+                  {currentAlgo.difficulty}
+                </span>
+                <span className={styles.testCase}>{currentAlgo.testCase}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.topRight}>
@@ -585,33 +629,42 @@ export default function AlgoVisualizerPage() {
       </header>
 
       {/* Main Content */}
-      <div className={styles.mainContent}>
-        {/* Left Panel */}
-        <div className={styles.leftPanel}>
-          <div className={styles.codeSection}>
-            <CodeDisplay
-              code={step?.code || ''}
-              prevCode={currentStep > 0 ? steps[currentStep - 1]?.code : ''}
-              codeHtml={step?.codeHtml || []}
-              onAnimationDone={handleAnimDone}
+      {algoLoading || !currentAlgo ? (
+        <div className={styles.loadingState}>
+          <div className={styles.loadingAlgoText}>
+            {algoLoading ? '正在加载算法...' : '请选择一个算法'}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.mainContent}>
+          {/* Left Panel */}
+          <div className={styles.leftPanel}>
+            <div className={styles.codeSection}>
+              <CodeDisplay
+                code={step?.code || ''}
+                prevCode={currentStep > 0 ? steps[currentStep - 1]?.code : ''}
+                codeHtml={step?.codeHtml || []}
+                onAnimationDone={handleAnimDone}
+              />
+            </div>
+            <div className={styles.vizSection}>
+              <AlgorithmVisualization step={step} />
+            </div>
+          </div>
+
+          {/* Right Panel */}
+          <div className={styles.rightPanel}>
+            <ExplanationPanel
+              step={step}
+              current={currentStep}
+              total={totalSteps}
             />
           </div>
-          <div className={styles.vizSection}>
-            <AlgorithmVisualization step={step} />
-          </div>
         </div>
-
-        {/* Right Panel */}
-        <div className={styles.rightPanel}>
-          <ExplanationPanel
-            step={step}
-            current={currentStep}
-            total={totalSteps}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Bottom Navigation */}
+      {currentAlgo && (
       <footer className={styles.bottomBar}>
         <div className={styles.navControls}>
           <button
@@ -684,6 +737,7 @@ export default function AlgoVisualizerPage() {
           ))}
         </div>
       </footer>
+      )}
     </div>
   )
 }

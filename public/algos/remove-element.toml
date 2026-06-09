@@ -1,0 +1,151 @@
+[algorithm]
+id = "remove-element"
+title = "移除元素"
+titleEn = "Remove Element"
+difficulty = "easy"
+tags = ["array", "two-pointers"]
+testCase = "nums = [3,2,2,3], val = 3"
+expectedOutput = "2 (nums = [2,2,_,_])"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 移除元素
+# 给你一个数组 nums 和一个值 val
+# 原地移除所有等于 val 的元素，返回移除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   元素的顺序可以改变
+#   返回新长度 k，前 k 个元素不含 val
+#
+# 示例:
+#   nums = [3, 2, 2, 3], val = 3
+#   返回 2, nums 前两个元素为 [2, 2]"""
+explanation = "**问题分析**\n\n给定 `nums = [3, 2, 2, 3]` 和 `val = 3`：\n- 需要移除所有值为 `3` 的元素\n- 返回移除后数组的新长度 `k`\n- 前 `k` 个位置放不等于 `val` 的元素\n\n**两种常见解法**\n\n| 方法 | 时间 | 空间 | 特点 |\n|------|------|------|------|\n| 双指针（快慢） | O(n) | O(1) | 保持相对顺序 |\n| 双指针（首尾） | O(n) | O(1) | 元素少时更少移动 |\n\n> 这里用快慢指针，慢指针指向待填充位置，快指针遍历数组。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 移除元素
+# 给你一个数组 nums 和一个值 val
+# 原地移除所有等于 val 的元素，返回移除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   元素的顺序可以改变
+#   返回新长度 k，前 k 个元素不含 val
+#
+# 示例:
+#   nums = [3, 2, 2, 3], val = 3
+#   返回 2, nums 前两个元素为 [2, 2]
+
+from typing import List
+
+def remove_element(nums: List[int], val: int) -> int:
+    \"\"\"原地移除所有等于 val 的元素，返回新长度。\"\"\"
+    pass"""
+explanation = "**第 1 步：函数签名**\n\n- 接收数组 `nums` 和目标值 `val`\n- 返回 `int`（新长度）\n- 要求**原地修改**数组\n- 文档字符串说明函数行为"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化快慢指针 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化指针"
+titleEn = "Initialize Pointer"
+code = """# 移除元素
+# 给你一个数组 nums 和一个值 val
+# 原地移除所有等于 val 的元素，返回移除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   元素的顺序可以改变
+#   返回新长度 k，前 k 个元素不含 val
+#
+# 示例:
+#   nums = [3, 2, 2, 3], val = 3
+#   返回 2, nums 前两个元素为 [2, 2]
+
+from typing import List
+
+def remove_element(nums: List[int], val: int) -> int:
+    \"\"\"原地移除所有等于 val 的元素，返回新长度。\"\"\"
+    k = 0  # 慢指针：记录不等于 val 的元素个数"""
+explanation = "**第 2 步：初始化慢指针**\n\n```\nk = 0  ← 指向待填充的位置，也表示「已确认的非 val 元素个数」\n```\n\n`k` 同时承担两个角色：\n1. **慢指针** — 指向下一个非 `val` 元素应放的位置\n2. **计数器** — 最终返回的值就是 `k`\n\n> 快指针由 `for` 循环隐式提供，不需要额外变量。"
+visualizationType = "code-only"
+
+# ── Step 3: 遍历并覆盖 ─────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历并覆盖"
+titleEn = "Iterate and Overwrite"
+code = """# 移除元素
+# 给你一个数组 nums 和一个值 val
+# 原地移除所有等于 val 的元素，返回移除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   元素的顺序可以改变
+#   返回新长度 k，前 k 个元素不含 val
+#
+# 示例:
+#   nums = [3, 2, 2, 3], val = 3
+#   返回 2, nums 前两个元素为 [2, 2]
+
+from typing import List
+
+def remove_element(nums: List[int], val: int) -> int:
+    \"\"\"原地移除所有等于 val 的元素，返回新长度。\"\"\"
+    k = 0  # 慢指针：记录不等于 val 的元素个数
+
+    for i in range(len(nums)):
+        if nums[i] != val:
+            nums[k] = nums[i]
+            k += 1
+    return k"""
+explanation = "**第 3 步：快指针遍历，慢指针填充**\n\n```\nfor i in range(len(nums)):     ← i 是快指针，遍历整个数组\n    if nums[i] != val:         ← 遇到不等于 val 的元素\n        nums[k] = nums[i]      ← 将它放到 k 位置\n        k += 1                 ← k 向前移动\nreturn k                       ← k 就是新长度\n```\n\n**执行过程**（`nums = [3, 2, 2, 3]`, `val = 3`）：\n\n```\ni=0: nums[0]=3 == val → 跳过\n     nums = [3, 2, 2, 3], k=0\n\ni=1: nums[1]=2 != val → nums[0]=2, k=1\n     nums = [2, 2, 2, 3], k=1\n\ni=2: nums[2]=2 != val → nums[1]=2, k=2\n     nums = [2, 2, 2, 3], k=2\n\ni=3: nums[3]=3 == val → 跳过\n     nums = [2, 2, 2, 3], k=2\n\n返回 k=2, 前两个元素是 [2, 2] ✓\n```\n\n> 注意：`i` 总是跑在 `k` 前面，所以覆盖未处理的元素是安全的。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 移除元素
+# 给你一个数组 nums 和一个值 val
+# 原地移除所有等于 val 的元素，返回移除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   元素的顺序可以保持
+#   返回新长度 k，前 k 个元素不含 val
+#
+# 示例:
+#   nums = [3, 2, 2, 3], val = 3
+#   返回 2, nums 前两个元素为 [2, 2]
+
+from typing import List
+
+def remove_element(nums: List[int], val: int) -> int:
+    \"\"\"原地移除所有等于 val 的元素，返回新长度。\"\"\"
+    k = 0  # 慢指针：记录不等于 val 的元素个数
+
+    for i in range(len(nums)):
+        if nums[i] != val:
+            nums[k] = nums[i]
+            k += 1
+    return k"""
+explanation = "**最终结果**\n\n✅ `nums = [3, 2, 2, 3]`, `val = 3` → 返回 `2`，数组前两位为 `[2, 2]`\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 一次遍历 |\n| 空间复杂度 | O(1) — 只用了两个指针 |\n\n**快慢指针技巧**\n- 适用于需要**原地筛选**的场景\n- 慢指针 `k` 标记「已确认的好元素」边界\n- 快指针 `i` 扫描整个数组做决策\n- 核心思想：**用覆盖代替删除**"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 2, 2, 3]", result = "2", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "快慢指针覆盖法"
+keyInsight = "慢指针指向待填充位置，快指针遍历扫描，用覆盖代替删除"

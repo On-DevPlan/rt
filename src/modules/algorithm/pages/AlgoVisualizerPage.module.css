@@ -43,6 +43,45 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Algorithm selector dropdown */
+.algoSelector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.algoSelect {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 28px 6px 12px;
+  background: var(--algo-surface2);
+  color: var(--algo-text);
+  border: 1px solid var(--algo-border);
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  min-width: 140px;
+  max-width: 280px;
+}
+
+.algoSelect:hover {
+  border-color: var(--algo-textDim);
+}
+
+.algoSelect:focus-visible {
+  border-color: var(--algo-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.15);
 }
 
 .topTitle {
@@ -125,6 +164,22 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+}
+
+/* Loading / placeholder state */
+.loadingState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--algo-bg);
+}
+
+.loadingAlgoText {
+  font-size: 16px;
+  color: var(--algo-textDim);
+  font-family: var(--font-sans, -apple-system, sans-serif);
+  opacity: 0.7;
 }
 
 /* ─── Left Panel ──────────────────────────────────────────────────────────── */

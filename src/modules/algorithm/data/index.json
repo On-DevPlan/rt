@@ -1,5 +1,49 @@
 [
   {
+    "id": "majority-element",
+    "title": "多数元素",
+    "titleEn": "Majority Element",
+    "difficulty": "easy",
+    "tags": [
+      "array",
+      "vote"
+    ],
+    "dataFile": "majority-element.json"
+  },
+  {
+    "id": "merge-sorted-array",
+    "title": "合并两个有序数组",
+    "titleEn": "Merge Sorted Array",
+    "difficulty": "easy",
+    "tags": [
+      "array",
+      "two-pointers"
+    ],
+    "dataFile": "merge-sorted-array.json"
+  },
+  {
+    "id": "remove-duplicates",
+    "title": "删除有序数组中的重复项",
+    "titleEn": "Remove Duplicates from Sorted Array",
+    "difficulty": "easy",
+    "tags": [
+      "array",
+      "two-pointers"
+    ],
+    "dataFile": "remove-duplicates.json"
+  },
+  {
+    "id": "remove-element",
+    "title": "移除元素",
+    "titleEn": "Remove Element",
+    "difficulty": "easy",
+    "tags": [
+      "array",
+      "two-pointers"
+    ],
+    "dataFile": "remove-element.json"
+  },
+  {
     "id": "two-sum",
     "title": "两数之和",
     "titleEn": "Two Sum",
@@ -9,5 +53,16 @@
       "hash-table"
     ],
     "dataFile": "two-sum.json"
+  },
+  {
+    "id": "remove-duplicates-ii",
+    "title": "删除有序数组中的重复项 II",
+    "titleEn": "Remove Duplicates from Sorted Array II",
+    "difficulty": "medium",
+    "tags": [
+      "array",
+      "two-pointers"
+    ],
+    "dataFile": "remove-duplicates-ii.json"
   }
 ]

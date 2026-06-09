@@ -18,17 +18,25 @@ public/algos/<algo-id>.toml
 scripts/parse_algo.py          ← Python (tomllib + pygments)
        │ 读取 TOML
        │ 用 Pygments 语法着色每行代码 → codeHtml[]
-       │ 输出 JSON
+       │ 输出 JSON + 生成 index.json
        ▼
 src/modules/algorithm/data/<algo-id>.json
-src/modules/algorithm/data/index.json    ← 算法索引
+src/modules/algorithm/data/index.json    ← 算法索引（静态导入）
        │
-       ▼ (静态 import)
+       ▼ (动态加载 via import.meta.glob)
 src/modules/algorithm/pages/AlgoVisualizerPage.jsx
-       │ CodeDisplay 组件
-       │   - computeLineDiff()     ← 行级 diff（前缀/后缀匹配）
-       │   - 打字机动画逐行播放     ← 32ms/字符，280ms 行间停顿
-       │   - 完成后使用 codeHtml[] ← dangerouslySetInnerHTML 渲染
+       │
+       ├── 算法选择器（顶栏 dropdown）
+       │   ├── 读取 index.json 列出所有算法
+       │   └── 选中后动态 import 对应 JSON 文件
+       │
+       ├── CodeDisplay 组件
+       │   ├── computeLineDiff()     ← 行级 diff（前缀/后缀匹配）
+       │   ├── 打字机动画逐行播放     ← 32ms/字符，280ms 行间停顿
+       │   └── 'same' 行始终使用 codeHtml[] 渲染
+       │
+       ├── AlgorithmVisualization 组件
+       └── ExplanationPanel 组件
        │
        ▼ 部署
 Dockerfile → nginx → 浏览器
@@ -40,22 +48,35 @@ Dockerfile → nginx → 浏览器
 src/modules/algorithm/
 ├── module.meta.js                          # 模块注册（路由 /algo/visualizer）
 ├── data/
-│   ├── index.json                          # 算法索引（自动生成）
-│   └── two-sum.json                        # 示例算法数据（自动生成）
+│   ├── index.json                          # 算法索引（自动生成，静态导入）
+│   ├── two-sum.json                        # 各算法数据（自动生成，动态导入）
+│   ├── majority-element.json
+│   ├── merge-sorted-array.json
+│   └── ...                                 # 新增 TOML 后自动生成
 ├── pages/
-│   ├── AlgoVisualizerPage.jsx              # 主页面（699 行）
+│   ├── AlgoVisualizerPage.jsx              # 主页面
 │   └── AlgoVisualizerPage.module.css       # 样式（深色霓虹主题）
 public/algos/
-│   └── two-sum.toml                        # 算法定义源文件
+│   ├── two-sum.toml                        # 算法定义源文件
+│   ├── merge-sorted-array.toml
+│   └── ...                                 # 直接添加即可
 scripts/
 │   └── parse_algo.py                       # TOML → JSON 解析器
 ```
 
 ## 添加新算法
 
+**三步完成，无需改前端代码：**
+
+1. 在 `public/algos/` 下创建 `<algo-id>.toml`
+2. 运行 `pnpm parse:algos`（自动生成 JSON + 更新 index.json）
+3. 运行 `pnpm run build`（Vite 自动察觉新 JSON 文件）
+
+前端使用 `import.meta.glob('../data/*.json')` 动态加载，新文件会自动出现在顶栏下拉菜单中。
+
 ### 1. 创建 TOML
 
-在 `public/algos/` 下创建 `<algo-id>.toml`，格式：
+在 `public/algos/` 下创建 `<algo-id>.toml`，格式见 [`docs/algo-toml-spec.md`](../../../docs/algo-toml-spec.md)：
 
 ```toml
 [algorithm]
@@ -114,11 +135,12 @@ pnpm run build
   - 'del' → 反向逐字删除，红色 `-` 标记
   - 'same' → 立即显示（无动画）
   - 行间停顿 280ms
-- **高亮**: 行完全显示后，用 `codeHtml[idx]` 替换为 Pygments 着色 HTML
+- **高亮**: `'same'` 行**始终**使用 `codeHtml[]` 语法高亮 HTML（不受动画状态影响），'add'/'del' 行在动画完成后替换为 HTML
+- **步骤过渡**: 组件保持挂载（不使用 `key` 强制重建），`code`/`prevCode` 变化时 diff 引擎自动计算新旧差异并驱动打字机动画，无 Remount 闪烁
 
 ### ExplanationPanel（说明区）
 
-- 延迟 150ms 淡入（`opacity` + `transform` CSS 过渡）
+- 组件保持挂载，`step`/`current` prop 变化时内容直接更新
 - `mdToHtml()` 内联 Markdown 渲染器（无外部依赖），支持表格/代码块/引用/列表
 
 ### AlgorithmVisualization（可视化区）
@@ -161,33 +183,16 @@ CSS 变量在 `AlgoVisualizerPage.module.css` 的 `:root` 中定义：
 | 前端自定义 JS tokenizer | 边缘 case 多（f-string、多行字符串等），难以维护 | 用 Pygments 在 build 时预着色 |
 | `explanation` 中使用中文 `""` 引号 | TOML 解析器将 `"` 视为字符串结束符 | 用 `「」` 或转义 `\"` |
 | GBK 编码的 Windows 终端运行 python 脚本 | UnicodeEncodeError | 设置 `PYTHONIOENCODING=utf-8` 或 `sys.stdout.reconfigure()` |
+| 用 `fadeKey` + React `key` 强制组件重建实现步骤切换 | 面板卸载重建导致刷新闪烁 + CSS remount 动画重播 | 移除 fadeKey，组件保持挂载，让 diff 引擎自然响应 prop 变化 |
+| 步骤切换后 'same' 行先渲染纯文本，动画开始后才切 HTML | 纯文本→语法高亮的渲染切换导致闪烁 | `'same'` 行不受动画状态控制，始终直接渲染语法高亮 HTML |
 
-## 隐藏 TODO / 未来改进
+## 待办
 
-### 短期
-
-- [ ] **算法列表**：当前只有一个算法（Two Sum），需要在页面内加切换器或侧边栏
-- [ ] **搜索/筛选**：通过 `index.json` 实现按难度、标签过滤
-- [ ] **自适应动画速度**：当前固定 32ms/字符，短代码行过快，长代码行过慢，应基于行长度动态调整
-- [ ] **快捷键提示**：页面顶部 `← →` 和 `Space` 提示不够醒目，新手可能不知道
-- [ ] **watch 模式依赖**：`pnpm parse:algos:watch` 需要 `pip install watchdog`，文档未说明
-
-### 中期
-
-- [ ] **多语言支持**：解析器中切换 `PythonLexer()` → `JavaLexer()` / `CppLexer()`，TOML 中加 `language` 字段
-- [ ] **算法进度持久化**：用 localStorage 记住用户看过的步骤
-- [ ] **移动端适配**：当前左 60%/右 40% 双栏布局在手机上不可用
-- [ ] **可视化数据自动化**：`visualizationData` 目前需要手动在 TOML 中维护，应该用 Python 运行测试 case 自动生成
-- [ ] **复杂 diff 增强**：当前前缀/后缀算法不支持行内修改检测（修改视为删除+新增），可用 Myers diff 改进
-
-### 长期
-
-- [ ] **LeetCode API 集成**：直接从 LeetCode 抓取题目描述和测试用例
-- [ ] **代码执行**：集成 Python sandbox 让用户看到算法真实输出
-- [ ] **社区算法库**：用户可上传自己的 TOML 算法定义
-- [ ] **对比模式**：同时播放两种算法（如哈希表法 vs 暴力法）对比
-- [ ] **单元测试**：parser 和前端组件均无测试
-- [ ] **CI 自动生成**：算法 JSON 数据应 CI 时自动生成而非提交到仓库
+- [x] **算法列表切换**：顶栏 dropdown + `import.meta.glob` 动态加载，新增 TOML 文件后自动发现
+- [ ] **自适应动画速度**：当前固定 32ms/字符，短行过快长行过慢，应基于行长度动态调整
+- [ ] **可视化数据自动化**：`visualizationData` 已手动维护，应用 Python 运行测试 case 自动生成
+- [ ] **复杂 diff 增强**：当前前缀/后缀算法不支持行内修改检测，可用 Myers diff 改进
+- [ ] **后端 TTS 服务**：运行时需要 uvicorn 进程，若部署时后端未启动不影响前端
 
 ## 开发命令
 

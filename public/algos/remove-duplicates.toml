@@ -1,0 +1,165 @@
+[algorithm]
+id = "remove-duplicates"
+title = "删除有序数组中的重复项"
+titleEn = "Remove Duplicates from Sorted Array"
+difficulty = "easy"
+tags = ["array", "two-pointers"]
+testCase = "nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]"
+expectedOutput = "5 (nums = [0, 1, 2, 3, 4])"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 删除有序数组中的重复项
+# 给你一个非严格递增排列的数组 nums
+# 原地删除重复出现的元素，使每个元素只出现一次
+# 返回删除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   相对顺序必须保持
+#   返回新长度 k，前 k 个元素不含重复值
+#
+# 示例:
+#   nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+#   返回 5, nums 前五个元素为 [0, 1, 2, 3, 4]"""
+explanation = "**问题分析**\n\n数组**已排序**（非严格递增），重复元素必然相邻。\n\n`nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]`\n\n**利用有序性**\n\n- 有序 → 重复元素相邻 → 只需比较当前元素与上一个保留元素\n- 用快慢指针：慢指针指向最后一个「已确认的唯一元素」\n- 快指针扫描，遇到不同的就放到慢指针后面\n\n> 与「移除元素」类似，只是筛选条件从「不等于 val」变成了「不等于上一个保留值」。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 删除有序数组中的重复项
+# 给你一个非严格递增排列的数组 nums
+# 原地删除重复出现的元素，使每个元素只出现一次
+# 返回删除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   相对顺序必须保持
+#   返回新长度 k，前 k 个元素不含重复值
+#
+# 示例:
+#   nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+#   返回 5, nums 前五个元素为 [0, 1, 2, 3, 4]
+
+from typing import List
+
+def remove_duplicates(nums: List[int]) -> int:
+    \"\"\"原地删除重复元素，使每个元素只出现一次，返回新长度。\"\"\"
+    pass"""
+explanation = "**第 1 步：函数签名**\n\n- 只接收 `nums` 一个参数（数组已排序）\n- 返回 `int`（去重后的长度）\n- 原地修改，保持相对顺序\n\n> 数组已排序是关键前提，未排序的数组需要用不同的方法。"
+visualizationType = "code-only"
+
+# ── Step 2: 边界条件 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "边界条件"
+titleEn = "Edge Case"
+code = """# 删除有序数组中的重复项
+# 给你一个非严格递增排列的数组 nums
+# 原地删除重复出现的元素，使每个元素只出现一次
+# 返回删除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   相对顺序必须保持
+#   返回新长度 k，前 k 个元素不含重复值
+#
+# 示例:
+#   nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+#   返回 5, nums 前五个元素为 [0, 1, 2, 3, 4]
+
+from typing import List
+
+def remove_duplicates(nums: List[int]) -> int:
+    \"\"\"原地删除重复元素，使每个元素只出现一次，返回新长度。\"\"\"
+    if not nums:
+        return 0
+
+    k = 1  # 第一个元素默认保留"""
+explanation = "**第 2 步：处理边界 + 初始化**\n\n```python\nif not nums:    # 空数组直接返回\n    return 0\n\nk = 1           # 第一个元素(nums[0])一定保留\n                # k 指向下一个唯一元素应放的位置\n```\n\n**为什么 k 从 1 开始？**\n- 第一个元素肯定没有重复（前面没元素）\n- `k` 既表示「已确认的唯一元素个数」，也表示「下一个待填充的位置」\n- 保留 1 个元素后，后续从 `nums[1]` 开始比较"
+visualizationType = "code-only"
+
+# ── Step 3: 遍历去重 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历去重"
+titleEn = "Iterate and Deduplicate"
+code = """# 删除有序数组中的重复项
+# 给你一个非严格递增排列的数组 nums
+# 原地删除重复出现的元素，使每个元素只出现一次
+# 返回删除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   相对顺序必须保持
+#   返回新长度 k，前 k 个元素不含重复值
+#
+# 示例:
+#   nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+#   返回 5, nums 前五个元素为 [0, 1, 2, 3, 4]
+
+from typing import List
+
+def remove_duplicates(nums: List[int]) -> int:
+    \"\"\"原地删除重复元素，使每个元素只出现一次，返回新长度。\"\"\"
+    if not nums:
+        return 0
+
+    k = 1  # 第一个元素默认保留
+
+    for i in range(1, len(nums)):
+        if nums[i] != nums[k - 1]:
+            nums[k] = nums[i]
+            k += 1
+    return k"""
+explanation = "**第 3 步：快指针遍历，遇到不同就保留**\n\n```\nfor i in range(1, len(nums)):       ← i 从 1 开始遍历\n    if nums[i] != nums[k - 1]:       ← 与上一个「已保留」元素比较\n        nums[k] = nums[i]            ← 不同则保留到 k 位置\n        k += 1                       ← k 前移\nreturn k\n```\n\n**执行过程**：\n\n```\nnums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]\nk=1\n\ni=1: nums[1]=0 == nums[0]=0 → 跳过\ni=2: nums[2]=1 != nums[0]=0 → nums[1]=1, k=2\ni=3: nums[3]=1 == nums[1]=1 → 跳过\ni=4: nums[4]=1 == nums[1]=1 → 跳过\ni=5: nums[5]=2 != nums[1]=1 → nums[2]=2, k=3\ni=6: nums[6]=2 == nums[2]=2 → 跳过\ni=7: nums[7]=3 != nums[2]=2 → nums[3]=3, k=4\ni=8: nums[8]=3 == nums[3]=3 → 跳过\ni=9: nums[9]=4 != nums[3]=3 → nums[4]=4, k=5\n\n返回 k=5, 前五个元素 [0, 1, 2, 3, 4] ✓\n```\n\n> `nums[k-1]` 始终是最后一个已确认的唯一元素，相当于「慢指针」。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 删除有序数组中的重复项
+# 给你一个非严格递增排列的数组 nums
+# 原地删除重复出现的元素，使每个元素只出现一次
+# 返回删除后数组的新长度
+#
+# 要求:
+#   原地修改，不能使用额外数组空间
+#   相对顺序必须保持
+#   返回新长度 k，前 k 个元素不含重复值
+#
+# 示例:
+#   nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+#   返回 5, nums 前五个元素为 [0, 1, 2, 3, 4]
+
+from typing import List
+
+def remove_duplicates(nums: List[int]) -> int:
+    \"\"\"原地删除重复元素，使每个元素只出现一次，返回新长度。\"\"\"
+    if not nums:
+        return 0
+
+    k = 1  # 第一个元素默认保留
+
+    for i in range(1, len(nums)):
+        if nums[i] != nums[k - 1]:
+            nums[k] = nums[i]
+            k += 1
+    return k"""
+explanation = "**最终结果**\n\n✅ `[0, 0, 1, 1, 1, 2, 2, 3, 3, 4]` → 返回 `5`，前五位 `[0, 1, 2, 3, 4]`\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 一次遍历 |\n| 空间复杂度 | O(1) — 只用两个指针 |\n\n**核心思想**\n- 利用数组**有序**的性质，重复元素必然相邻\n- `nums[k-1]` 是最后一个保留元素，`nums[i]` 与它比较就知道是否重复\n- 相同则跳过，不同则保留——简洁高效"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[0, 1, 2, 3, 4, 2, 2, 3, 3, 4]", result = "5", highlightedIndices = [0, 1, 2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "快慢指针 + 有序性"
+keyInsight = "利用数组有序性，相邻比较即可去重，O(n)时间复杂度"
