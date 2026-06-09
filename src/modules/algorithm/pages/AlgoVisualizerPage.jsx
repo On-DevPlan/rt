@@ -1,52 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
+import { marked } from 'marked'
 import styles from './AlgoVisualizerPage.module.css'
 
-// ─── Inline Markdown Renderer ────────────────────────────────────────────────
+// ─── Markdown Renderer ───────────────────────────────────────────────────────
 
 function mdToHtml(text) {
   if (!text) return ''
-  // Escape HTML first
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
-  // Code blocks (```...```)
-  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-
-  // Inline code `...`
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
-
-  // Bold **...**
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-
-  // Tables
-  html = html.replace(/\n\|(.+)\|\n\|([-| ]+)\|\n((?:\n\|.+\|\n?)*)/g, (_, header, sep, rows) => {
-    const headers = header.split('|').map(h => h.trim()).filter(Boolean)
-    const aligns = sep.split('|').map(a => a.includes(':') ? (a.startsWith(':') && a.endsWith(':') ? 'center' : a.startsWith(':') ? 'left' : 'right') : null)
-    let table = '<table><thead><tr>'
-    headers.forEach((h, i) => table += `<th${aligns[i] ? ` align="${aligns[i]}"` : ''}>${h}</th>`)
-    table += '</tr></thead><tbody>'
-    rows.trim().split('\n').forEach(r => {
-      const cells = r.split('|').filter((_, i, a) => i > 0 && i < a.length - 1).map(c => c.trim())
-      table += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>'
-    })
-    return table + '</tbody></table>'
-  })
-
-  // Blockquote >
-  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-
-  // Unordered list items
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-
-  // Line breaks
-  html = html.replace(/\n\n/g, '</p><p>')
-  html = html.replace(/\n/g, '<br>')
-
-  return `<p>${html}</p>`
+  return marked.parse(text, { async: false })
 }
 
 // ─── Algorithm Data ──────────────────────────────────────────────────────────
