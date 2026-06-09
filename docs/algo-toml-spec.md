@@ -1,303 +1,339 @@
-# Algorithm Lab — TOML 数据驱动规范 v1
+# Algorithm Lab — TOML Spec v2（AI Agent 优化版）
 
-## 概述
-
-`Algorithm Lab` 采用 **TOML → Python(Pygments) → JSON → React** 的纯数据驱动架构。
-算法步骤、代码内容、可视化状态全部在 TOML 中声明，前端按 spec 渲染，零胶水代码。
-
-```
-public/algos/<algo-id>.toml
-       │ 编写算法定义（本规范）
-       ▼
-scripts/parse_algo.py   ← Python 解析器
-       │ 读取 TOML
-       │ Pygments 语法着色 → codeHtml[]
-       │ 校验 + 结构转换
-       ▼
-src/modules/algorithm/data/<algo-id>.json  ← 前端消费
-```
+> 本规范专为 AI Agent 编写 TOML 而优化。快速入口见 §0 模板，关键约束见 §5。
 
 ---
 
-## 1. 顶层结构
+## §0 快速模板（AI 从这里开始）
 
 ```toml
 [algorithm]
-# ... 算法元信息（见 §2）
+id = "your-algo-id"              # 唯一，用作文件名和数据 key，全小写连字符
+title = "中文标题"
+titleEn = "English Title"
+difficulty = "easy"              # easy | medium | hard
+tags = ["array", "hash-table"]  # 分类标签，至少一个
 
-[[algorithm.steps]]
-# ... 步骤定义（见 §3），一个文件可以包含 N 个 steps
-
-[algorithm.summary]
-# ... 复杂度总结（见 §4），可选
-```
-
----
-
-## 2. `[algorithm]` — 算法元信息
-
-| 字段 | 类型 | 必需 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| `id` | `string` | **是** | — | 唯一标识符，用作文件名和数据 key |
-| `title` | `string` | **是** | — | 中文标题 |
-| `titleEn` | `string` | 否 | `""` | 英文标题 |
-| `difficulty` | `string` | 否 | `"medium"` | 难度：`"easy"` / `"medium"` / `"hard"` |
-| `tags` | `string[]` | 否 | `[]` | 分类标签，如 `["array", "hash-table"]` |
-| `testCase` | `string` | 否 | `""` | 示例测试用例，纯展示用 |
-| `expectedOutput` | `string` | 否 | `""` | 预期输出，纯展示用 |
-
-**示例：**
-
-```toml
-[algorithm]
-id = "two-sum"
-title = "两数之和"
-titleEn = "Two Sum"
-difficulty = "easy"
-tags = ["array", "hash-table"]
-testCase = "nums = [2, 7, 11, 15], target = 9"
-expectedOutput = "[0, 1]"
-```
-
----
-
-## 3. `[[algorithm.steps]]` — 步骤定义
-
-每个步骤代表代码从一个状态到下一个状态的渐进变化。
-
-### 3.1 通用字段
-
-| 字段 | 类型 | 必需 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| `id` | `int` | 否 | 从 0 递增 | 步骤编号 |
-| `title` | `string` | **是** | — | 步骤中文标题 |
-| `titleEn` | `string` | 否 | `""` | 步骤英文标题 |
-| `code` | `string` | **是** | — | 当前步骤的完整 Python 代码（TOML 多行字符串） |
-| `explanation` | `string` | **是** | — | Markdown 格式的步骤说明 |
-| `visualizationType` | `string` | 否 | `"code-only"` | 可视化布局类型，见 §3.2 |
-| `visualizationData` | `table` | 否 | `{}` | 可视化数据，不同 `visualizationType` 需要不同字段，见 §3.3 |
-
-### 3.2 `visualizationType` 枚举
-
-| 类型 | 用途 | 布局 |
-|------|------|------|
-| `"intro"` | 题目介绍，无代码逻辑 | 居中提示文字 |
-| `"code-only"` | 仅展示代码结构 | 小提示图标 |
-| `"map-create"` | 初始化哈希表 | 数组 + 空 Map |
-| `"array-iteration"` | 遍历数组，查找补数 | 数组 + Map + complement 徽章 |
-| `"map-add"` | 将元素存入哈希表 | 数组 + Map + 插入操作提示 |
-| `"map-found"` | 找到匹配结果 | 数组(高亮) + Map + 成功提示 |
-| `"result"` | 最终结果展示 | 数组(高亮) + Map + 结果徽章 |
-
-### 3.3 `visualizationData` 字段对照表
-
-| visualizationType | 必需字段 | 可选字段 | 说明 |
-|-------------------|----------|----------|------|
-| `intro` | — | — | 无需数据 |
-| `code-only` | — | — | 无需数据 |
-| `map-create` | `mapContents`, `arrayState` | `currentIndex` | 展示初始空 Map |
-| `array-iteration` | `mapContents`, `arrayState`, `currentIndex` | `currentValue`, `complement`, `found` | 展示当前遍历状态 |
-| `map-add` | `mapContents`, `arrayState`, `currentIndex`, `mapKey`, `mapValue` | — | 展示元素加入 Map |
-| `map-found` | `mapContents`, `arrayState`, `currentIndex`, `complement`, `foundIndex` | `currentValue`, `result` | 展示匹配成功 |
-| `result` | `mapContents`, `arrayState`, `result` | `highlightedIndices` | 展示最终结果 |
-
-### 3.4 各字段类型与格式
-
-#### `mapContents` (string)
-哈希表当前内容的字符串表示。格式为 `"{key → value, key → value}"`。
-- 空表：`"{}"`
-- 有数据：`"{2 → 0, 7 → 1}"`
-
-#### `arrayState` (string)
-数组内容的字符串表示，与 JavaScript 数组字面量一致。
-- 格式：`"[2, 7, 11, 15]"`
-- 前端解析：`state.replace(/[\[\]]/g, '').split(', ').map(Number)`
-
-#### `currentIndex` (int)
-当前遍历到的数组索引。-1 表示无高亮。
-
-#### `highlightedIndices` (int[])
-数组中需要高亮标记的索引列表，如 `[0, 1]`。
-
-#### `complement` (int)
-当前元素的补数值（`target - num`），用于展示计算过程。
-
-#### `found` (bool)
-`complement` 是否在 Map 中找到。
-- `true`（TOML 布尔）→ 显示「✓ 命中!」
-- `false` → 显示「未找到」
-
-#### `foundIndex` (int)
-在 Map 中找到的匹配索引。
-
-#### `mapKey` / `mapValue` (int 或 string)
-正在插入 Map 的键和值。
-
-#### `result` (string)
-返回结果字符串，如 `"[0, 1]"`。
-
----
-
-## 4. `[algorithm.summary]` — 复杂度总结（可选）
-
-| 字段 | 类型 | 必需 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| `timeComplexity` | `string` | 否 | `""` | 时间复杂度说明 |
-| `spaceComplexity` | `string` | 否 | `""` | 空间复杂度说明 |
-| `approach` | `string` | 否 | `""` | 算法思路概述 |
-| `keyInsight` | `string` | 否 | `""` | 核心启发/学习点 |
-
----
-
-## 5. 关键约束
-
-### 5.1 代码连续性（最重要的约束）
-
-相邻步骤的 `code` 字段**必须保持公共前缀和后缀一致**。diff 引擎使用前缀/后缀匹配算法，不支持检测行内修改。
-
-**正确做法** — 每次只增不改：
-```
-Step 1: "a\nb\nc"     →  前缀匹配: a/b → 后缀匹配: c
-Step 2: "a\nb\nX\nc"  →  diff: same a, same b, add X, same c
-```
-
-**错误做法** — 删除或修改中间行：
-```
-Step 1: "a\nb\nc"
-Step 2: "a\nX\nc"     →  diff: same a, del b, add X, same c  ← 产生闪烁
-```
-
-**根因**：前缀/后缀算法会将中间的旧行标记为删除、新行标记为新增，造成不必要的视觉闪烁。
-
-### 5.2 explanation 支持的 Markdown 子集
-
-| 语法 | 说明 |
-|------|------|
-| `**粗体**` | 强调 |
-| `` `代码` `` | 行内代码 |
-| ` ``` ` 代码块 | 多行代码（可指定语言） |
-| `> 引用` | 引用块 |
-| `- 列表项` | 无序列表 |
-| `\| 表格 \|` | 表格（需完整表头+分隔行） |
-| 连续空行 | 段落分隔 |
-
-### 5.3 文件名与 id 一致性
-
-- TOML 文件名：`<algo-id>.toml`（如 `two-sum.toml`）
-- `[algorithm].id` 必须与文件名前缀一致（当前无强制性校验，但混乱会导致维护困难）
-
----
-
-## 6. TOML 语法注意事项
-
-### 6.1 多行字符串
-
-代码和说明使用 TOML `"""` 多行字符串：
-
-```toml
-code = """from typing import List
-
-def two_sum(nums: List[int], target: int) -> List[int]:
-    \"\"\"找出数组中两数之和等于 target 的两个索引。\"\"\"
-    pass"""
-```
-
-注意：
-- 代码中的 Python 文档字符串 `"""..."""` 需要转义为 `\"\"\"...\"\"\"`
-- 也可将中文引号 `""` 替换为 `「」` 避免转义
-
-### 6.2 内联表
-
-`visualizationData` 使用 TOML 内联表语法：
-
-```toml
-visualizationData = { mapContents = "{}", arrayState = "[2, 7, 11, 15]", currentIndex = -1 }
-```
-
-- 用 `{ }` 包裹，逗号分隔
-- **键名不加引号**
-- 字符串值用双引号
-- 布尔值用 `true` / `false`（全小写）
-
-### 6.3 Windows 编码
-
-Windows 终端运行解析脚本时可能因 GBK 编码报错。已自动处理，如需手动：
-
-```bash
-$env:PYTHONIOENCODING = "utf-8"
-python scripts/parse_algo.py
-```
-
----
-
-## 7. 完整示例
-
-```toml
-[algorithm]
-id = "two-sum"
-title = "两数之和"
-titleEn = "Two Sum"
-difficulty = "easy"
-tags = ["array", "hash-table"]
-testCase = "nums = [2, 7, 11, 15], target = 9"
-expectedOutput = "[0, 1]"
-
-# ── Step 0: 题目介绍 ──────────────────────────────────────────
+# ── 第 1 步：题目介绍 ──────────────────────────────────
 [[algorithm.steps]]
 id = 0
 title = "理解问题"
 titleEn = "Understand the Problem"
-code = """# 注释行说明题目"""
+code = """# 第一行是注释，说明题目
+# 后续行用注释描述"""
 explanation = "**问题分析**\n\n说明文字..."
 visualizationType = "intro"
 
-# ── Step 1: 函数签名 ──────────────────────────────────────────
+# ── 第 2 步：函数签名 ──────────────────────────────────
 [[algorithm.steps]]
 id = 1
 title = "函数签名"
 titleEn = "Function Signature"
-code = """# 注释行说明题目
+code = """# 第一行注释不变
 
 from typing import List
 
-def two_sum(nums: List[int], target: int) -> List[int]:
+def your_func(params) -> ReturnType:
     \"\"\"文档字符串\"\"\"
     pass"""
 explanation = "**第 1 步**\n\n说明..."
 visualizationType = "code-only"
 
-# ── Step 2: 初始化哈希表 ──────────────────────────────────────
+# ── 后续步骤：逐步添加代码行 ────────────────────────────
 [[algorithm.steps]]
 id = 2
-title = "初始化哈希表"
-titleEn = "Initialize Hash Table"
-code = """# 注释行说明题目
+title = "..."
+titleEn = "..."
+code = """# 第一行注释不变
+# ...（包含上一步所有代码 + 新增行）
 
 from typing import List
 
-def two_sum(nums: List[int], target: int) -> List[int]:
+def your_func(params) -> ReturnType:
     \"\"\"文档字符串\"\"\"
-    seen = {}  # 新增这行
+    seen = {}  # ← 新增这行
     pass"""
 explanation = "**第 2 步**\n\n说明..."
 visualizationType = "map-create"
-visualizationData = { mapContents = "{}", arrayState = "[2, 7, 11, 15]", currentIndex = -1 }
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3]", currentIndex = -1 }
 
-# ── ... 更多 steps ─────────────────────────────────────────────
+# ── 更多 steps ... ──────────────────────────────────────
+
+# ── 最后一步：完整代码, visualizationType = "result" ────
+[[algorithm.steps]]
+id = 5
+title = "完成"
+titleEn = "Complete"
+code = """# ... 完整最终代码 ..."""
+explanation = "**最终结果**\n\n说明..."
+visualizationType = "result"
+visualizationData = { mapContents = "{1 → 0}", arrayState = "[1, 2, 3]", result = "[0, 1]", highlightedIndices = [0, 1] }
 
 [algorithm.summary]
 timeComplexity = "O(n)"
 spaceComplexity = "O(n)"
-approach = "哈希表（一次遍历）"
-keyInsight = "利用字典的 O(1) 查找特性，将双层循环降为单层"
+approach = "方法简述"
+keyInsight = "一句话核心启发"
 ```
 
 ---
 
-## 8. 开发命令
+## §1 概述
+
+数据链路：`TOML → Python/Pygments → JSON → React`，TOML 是唯一数据源。
+
+```
+public/algos/<algo-id>.toml    ← AI 在这里工作
+       │
+       ▼ (pnpm parse:algos)
+scripts/parse_algo.py          ← 自动解析、着色、校验
+       │
+       ▼
+src/modules/algorithm/data/    ← 生成的 JSON，前端自动发现
+```
+
+**添加新算法的步骤**（无需改前端代码）：
+
+1. 在 `public/algos/` 下创建 `<algo-id>.toml`
+2. 运行 `pnpm parse:algos`
+3. 运行 `pnpm run build`
+
+---
+
+## §2 `[algorithm]` 算法元信息
+
+| 字段 | 类型 | 必需 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `id` | `string` | **是** | — | 唯一标识，全小写连字符，如 `"two-sum"` |
+| `title` | `string` | **是** | — | 中文标题 |
+| `titleEn` | `string` | 否 | `""` | 英文标题 |
+| `difficulty` | `string` | 否 | `"medium"` | 枚举：`"easy"` / `"medium"` / `"hard"` |
+| `tags` | `string[]` | 否 | `[]` | 分类标签，如 `["array", "hash-table"]` |
+| `testCase` | `string` | 否 | `""` | 示例测试用例，纯展示 |
+| `expectedOutput` | `string` | 否 | `""` | 预期输出，纯展示 |
+
+---
+
+## §3 `[[algorithm.steps]]` 步骤定义
+
+### 3.1 通用字段
+
+| 字段 | 类型 | 必需 | 默认值 | 约束 |
+|------|------|------|--------|------|
+| `id` | `int` | 否 | 从 0 递增 | 建议每步 +1 |
+| `title` | `string` | **是** | — | 中文步骤名，4-8 字 |
+| `titleEn` | `string` | 否 | `""` | 英文步骤名 |
+| `code` | `string` | **是** | — | **MUST** 包含上一步所有代码行 + 新增行 |
+| `explanation` | `string` | **是** | — | Markdown 格式，支持表格/代码块 |
+| `visualizationType` | `string` | 否 | `"code-only"` | 见 §3.2 |
+| `visualizationData` | `table` | 否 | `{}` | 字段由 visualizationType 决定，见 §3.3 |
+
+### 3.2 `visualizationType` 枚举
+
+| 类型 | 场景 | 布局 | 需要 visualizationData？ |
+|------|------|------|--------------------------|
+| `"intro"` | 题目介绍 | 居中说明文字 | 不需要 |
+| `"code-only"` | 仅展示代码 | 小图标提示 | 不需要 |
+| `"map-create"` | 初始化哈希表 | 数组 + 空 Map | 需要 |
+| `"array-iteration"` | 遍历数组，查找补数 | 数组 + Map + 补数徽章 | 需要 |
+| `"map-add"` | 元素存入哈希表 | 数组 + Map + 插入操作提示 | 需要 |
+| `"map-found"` | 找到匹配结果 | 数组(高亮) + Map + 成功提示 | 需要 |
+| `"result"` | 最终结果 | 数组(高亮) + Map + 结果徽章 | 需要 |
+
+### 3.3 `visualizationData` 字段速查
+
+#### `"map-create"` — 初始化
+```toml
+visualizationData = { mapContents = "{}", arrayState = "[2, 7, 11, 15]", currentIndex = -1 }
+```
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `mapContents` | `string` | 是 | 格式 `"{key → value}"`，空表 `"{}"` |
+| `arrayState` | `string` | 是 | 数组字符串，如 `"[2, 7, 11, 15]"` |
+| `currentIndex` | `int` | 否 | 高亮索引，`-1` 表示无 |
+
+#### `"array-iteration"` — 遍历查找
+```toml
+visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", currentIndex = 1, complement = 7, found = false }
+```
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `mapContents` | `string` | 是 | 当前 Map 状态 |
+| `arrayState` | `string` | 是 | 数组字符串 |
+| `currentIndex` | `int` | 是 | 当前遍历索引 |
+| `currentValue` | `int` | 否 | 当前元素值 |
+| `complement` | `int` | 否 | 计算出的补数 |
+| `found` | `bool` | 否 | **TOML 布尔，小写**：`true` / `false` |
+
+#### `"map-add"` — 存入 Map
+```toml
+visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", currentIndex = 0, mapKey = 2, mapValue = 0 }
+```
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `mapContents` | `string` | 是 | 插入后的 Map 状态 |
+| `arrayState` | `string` | 是 | 数组字符串 |
+| `currentIndex` | `int` | 是 | 当前索引 |
+| `mapKey` | `int` | 是 | 正在插入的键 |
+| `mapValue` | `int` | 是 | 正在插入的值 |
+
+#### `"map-found"` — 命中
+```toml
+visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", currentIndex = 1, complement = 2, foundIndex = 0 }
+```
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `mapContents` | `string` | 是 | 当前 Map 状态 |
+| `arrayState` | `string` | 是 | 数组字符串 |
+| `currentIndex` | `int` | 是 | 当前索引 |
+| `complement` | `int` | 是 | 补数（即 map 中已存在的值） |
+| `foundIndex` | `int` | 是 | Map 中匹配的索引 |
+| `currentValue` | `int` | 否 | 当前元素值 |
+| `result` | `string` | 否 | 结果字符串，如 `"[0, 1]"` |
+
+#### `"result"` — 完成
+```toml
+visualizationData = { mapContents = "{2 → 0}", arrayState = "[2, 7, 11, 15]", result = "[0, 1]", highlightedIndices = [0, 1] }
+```
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `mapContents` | `string` | 是 | 最终 Map 状态 |
+| `arrayState` | `string` | 是 | 最终数组字符串 |
+| `result` | `string` | 是 | 结果字符串 |
+| `highlightedIndices` | `int[]` | 否 | 高亮的索引数组 |
+
+---
+
+## §4 `[algorithm.summary]` 复杂度总结
+
+```toml
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "哈希表（一次遍历）"
+keyInsight = "一句话点明核心思想"
+```
+
+所有字段均为可选 string。
+
+---
+
+## §5 关键约束（AI 最容易出错的地方）
+
+### ⚠️ 规则 1：代码连续性 — 这是最重要的约束
+
+**相邻步骤的 `code` 字段必须保持公共前缀和后缀一致。**
+
+每步只能**新增**代码行，不能删除或修改已有的行。AI 在"重构"或"简化"代码时容易违反此规则。
+
+```
+✅ 正确（只增不减）：
+Step 1: "a\na = 1\npass"
+Step 2: "a\na = 1\nb = 2\npass"   ← 只加了 "b = 2"
+Step 3: "a\na = 1\nb = 2\nc = 3\npass"  ← 只加了 "c = 3"
+
+❌ 错误（AI 常见错误）：
+Step 1: "a\na = 1\npass"
+Step 2: "a\na = 2\npass"           ← 把 "a = 1" 改成 "a = 2" → diff 视为删除+新增
+```
+
+**为什么？** 前端 diff 引擎使用前缀/后缀匹配算法，不支持行内修改检测。修改中间行会产生大量 delete+add，造成视觉闪烁。
+
+### ⚠️ 规则 2：Python `"""` 文档字符串逃逸
+
+在 TOML `"""` 多行字符串中，Python 的 `"""..."""` 文档字符串必须转义为 `\"\"\"...\"\"\"`：
+
+```toml
+code = """def foo():
+    \"\"\"这是文档字符串\"\"\"
+    pass"""
+```
+
+另一种方式：用 `「」` 代替 `""` 避免转义。
+
+### ⚠️ 规则 3：TOML 布尔值全小写
+
+```toml
+visualizationData = { found = true }    # ✅ 正确
+visualizationData = { found = True }    # ❌ 错误！True 不是 TOML 布尔
+visualizationData = { found = "true" }  # ❌ 错误！这是字符串不是布尔
+```
+
+### ⚠️ 规则 4：字段名不加引号（内联表语法）
+
+```toml
+visualizationData = { mapContents = "{}", currentIndex = -1 }  # ✅ 正确
+visualizationData = { "mapContents" = "{}" }                   # ❌ 不需要引号
+```
+
+### ⚠️ 规则 5：步骤数
+
+建议 4-6 步。太少的步骤缺乏渐进感，太多步骤说明冗余。
+
+典型的步骤结构：
+| 步骤 | visualizationType | 代码状态 |
+|------|-------------------|----------|
+| 0 | `intro` | 只有注释（无实际代码） |
+| 1 | `code-only` | 函数签名 + pass |
+| 2 | 按需选择 | + 变量初始化 |
+| 3 | 按需选择 | + 核心逻辑 |
+| 4 | `result` | 完整代码 |
+
+### ⚠️ 规则 6：TOML 字符串中的引号
+
+TOML 的 `"""` 字符串中，如果内容包含连续 3-4 个 `"`，需要转义：
+
+```toml
+explanation = """他说「你好」"""  # ✅ 可以用「」代替中文引号
+explanation = """他说 \"你好\""""  # ✅ 或者转义
+```
+
+---
+
+## §6 AI Agent 自我检查清单
+
+生成完 TOML 文件后，逐项检查：
+
+- [ ] `[algorithm].id` 与文件名 `<algo-id>.toml` 一致
+- [ ] 所有相邻步骤的 `code` 字段：**后一步包含前一步的全部代码行**，只增不改
+- [ ] Python 文档字符串 `"""..."""` 已转义为 `\"\"\"...\"\"\"`
+- [ ] TOML 布尔值使用 `true`/`false`（全小写，不是 Python 的 True/False）
+- [ ] `visualizationData` 字段名**不加引号**：`{ key = value }` 不是 `{ "key" = value }`
+- [ ] `visualizationType` 在枚举范围内（`intro`, `code-only`, `map-create`, `array-iteration`, `map-add`, `map-found`, `result`）
+- [ ] 每个非纯代码步骤（`map-create`/`array-iteration`/等）的 `visualizationData` 字段齐全
+- [ ] `mapContents` 格式正确：`"{2 → 0}"`（箭头两侧有空格）或 `"{}"`
+- [ ] `arrayState` 格式正确：`"[2, 7, 11, 15]"`（逗号+空格分隔）
+- [ ] `explanation` 中无失控的 TOML 字符串（检查引号是否匹配）
+- [ ] 步骤数在 4-6 之间，循序渐进
+- [ ] `pnpm parse:algos` 解析无报错
+- [ ] `pnpm run build` 构建无报错
+
+---
+
+## §7 常见 AI 错误记录
+
+| 错误操作 | 后果 | 正确做法 |
+|---------|------|---------|
+| 相邻步骤的 code 不一致（修改了中间行） | diff 产生大量 delete+add，动画闪烁 | 每步只增不改，保持公共前缀/后缀 |
+| Python `"""` 文档字符串未转义 | TOML 解析器提前关闭字符串 | 用 `\"\"\"` 代替 `"""` |
+| 布尔值写成 `True`/`False` | TOML 解析失败 | 用 `true`/`false` |
+| `visualizationData` 字段名加引号 | 不是标准 TOML 内联表语法 | 字段名不加引号 |
+| 编写超长 explanation（超过 200 字） | 步骤说明过长，阅读体验差 | 保持简洁，用表格/列表分段 |
+| 步骤数过多（> 8 步） | 用户失去耐心 | 控制在 4-6 步 |
+| 使用非标准 Markdown 语法（如 `[toc]`、脚注） | `mdToHtml` 不支持 | 只使用支持的子集：粗体、行内代码、代码块、表格、引用、列表 |
+| `mapContents` 中箭头格式错误（如用 `->` 而不是 `→`） | 前端解析错误 | 用 `→`（`→`），如 `"{2 → 0}"` |
+
+---
+
+## §8 开发命令
 
 ```bash
-pnpm parse:algos               # 解析所有 TOML → 更新 JSON
-pnpm parse:algos:watch         # 监视模式（需 pip install watchdog）
+pnpm parse:algos               # 解析所有 TOML → JSON
 pnpm run build                 # 构建验证
 ```
+
