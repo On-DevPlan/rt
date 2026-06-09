@@ -49,138 +49,6 @@ function mdToHtml(text) {
   return `<p>${html}</p>`
 }
 
-// ─── Python Syntax Highlighter ────────────────────────────────────────────────
-
-const PY_KEYWORDS = new Set([
-  'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
-  'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
-  'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is',
-  'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
-  'try', 'while', 'with', 'yield',
-])
-
-const PY_BUILTINS = new Set([
-  'print', 'len', 'range', 'int', 'str', 'float', 'list', 'dict',
-  'set', 'tuple', 'bool', 'type', 'isinstance', 'hasattr', 'getattr',
-  'setattr', 'enumerate', 'zip', 'map', 'filter', 'sorted', 'reversed',
-  'abs', 'min', 'max', 'sum', 'any', 'all', 'open', 'super', 'object',
-  'input', 'iter', 'next', 'repr', 'hex', 'oct', 'bin', 'round', 'pow',
-  'hash', 'id', 'issubclass', 'callable', 'format', 'vars', 'dir',
-  'locals', 'globals', 'staticmethod', 'classmethod', 'property',
-  'List', 'Dict', 'Tuple', 'Set', 'Optional', 'Any', 'Union',
-])
-
-function esc(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-/** Single-pass Python tokenizer → HTML with syntax highlighting spans. */
-function highlightPython(code) {
-  if (!code) return ''
-  let html = ''
-  let i = 0
-
-  while (i < code.length) {
-    // ── Comment ──────────────────────────────────────────────────────────
-    if (code[i] === '#') {
-      let j = i
-      while (j < code.length && code[j] !== '\n') j++
-      html += `<span class="tokenComment">${esc(code.slice(i, j))}</span>`
-      i = j
-      continue
-    }
-
-    // ── Triple-quoted string ("""/''') ───────────────────────────────────
-    const tri = code.slice(i, i + 3)
-    if (tri === '"""' || tri === "'''") {
-      let j = i + 3
-      while (j < code.length - 2) {
-        if (code.slice(j, j + 3) === tri) { j += 3; break }
-        j++
-      }
-      html += `<span class="tokenString">${esc(code.slice(i, j))}</span>`
-      i = j
-      continue
-    }
-
-    // ── Single/double quoted string ──────────────────────────────────────
-    if (code[i] === '"' || code[i] === "'") {
-      const q = code[i]
-      let j = i + 1
-      while (j < code.length && code[j] !== '\n') {
-        if (code[j] === '\\') j += 2
-        else if (code[j] === q) { j++; break }
-        else j++
-      }
-      html += `<span class="tokenString">${esc(code.slice(i, j))}</span>`
-      i = j
-      continue
-    }
-
-    // ── f/r/b string prefix ──────────────────────────────────────────────
-    if (i + 1 < code.length && /[frb]/i.test(code[i]) && (code[i + 1] === '"' || code[i + 1] === "'")) {
-      html += `<span class="tokenString">${esc(code[i])}</span>`
-      i++
-      continue
-    }
-    if (i + 3 < code.length && /[frb]/i.test(code[i]) && (code.slice(i + 1, i + 4) === '"""' || code.slice(i + 1, i + 4) === "'''")) {
-      html += `<span class="tokenString">${esc(code[i])}</span>`
-      i++
-      continue
-    }
-
-    // ── Decorator (@xxx) ──────────────────────────────────────────────────
-    if (code[i] === '@' && i + 1 < code.length && /[a-zA-Z_]/.test(code[i + 1])) {
-      let j = i + 1
-      while (j < code.length && /[\w.]/.test(code[j])) j++
-      html += `<span class="tokenDecorator">${esc(code.slice(i, j))}</span>`
-      i = j
-      continue
-    }
-
-    // ── Number ────────────────────────────────────────────────────────────
-    if (/\d/.test(code[i]) && (i === 0 || !/\w/.test(code[i - 1]))) {
-      let j = i
-      if (code[i] === '0' && i + 1 < code.length && /[xXbBoO]/.test(code[i + 1])) {
-        j += 2
-        while (j < code.length && /[\d_a-fA-F]/.test(code[j])) j++
-      } else if (/\d/.test(code[i])) {
-        while (j < code.length && /[\d._]/.test(code[j])) j++
-      }
-      html += `<span class="tokenNumber">${esc(code.slice(i, j))}</span>`
-      i = j
-      continue
-    }
-
-    // ── Identifier / keyword ──────────────────────────────────────────────
-    if (/[a-zA-Z_]/.test(code[i])) {
-      let j = i
-      while (j < code.length && /\w/.test(code[j])) j++
-      const word = code.slice(i, j)
-
-      if (PY_KEYWORDS.has(word)) {
-        html += `<span class="tokenKeyword">${word}</span>`
-      } else if (word === 'self' || word === 'cls') {
-        html += `<span class="tokenSelf">${word}</span>`
-      } else if (j < code.length && code[j] === '(') {
-        html += PY_BUILTINS.has(word)
-          ? `<span class="tokenBuiltin">${word}</span>`
-          : `<span class="tokenFunction">${word}</span>`
-      } else {
-        html += esc(word)
-      }
-      i = j
-      continue
-    }
-
-    // ── Any other character ───────────────────────────────────────────────
-    html += esc(code[i])
-    i++
-  }
-
-  return html
-}
-
 // ─── Algorithm Data ──────────────────────────────────────────────────────────
 
 import algoData from '../data/two-sum.json'
@@ -326,7 +194,7 @@ function computeLineDiff(prevCode, currentCode) {
 const TYPING_MS = 32        // ms per character typed
 const LINE_PAUSE_MS = 280   // pause between lines after fully typed
 
-function CodeDisplay({ code, prevCode, onAnimationDone }) {
+function CodeDisplay({ code, prevCode, codeHtml, onAnimationDone }) {
   const [diffEntries, setDiffEntries] = useState([])
   const [animState, setAnimState] = useState({
     diffIndex: -1,
@@ -476,7 +344,9 @@ function CodeDisplay({ code, prevCode, onAnimationDone }) {
                 <span className={styles.lineNumber}>{idx + 1}</span>
                 <span className={gutterCls}>{gutter}</span>
                 <span className={styles.lineContent}>
-                  <span dangerouslySetInnerHTML={{ __html: highlightPython(displayText) || '&nbsp;' }} />
+                  {isReady && codeHtml && codeHtml[idx]
+                    ? <span dangerouslySetInnerHTML={{ __html: codeHtml[idx] || '&nbsp;' }} />
+                    : <span>{displayText || <span className={styles.emptyLine}>&nbsp;</span>}</span>}
                   {showCursor && <span className={styles.typeCursor}>|</span>}
                 </span>
               </div>
@@ -732,6 +602,7 @@ export default function AlgoVisualizerPage() {
             <CodeDisplay
               code={step?.code || ''}
               prevCode={currentStep > 0 ? steps[currentStep - 1]?.code : ''}
+              codeHtml={step?.codeHtml || []}
               onAnimationDone={handleAnimDone}
             />
           </div>

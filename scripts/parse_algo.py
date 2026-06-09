@@ -16,10 +16,82 @@ import os
 import sys
 import glob
 from pathlib import Path
+import html as html_mod
+
+from pygments import lex
+from pygments.lexers import PythonLexer
+from pygments.token import Token
 
 # Ensure UTF-8 output on Windows
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
+
+# ─── Pygments Syntax Highlighting ────────────────────────────────────────────
+
+LEXER = PythonLexer()
+
+_TOKEN_CLASS_MAP = [
+    (Token.Keyword, "tokenKeyword"),
+    (Token.Keyword.Constant, "tokenKeyword"),
+    (Token.Keyword.Declaration, "tokenKeyword"),
+    (Token.Keyword.Namespace, "tokenKeyword"),
+    (Token.Keyword.Reserved, "tokenKeyword"),
+    (Token.Keyword.Type, "tokenKeyword"),
+    (Token.Name.Builtin, "tokenBuiltin"),
+    (Token.Name.Builtin.Pseudo, "tokenBuiltin"),
+    (Token.Name.Decorator, "tokenDecorator"),
+    (Token.Name.Function, "tokenFunction"),
+    (Token.Name.Class, "tokenFunction"),
+    (Token.String, "tokenString"),
+    (Token.String.Doc, "tokenString"),
+    (Token.Comment, "tokenComment"),
+    (Token.Comment.Special, "tokenComment"),
+    (Token.Number, "tokenNumber"),
+    (Token.Name.Exception, "tokenKeyword"),
+]
+
+
+def _get_token_class(ttype: Token) -> str | None:
+    """Map Pygments token type to CSS class name."""
+    for token_type, css_class in _TOKEN_CLASS_MAP:
+        if ttype in token_type:
+            return css_class
+    return None
+
+
+def highlight_code_lines(code: str) -> list[str]:
+    """Highlight Python code via Pygments, return one HTML string per line."""
+    tokens = list(LEXER.get_tokens(code))
+    lines: list[str] = []
+    current_parts: list[str] = []
+
+    for ttype, value in tokens:
+        parts = value.split("\n")
+        for idx, part in enumerate(parts):
+            if idx > 0:
+                # flush current line
+                lines.append("".join(current_parts))
+                current_parts = []
+            if part:
+                cls = _get_token_class(ttype)
+                escaped = html_mod.escape(part)
+                if cls:
+                    current_parts.append(f'<span class="{cls}">{escaped}</span>')
+                else:
+                    current_parts.append(escaped)
+
+    if current_parts:
+        lines.append("".join(current_parts))
+    elif code.endswith("\n"):
+        lines.append("")
+
+    # Normalise: if the frontend expects exactly N lines matching split("\n")
+    # Pad missing trailing empty lines
+    expected = len(code.split("\n"))
+    while len(lines) < expected:
+        lines.append("")
+
+    return lines
 
 try:
     import tomllib  # Python 3.11+
@@ -57,6 +129,7 @@ def parse_toml(filepath: Path) -> dict:
                 "title": s["title"],
                 "titleEn": s.get("titleEn", ""),
                 "code": s["code"],
+                "codeHtml": highlight_code_lines(s["code"]),
                 "explanation": s["explanation"],
                 "visualizationType": s.get("visualizationType", "code-only"),
                 "visualizationData": s.get("visualizationData", {}),
