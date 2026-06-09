@@ -1,0 +1,209 @@
+[algorithm]
+id = "insert-delete-getrandom-o1"
+title = "O(1) 时间插入删除和获取随机元素"
+titleEn = "Insert Delete GetRandom O(1)"
+difficulty = "medium"
+tags = ["array", "hash-table", "design"]
+testCase = "RandomizedSet()\ninsert(1) -> true\nremove(2) -> false\ninsert(2) -> true\ngetRandom() -> 1 或 2\nremove(1) -> true\ngetRandom() -> 2"
+expectedOutput = "三个操作平均 O(1)"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# O(1) 时间插入、删除和获取随机元素
+# 设计一个 RandomizedSet 类，支持以下操作，且平均时间复杂度为 O(1):
+#   1. insert(val): 元素不存在则插入，返回 true; 已存在则返回 false
+#   2. remove(val): 元素存在则删除，返回 true; 不存在则返回 false
+#   3. getRandom(): 随机返回集合中的一个元素，每个元素被选中的概率相同
+#
+# 关键挑战:
+#   - 数组支持 O(1) 随机访问，但删除任意位置是 O(n)
+#   - 哈希表支持 O(1) 查找，但不能随机访问
+#   - 需要把两者结合，取长补短"""
+explanation = "**问题分析**\n\n实现一个数据结构，同时支持：\n\n| 操作 | 要求 |\n|------|------|\n| `insert(val)` | 平均 O(1) |\n| `remove(val)` | 平均 O(1) |\n| `getRandom()` | O(1) 且等概率 |\n\n**核心难点**\n\n- 数组能 O(1) 随机访问，但**任意位置删除**是 O(n)\n- 哈希表能 O(1) 查找，但不能随机访问\n\n**思路：数组 + 哈希表组合**\n\n1. `data` 数组存所有元素，支持 O(1) `random.choice`\n2. `idx` 哈希表存 `val -> 数组下标`，支持 O(1) 查找\n3. 删除时，把待删元素与末尾交换再 `pop`，把 O(n) 删除降为 O(1)\n\n> 关键技巧：**末尾交换删除法**——用空间换时间，把任意位置删除转换为末尾删除。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "类签名"
+titleEn = "Class Signature"
+code = """# O(1) 时间插入、删除和获取随机元素
+# 设计一个 RandomizedSet 类，支持以下操作，且平均时间复杂度为 O(1):
+#   1. insert(val): 元素不存在则插入，返回 true; 已存在则返回 false
+#   2. remove(val): 元素存在则删除，返回 true; 不存在则返回 false
+#   3. getRandom(): 随机返回集合中的一个元素，每个元素被选中的概率相同
+#
+# 关键挑战:
+#   - 数组支持 O(1) 随机访问，但删除任意位置是 O(n)
+#   - 哈希表支持 O(1) 查找，但不能随机访问
+#   - 需要把两者结合，取长补短
+
+import random
+
+class RandomizedSet:
+    \"\"\"支持 O(1) 插入、删除、随机获取的集合。\"\"\"
+    def __init__(self):
+        pass
+
+    def insert(self, val: int) -> bool:
+        \"\"\"元素不存在则插入并返回 true，否则返回 false。\"\"\"
+        pass
+
+    def remove(self, val: int) -> bool:
+        \"\"\"元素存在则删除并返回 true，否则返回 false。\"\"\"
+        pass
+
+    def getRandom(self) -> int:
+        \"\"\"随机返回集合中的一个元素。\"\"\"
+        pass"""
+explanation = "**第 1 步：编写类签名**\n\n- 用 `import random` 引入标准库\n- 定义 `RandomizedSet` 类，包含 4 个方法：\n  - `__init__()`: 初始化数据结构\n  - `insert(val) -> bool`: 插入元素\n  - `remove(val) -> bool`: 删除元素\n  - `getRandom() -> int`: 随机获取元素\n- 文档字符串描述每个方法的作用\n\n> 这一步只搭框架，所有方法体都是 `pass`。"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化数据结构 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化结构"
+titleEn = "Initialize Structure"
+code = """# O(1) 时间插入、删除和获取随机元素
+# 设计一个 RandomizedSet 类，支持以下操作，且平均时间复杂度为 O(1):
+#   1. insert(val): 元素不存在则插入，返回 true; 已存在则返回 false
+#   2. remove(val): 元素存在则删除，返回 true; 不存在则返回 false
+#   3. getRandom(): 随机返回集合中的一个元素，每个元素被选中的概率相同
+#
+# 关键挑战:
+#   - 数组支持 O(1) 随机访问，但删除任意位置是 O(n)
+#   - 哈希表支持 O(1) 查找，但不能随机访问
+#   - 需要把两者结合，取长补短
+
+import random
+
+class RandomizedSet:
+    \"\"\"支持 O(1) 插入、删除、随机获取的集合。\"\"\"
+    def __init__(self):
+        self.data = []   # 数组存值，支持 O(1) 随机访问
+        self.idx = {}    # 哈希表存 val -> 数组下标，支持 O(1) 查找
+
+    def insert(self, val: int) -> bool:
+        \"\"\"元素不存在则插入并返回 true，否则返回 false。\"\"\"
+        pass
+
+    def remove(self, val: int) -> bool:
+        \"\"\"元素存在则删除并返回 true，否则返回 false。\"\"\"
+        pass
+
+    def getRandom(self) -> int:
+        \"\"\"随机返回集合中的一个元素。\"\"\"
+        pass"""
+explanation = "**第 2 步：初始化数据结构**\n\n```python\nself.data = []   # 数组\nself.idx  = {}   # 哈希表\n```\n\n**两个数据结构各司其职**\n\n| 字段 | 类型 | 作用 |\n|------|------|------|\n| `data` | `List[int]` | 顺序存储所有值，供 `random.choice` 使用 |\n| `idx` | `Dict[int, int]` | 记录 `值 → 在 data 中的下标`，供 O(1) 查找 |\n\n**为什么需要两个？**\n\n- 只用数组：`getRandom` 是 O(1)，但 `remove` 是 O(n)\n- 只用哈希表：`insert`/`remove` 是 O(1)，但 `getRandom` 无法等概率采样\n- 组合后：所有操作平均 O(1)"
+visualizationType = "map-create"
+visualizationData = { mapContents = "{}", arrayState = "[]", currentIndex = -1 }
+
+# ── Step 3: 实现 insert 和 remove ─────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "插入与删除"
+titleEn = "Insert & Remove"
+code = """# O(1) 时间插入、删除和获取随机元素
+# 设计一个 RandomizedSet 类，支持以下操作，且平均时间复杂度为 O(1):
+#   1. insert(val): 元素不存在则插入，返回 true; 已存在则返回 false
+#   2. remove(val): 元素存在则删除，返回 true; 不存在则返回 false
+#   3. getRandom(): 随机返回集合中的一个元素，每个元素被选中的概率相同
+#
+# 关键挑战:
+#   - 数组支持 O(1) 随机访问，但删除任意位置是 O(n)
+#   - 哈希表支持 O(1) 查找，但不能随机访问
+#   - 需要把两者结合，取长补短
+
+import random
+
+class RandomizedSet:
+    \"\"\"支持 O(1) 插入、删除、随机获取的集合。\"\"\"
+    def __init__(self):
+        self.data = []   # 数组存值，支持 O(1) 随机访问
+        self.idx = {}    # 哈希表存 val -> 数组下标，支持 O(1) 查找
+
+    def insert(self, val: int) -> bool:
+        \"\"\"元素不存在则插入并返回 true，否则返回 false。\"\"\"
+        if val in self.idx:
+            return False
+        self.idx[val] = len(self.data)
+        self.data.append(val)
+        return True
+
+    def remove(self, val: int) -> bool:
+        \"\"\"元素存在则删除并返回 true，否则返回 false。\"\"\"
+        if val not in self.idx:
+            return False
+        i = self.idx[val]
+        last = self.data[-1]
+        self.data[i] = last
+        self.idx[last] = i
+        self.data.pop()
+        del self.idx[val]
+        return True
+
+    def getRandom(self) -> int:
+        \"\"\"随机返回集合中的一个元素。\"\"\"
+        pass"""
+explanation = "**第 3 步：实现 `insert` 与 `remove`**\n\n**insert 的 O(1) 写法**\n\n```python\nif val in self.idx:\n    return False\nself.idx[val] = len(self.data)\nself.data.append(val)\nreturn True\n```\n\n直接在 `data` 末尾追加，下标就是当前 `len(data)`，哈希表同步记录映射。\n\n**remove 的末尾交换法（重点）**\n\n假设 `data = [1, 2, 3, 4]`，要删除下标 1 的 `2`：\n\n| 步骤 | 操作 | data | idx |\n|------|------|------|-----|\n| 初始 | — | `[1, 2, 3, 4]` | `{1→0, 2→1, 3→2, 4→3}` |\n| 1 | `last = data[-1]` | `[1, 2, 3, 4]` | — |\n| 2 | `data[1] = last` | `[1, 4, 3, 4]` | `{1→0, 2→1, 3→2, 4→1}` |\n| 3 | `idx[last] = 1` | `[1, 4, 3, 4]` | `{1→0, 2→1, 3→2, 4→1}` |\n| 4 | `data.pop()` | `[1, 4, 3]` | `{1→0, 2→1, 3→2, 4→1}` |\n| 5 | `del idx[2]` | `[1, 4, 3]` | `{1→0, 3→2, 4→1}` |\n\n> 不需要移动中间元素，全部操作都是 O(1)。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# O(1) 时间插入、删除和获取随机元素
+# 设计一个 RandomizedSet 类，支持以下操作，且平均时间复杂度为 O(1):
+#   1. insert(val): 元素不存在则插入，返回 true; 已存在则返回 false
+#   2. remove(val): 元素存在则删除，返回 true; 不存在则返回 false
+#   3. getRandom(): 随机返回集合中的一个元素，每个元素被选中的概率相同
+#
+# 关键挑战:
+#   - 数组支持 O(1) 随机访问，但删除任意位置是 O(n)
+#   - 哈希表支持 O(1) 查找，但不能随机访问
+#   - 需要把两者结合，取长补短
+
+import random
+
+class RandomizedSet:
+    \"\"\"支持 O(1) 插入、删除、随机获取的集合。\"\"\"
+    def __init__(self):
+        self.data = []   # 数组存值，支持 O(1) 随机访问
+        self.idx = {}    # 哈希表存 val -> 数组下标，支持 O(1) 查找
+
+    def insert(self, val: int) -> bool:
+        \"\"\"元素不存在则插入并返回 true，否则返回 false。\"\"\"
+        if val in self.idx:
+            return False
+        self.idx[val] = len(self.data)
+        self.data.append(val)
+        return True
+
+    def remove(self, val: int) -> bool:
+        \"\"\"元素存在则删除并返回 true，否则返回 false。\"\"\"
+        if val not in self.idx:
+            return False
+        i = self.idx[val]
+        last = self.data[-1]
+        self.data[i] = last
+        self.idx[last] = i
+        self.data.pop()
+        del self.idx[val]
+        return True
+
+    def getRandom(self) -> int:
+        \"\"\"随机返回集合中的一个元素。\"\"\"
+        return random.choice(self.data)"""
+explanation = "**最终结果**\n\n`getRandom` 一行搞定：`random.choice(self.data)` 借助 Python 标准库等概率采样。\n\n**算法复杂度**\n\n| 操作 | 时间 | 说明 |\n|------|------|------|\n| `insert` | **O(1)** 平均 | 哈希查找 + 数组追加 |\n| `remove` | **O(1)** 平均 | 末尾交换法避免移动元素 |\n| `getRandom` | **O(1)** | 数组下标等概率 |\n| 空间 | **O(n)** | `data` + `idx` 各存 n 个元素 |\n\n**关键技巧回顾**\n\n- **数组 + 哈希表组合**：用哈希表弥补数组删除的 O(n) 缺陷\n- **末尾交换删除**：把任意位置删除转换为 O(1) 的末尾 pop\n- **双向映射**：`idx` 记录 `值 → 下标`，删除时同步更新被交换元素的映射\n\n> 这是一种经典的\"用空间换时间\"思想，类似的模式也用在 LRU 缓存、Union-Find 等数据结构中。"
+visualizationType = "result"
+visualizationData = { mapContents = "{1 → 0, 2 → 1}", arrayState = "[1, 2]", result = "getRandom() → 1 或 2", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(1) 平均"
+spaceComplexity = "O(n)"
+approach = "数组 + 哈希表，末尾交换删除"
+keyInsight = "用哈希表定位下标，删除时把待删元素与末尾交换再 pop，所有操作降为 O(1)"

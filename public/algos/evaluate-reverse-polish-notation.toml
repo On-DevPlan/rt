@@ -1,0 +1,184 @@
+[algorithm]
+id = "evaluate-reverse-polish-notation"
+title = "逆波兰表达式求值"
+titleEn = "Evaluate Reverse Polish Notation"
+difficulty = "medium"
+tags = ["array", "math", "stack"]
+testCase = "tokens = [\"2\",\"1\",\"+\",\"3\",\"*\"]"
+expectedOutput = "9"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 逆波兰表达式求值
+# 给定一个字符串数组 tokens，表示逆波兰表达式（后缀表达式）
+# 求该表达式的值，并作为整数返回
+#
+# 运算符: + - * /，每个运算对象可以是整数或另一个表达式
+# 整数运算只保留整数部分，即「向 0 截断」
+#
+# 示例 1:
+#   tokens = ["2","1","+","3","*"]
+#   ((2 + 1) * 3) = 9
+#
+# 示例 2:
+#   tokens = ["4","13","5","/","+"]
+#   (4 + (13 / 5)) = 4 + 2 = 6"""
+explanation = "**问题分析**\n\n**逆波兰表达式（后缀表达式）** 把运算符写在操作数之后：\n\n```\n中缀: (2 + 1) * 3\n后缀: 2 1 + 3 *\n```\n\n**特点**：无需括号即可无歧义地表示运算顺序，非常适合用**栈**处理。\n\n**思路**\n\n| 输入 | 动作 |\n|------|------|\n| 数字 | 入栈 |\n| 运算符 | 弹出两个操作数，运算后将结果入栈 |\n\n> 扫描完成后，栈中唯一元素即为表达式的值。\n\n**关键细节**\n\n- 弹出的**第一个数是右操作数**，**第二个数是左操作数**\n- `4 / 2 = 2`、`(-4) / 2 = -2`、`4 / (-2) = -2`，**向 0 截断**"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 栈初始化 ─────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 逆波兰表达式求值
+# 给定一个字符串数组 tokens，表示逆波兰表达式（后缀表达式）
+# 求该表达式的值，并作为整数返回
+#
+# 运算符: + - * /，每个运算对象可以是整数或另一个表达式
+# 整数运算只保留整数部分，即「向 0 截断」
+#
+# 示例 1:
+#   tokens = ["2","1","+","3","*"]
+#   ((2 + 1) * 3) = 9
+#
+# 示例 2:
+#   tokens = ["4","13","5","/","+"]
+#   (4 + (13 / 5)) = 4 + 2 = 6
+
+from typing import List
+
+def evalRPN(tokens: List[str]) -> int:
+    \"\"\"求逆波兰表达式的值。\"\"\"
+    ops = {'+', '-', '*', '/'}
+    stk = []"""
+explanation = "**第 1 步：编写函数签名与栈初始化**\n\n- 接收 `List[str]` 类型的 `tokens`，返回 `int`\n- `ops` 用集合保存四个运算符，便于 O(1) 判定\n- `stk` 即运算栈\n\n```python\nops = {'+', '-', '*', '/'}  # 集合查找 O(1)\nstk = []                    # Python list 当栈用，append/pop 都是 O(1)\n```"
+visualizationType = "code-only"
+
+# ── Step 2: 处理数字入栈 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "遍历与入栈"
+titleEn = "Iterate and Push"
+code = """# 逆波兰表达式求值
+# 给定一个字符串数组 tokens，表示逆波兰表达式（后缀表达式）
+# 求该表达式的值，并作为整数返回
+#
+# 运算符: + - * /，每个运算对象可以是整数或另一个表达式
+# 整数运算只保留整数部分，即「向 0 截断」
+#
+# 示例 1:
+#   tokens = ["2","1","+","3","*"]
+#   ((2 + 1) * 3) = 9
+#
+# 示例 2:
+#   tokens = ["4","13","5","/","+"]
+#   (4 + (13 / 5)) = 4 + 2 = 6
+
+from typing import List
+
+def evalRPN(tokens: List[str]) -> int:
+    \"\"\"求逆波兰表达式的值。\"\"\"
+    ops = {'+', '-', '*', '/'}
+    stk = []
+    for t in tokens:
+        if t in ops:
+            pass  # 下一阶段处理运算符
+        else:
+            stk.append(int(t))"""
+explanation = "**第 2 步：遍历 tokens，遇到数字就入栈**\n\n```\ntokens = [\"2\", \"1\", \"+\", \"3\", \"*\"]\n\nt=\"2\" → 数字 → stk=[2]\nt=\"1\" → 数字 → stk=[2, 1]\nt=\"+\" → 运算符（稍后处理）\nt=\"3\" → 数字 → stk=[2, 1, 3]\nt=\"*\" → 运算符（稍后处理）\n```\n\n- `int(t)` 把字符串转成整数\n- 运算符分支先用 `pass` 占位，下一步补完"
+visualizationType = "code-only"
+
+# ── Step 3: 处理运算符 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "处理运算符"
+titleEn = "Handle Operators"
+code = """# 逆波兰表达式求值
+# 给定一个字符串数组 tokens，表示逆波兰表达式（后缀表达式）
+# 求该表达式的值，并作为整数返回
+#
+# 运算符: + - * /，每个运算对象可以是整数或另一个表达式
+# 整数运算只保留整数部分，即「向 0 截断」
+#
+# 示例 1:
+#   tokens = ["2","1","+","3","*"]
+#   ((2 + 1) * 3) = 9
+#
+# 示例 2:
+#   tokens = ["4","13","5","/","+"]
+#   (4 + (13 / 5)) = 4 + 2 = 6
+
+from typing import List
+
+def evalRPN(tokens: List[str]) -> int:
+    \"\"\"求逆波兰表达式的值。\"\"\"
+    ops = {'+', '-', '*', '/'}
+    stk = []
+    for t in tokens:
+        if t in ops:
+            b = stk.pop()  # 先弹出的 = 右操作数
+            a = stk.pop()  # 后弹出的 = 左操作数
+            if t == '+': c = a + b
+            elif t == '-': c = a - b
+            elif t == '*': c = a * b
+            else:
+                # 向 0 截断除法：符号相同时用 int(a/b)，否则取负
+                c = int(a / b) if a * b >= 0 else -int(-a / b)
+            stk.append(c)
+        else:
+            stk.append(int(t))"""
+explanation = "**第 3 步：处理运算符 — 弹两个数、计算、再入栈**\n\n> **关键顺序**：栈顶是先压入的 → 后弹出的，所以**先 pop 的是右操作数 `b`，后 pop 的是左操作数 `a`**。\n\n```\ntokens = [\"2\", \"1\", \"+\", \"3\", \"*\"]\n\nt=\"+\": stk=[2,1] → b=1, a=2 → c=2+1=3 → stk=[3]\nt=\"*\": stk=[3,3] → b=3, a=3 → c=3*3=9 → stk=[9]\n```\n\n**除法要向 0 截断**（注意不是「向下取整」）\n\n| 表达式 | 真值 | 题目要求 | Python `//` | 本算法 |\n|--------|------|----------|------------|--------|\n| `6 / 2` | 3 | 3 | 3 | 3 |\n| `7 / 2` | 3.5 | 3 | 3 | 3 |\n| `-7 / 2` | -3.5 | -3 | **-4** | **-3** |\n| `7 / -2` | -3.5 | -3 | **-4** | **-3** |\n\n> Python 的 `//` 是向下取整，与题目「向 0 截断」不一致，所以用 `int(a/b)` 配合符号判断实现。\n\n**技巧：符号判断**\n\n```python\nc = int(a / b) if a * b >= 0 else -int(-a / b)\n```\n\n- `a * b >= 0` → 同号 → `int(a/b)` 本身就是向 0 截断\n- `a * b < 0`  → 异号 → 先取 `-a/b` 再 `int`，再加负号"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 逆波兰表达式求值
+# 给定一个字符串数组 tokens，表示逆波兰表达式（后缀表达式）
+# 求该表达式的值，并作为整数返回
+#
+# 运算符: + - * /，每个运算对象可以是整数或另一个表达式
+# 整数运算只保留整数部分，即「向 0 截断」
+#
+# 示例 1:
+#   tokens = ["2","1","+","3","*"]
+#   ((2 + 1) * 3) = 9
+#
+# 示例 2:
+#   tokens = ["4","13","5","/","+"]
+#   (4 + (13 / 5)) = 4 + 2 = 6
+
+from typing import List
+
+def evalRPN(tokens: List[str]) -> int:
+    \"\"\"求逆波兰表达式的值。\"\"\"
+    ops = {'+', '-', '*', '/'}
+    stk = []
+    for t in tokens:
+        if t in ops:
+            b = stk.pop()
+            a = stk.pop()
+            if t == '+': c = a + b
+            elif t == '-': c = a - b
+            elif t == '*': c = a * b
+            else:
+                c = int(a / b) if a * b >= 0 else -int(-a / b)
+            stk.append(c)
+        else:
+            stk.append(int(t))
+    return stk[0]"""
+explanation = "**最终结果**\n\n```\n输入: tokens = [\"2\", \"1\", \"+\", \"3\", \"*\"]\n输出: 9\n\n输入: tokens = [\"4\", \"13\", \"5\", \"/\", \"+\"]\n输出: 6\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个 token 遍历一次 |\n| 空间复杂度 | O(n) — 栈最多保存 n 个元素 |\n\n**关键点回顾**\n\n- 数字入栈，运算符弹两个、运算、结果再入栈\n- **弹出顺序**：先 `b`（右操作数），再 `a`（左操作数）\n- **除法向 0 截断**：`int(a/b)` 同号直接用；异号用 `-int(-a/b)`"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"2\",\"1\",\"+\",\"3\",\"*\"]", result = "9", highlightedIndices = [0, 1, 2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "栈：数字入栈，运算符弹两个数计算后入栈"
+keyInsight = "先弹的是右操作数 b，后弹的是左操作数 a；除法向 0 截断而非向下取整"

@@ -1,0 +1,165 @@
+{
+  "id": "maximum-subarray",
+  "title": "最大子数组和",
+  "titleEn": "Maximum Subarray",
+  "difficulty": "medium",
+  "tags": [
+    "array",
+    "divide-and-conquer",
+    "dynamic-programming"
+  ],
+  "testCase": "nums = [-2,1,-3,4,-1,2,1,-5,4]",
+  "expectedOutput": "6",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 53. 最大子数组和\n# 找出具有最大和的连续子数组（子数组至少包含一个元素）\n#\n# 示例:\n#   nums = [-2,1,-3,4,-1,2,1,-5,4]\n#   最大子数组: [4,-1,2,1]\n#   最大和: 6\n#\n# 关键: Kadane 算法 — 动态规划思想",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 53. 最大子数组和</span>",
+        "<span class=\"tokenComment\"># 找出具有最大和的连续子数组（子数组至少包含一个元素）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   nums = [-2,1,-3,4,-1,2,1,-5,4]</span>",
+        "<span class=\"tokenComment\">#   最大子数组: [4,-1,2,1]</span>",
+        "<span class=\"tokenComment\">#   最大和: 6</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 关键: Kadane 算法 — 动态规划思想</span>"
+      ],
+      "explanation": "**问题分析**\n\n给定整数数组 `nums`，找出**连续**子数组（至少包含一个元素）的最大和。\n\n**示例演示**\n\n```\nnums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]\n\n可能的连续子数组:\n[-2] = -2\n[-2, 1] = -1\n[1] = 1\n[1, -3, 4, -1, 2, 1] = 4  ← 较大\n[4, -1, 2, 1] = 6            ← 最大！\n```\n\n**解法对比**\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 暴力枚举所有子数组 | O(n²) | O(1) |\n| 分治法 | O(n log n) | O(log n) |\n| **Kadane 算法** | **O(n)** | **O(1)** |\n\n> Kadane 算法的核心：在每个位置做决策 — **要么接续前段子数组，要么从这里重新开始**。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 53. 最大子数组和\n# 找出具有最大和的连续子数组（子数组至少包含一个元素）\n#\n# 示例:\n#   nums = [-2,1,-3,4,-1,2,1,-5,4]\n#   最大子数组: [4,-1,2,1]\n#   最大和: 6\n#\n# 关键: Kadane 算法 — 动态规划思想\n\nfrom typing import List\n\ndef maxSubArray(nums: List[int]) -> int:\n    \"\"\"返回最大子数组和（Kadane 算法）。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 53. 最大子数组和</span>",
+        "<span class=\"tokenComment\"># 找出具有最大和的连续子数组（子数组至少包含一个元素）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   nums = [-2,1,-3,4,-1,2,1,-5,4]</span>",
+        "<span class=\"tokenComment\">#   最大子数组: [4,-1,2,1]</span>",
+        "<span class=\"tokenComment\">#   最大和: 6</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 关键: Kadane 算法 — 动态规划思想</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">maxSubArray</span>(nums: List[<span class=\"tokenBuiltin\">int</span>]) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回最大子数组和（Kadane 算法）。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 接收参数：`nums` — 整数数组\n- 返回值：`int` — 最大子数组和\n- 使用类型注解明确输入/输出\n- 文档字符串说明算法用途",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "初始化状态",
+      "titleEn": "Initialize State",
+      "code": "# 53. 最大子数组和\n# 找出具有最大和的连续子数组（子数组至少包含一个元素）\n#\n# 示例:\n#   nums = [-2,1,-3,4,-1,2,1,-5,4]\n#   最大子数组: [4,-1,2,1]\n#   最大和: 6\n#\n# 关键: Kadane 算法 — 动态规划思想\n\nfrom typing import List\n\ndef maxSubArray(nums: List[int]) -> int:\n    \"\"\"返回最大子数组和（Kadane 算法）。\"\"\"\n    max_sum = nums[0]\n    current_sum = nums[0]",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 53. 最大子数组和</span>",
+        "<span class=\"tokenComment\"># 找出具有最大和的连续子数组（子数组至少包含一个元素）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   nums = [-2,1,-3,4,-1,2,1,-5,4]</span>",
+        "<span class=\"tokenComment\">#   最大子数组: [4,-1,2,1]</span>",
+        "<span class=\"tokenComment\">#   最大和: 6</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 关键: Kadane 算法 — 动态规划思想</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">maxSubArray</span>(nums: List[<span class=\"tokenBuiltin\">int</span>]) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回最大子数组和（Kadane 算法）。&quot;&quot;&quot;</span>",
+        "    max_sum = nums[<span class=\"tokenNumber\">0</span>]",
+        "    current_sum = nums[<span class=\"tokenNumber\">0</span>]"
+      ],
+      "explanation": "**第 2 步：初始化两个关键变量**\n\n| 变量 | 含义 | 初始值 |\n|------|------|--------|\n| `max_sum` | 全局最大子数组和 | `nums[0]` |\n| `current_sum` | **以当前位置结尾**的最大子数组和 | `nums[0]` |\n\n**为什么从 `nums[0]` 开始？**\n\n- 子数组至少包含一个元素\n- 从第一个元素开始遍历\n- `current_sum` 代表「当前正在累加的子数组」的和\n\n> 核心思想：`current_sum` 只关心「以当前元素结尾」的最大子数组，`max_sum` 记录全局最优。",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 3,
+      "title": "状态转移",
+      "titleEn": "State Transition",
+      "code": "# 53. 最大子数组和\n# 找出具有最大和的连续子数组（子数组至少包含一个元素）\n#\n# 示例:\n#   nums = [-2,1,-3,4,-1,2,1,-5,4]\n#   最大子数组: [4,-1,2,1]\n#   最大和: 6\n#\n# 关键: Kadane 算法 — 动态规划思想\n\nfrom typing import List\n\ndef maxSubArray(nums: List[int]) -> int:\n    \"\"\"返回最大子数组和（Kadane 算法）。\"\"\"\n    max_sum = nums[0]\n    current_sum = nums[0]\n    for num in nums[1:]:\n        current_sum = max(num, current_sum + num)\n        max_sum = max(max_sum, current_sum)",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 53. 最大子数组和</span>",
+        "<span class=\"tokenComment\"># 找出具有最大和的连续子数组（子数组至少包含一个元素）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   nums = [-2,1,-3,4,-1,2,1,-5,4]</span>",
+        "<span class=\"tokenComment\">#   最大子数组: [4,-1,2,1]</span>",
+        "<span class=\"tokenComment\">#   最大和: 6</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 关键: Kadane 算法 — 动态规划思想</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">maxSubArray</span>(nums: List[<span class=\"tokenBuiltin\">int</span>]) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回最大子数组和（Kadane 算法）。&quot;&quot;&quot;</span>",
+        "    max_sum = nums[<span class=\"tokenNumber\">0</span>]",
+        "    current_sum = nums[<span class=\"tokenNumber\">0</span>]",
+        "    <span class=\"tokenKeyword\">for</span> num in nums[<span class=\"tokenNumber\">1</span>:]:",
+        "        current_sum = <span class=\"tokenBuiltin\">max</span>(num, current_sum + num)",
+        "        max_sum = <span class=\"tokenBuiltin\">max</span>(max_sum, current_sum)"
+      ],
+      "explanation": "**第 3 步：遍历数组，动态更新状态**\n\n**状态转移方程**\n\n```python\ncurrent_sum = max(num, current_sum + num)\n```\n\n每个位置做决策：\n- 选择 `num`：从**当前元素重新开始**新的子数组\n- 选择 `current_sum + num`：**接续前段子数组**\n\n**决策依据**\n\n| 条件 | 含义 | 选择 |\n|------|------|------|\n| `current_sum < 0` | 前段子数组是负担 | `num`（重新开始） |\n| `current_sum >= 0` | 前段子数组有贡献 | `current_sum + num`（接续） |\n\n**示例执行**（`nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]`）：\n\n```\n初始: max_sum=-2, current_sum=-2\n\ni=1: num=1\n  current_sum = max(1, -2+1) = max(1, -1) = 1\n  max_sum = max(-2, 1) = 1\n  → 从 1 重新开始（前段 -2 是负担）\n\ni=2: num=-3\n  current_sum = max(-3, 1-3) = max(-3, -2) = -2\n  max_sum = max(1, -2) = 1\n\ni=3: num=4\n  current_sum = max(4, -2+4) = max(4, 2) = 4\n  max_sum = max(1, 4) = 4\n  → 从 4 重新开始（前段 -2 是负担）\n\ni=4: num=-1\n  current_sum = max(-1, 4-1) = max(-1, 3) = 3\n  max_sum = max(4, 3) = 4\n\ni=5: num=2\n  current_sum = max(2, 3+2) = max(2, 5) = 5\n  max_sum = max(4, 5) = 5\n\ni=6: num=1\n  current_sum = max(1, 5+1) = max(1, 6) = 6\n  max_sum = max(5, 6) = 6  ← 更新全局最大！\n\ni=7: num=-5\n  current_sum = max(-5, 6-5) = max(-5, 1) = 1\n  max_sum = max(6, 1) = 6\n\ni=8: num=4\n  current_sum = max(4, 1+4) = max(4, 5) = 5\n  max_sum = max(6, 5) = 6\n\n最终: max_sum = 6  (子数组 [4,-1,2,1])\n```",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 53. 最大子数组和\n# 找出具有最大和的连续子数组（子数组至少包含一个元素）\n#\n# 示例:\n#   nums = [-2,1,-3,4,-1,2,1,-5,4]\n#   最大子数组: [4,-1,2,1]\n#   最大和: 6\n#\n# 关键: Kadane 算法 — 动态规划思想\n\nfrom typing import List\n\ndef maxSubArray(nums: List[int]) -> int:\n    \"\"\"返回最大子数组和（Kadane 算法）。\"\"\"\n    max_sum = nums[0]\n    current_sum = nums[0]\n    for num in nums[1:]:\n        current_sum = max(num, current_sum + num)\n        max_sum = max(max_sum, current_sum)\n    return max_sum",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 53. 最大子数组和</span>",
+        "<span class=\"tokenComment\"># 找出具有最大和的连续子数组（子数组至少包含一个元素）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   nums = [-2,1,-3,4,-1,2,1,-5,4]</span>",
+        "<span class=\"tokenComment\">#   最大子数组: [4,-1,2,1]</span>",
+        "<span class=\"tokenComment\">#   最大和: 6</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 关键: Kadane 算法 — 动态规划思想</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">maxSubArray</span>(nums: List[<span class=\"tokenBuiltin\">int</span>]) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回最大子数组和（Kadane 算法）。&quot;&quot;&quot;</span>",
+        "    max_sum = nums[<span class=\"tokenNumber\">0</span>]",
+        "    current_sum = nums[<span class=\"tokenNumber\">0</span>]",
+        "    <span class=\"tokenKeyword\">for</span> num in nums[<span class=\"tokenNumber\">1</span>:]:",
+        "        current_sum = <span class=\"tokenBuiltin\">max</span>(num, current_sum + num)",
+        "        max_sum = <span class=\"tokenBuiltin\">max</span>(max_sum, current_sum)",
+        "    <span class=\"tokenKeyword\">return</span> max_sum"
+      ],
+      "explanation": "**最终结果**\n\n✅ Kadane 算法完成\n\n```\n输入: nums = [-2,1,-3,4,-1,2,1,-5,4]\n输出: 6  (子数组 [4,-1,2,1])\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 单次遍历 |\n| 空间复杂度 | O(1) — 只用两个变量 |\n\n**核心思想总结**\n\n1. **动态规划**：`current_sum` 存储子问题（以当前元素结尾的最大和）\n2. **贪心决策**：每一步选择「接续」或「重新开始」\n3. **全局记录**：`max_sum` 始终记录历史最大值\n\n**关键判断**\n\n```python\ncurrent_sum = max(num, current_sum + num)\n```\n\n- 如果 `current_sum < 0`：前段子数组拖累，果断放弃，从 `num` 重新开始\n- 如果 `current_sum >= 0`：前段子数组有帮助，接续累加\n\n> 本质上是「滚动数组」的动态规划优化，只保留前一个状态。",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{}",
+        "arrayState": "[-2, 1, -3, 4, -1, 2, 1, -5, 4]",
+        "result": "6",
+        "highlightedIndices": [
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "approach": "Kadane 算法（动态规划）",
+    "keyInsight": "current_sum < 0 时放弃当前子数组；每个位置决策：要么接续前段子数组，要么从这里重新开始"
+  }
+}

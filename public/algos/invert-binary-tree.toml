@@ -1,0 +1,223 @@
+[algorithm]
+id = "invert-binary-tree"
+title = "翻转二叉树"
+titleEn = "Invert Binary Tree"
+difficulty = "easy"
+tags = ["tree", "dfs", "bfs"]
+testCase = "root = [4,2,7,1,3,6,9]"
+expectedOutput = "[4,7,2,9,6,3,1]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 226. 翻转二叉树
+# 给你一棵二叉树的根节点 root，翻转这棵二叉树，并返回其根节点
+#
+# 翻转定义：交换每个节点的左右子树
+#
+# 示例:
+#   输入:    [4,2,7,1,3,6,9]
+#
+#              4
+#            /   \
+#           2     7
+#          / \\   / \\
+#         1   3 6   9
+#
+#   输出:    [4,7,2,9,6,3,1]
+#
+#              4
+#            /   \\
+#           7     2
+#          / \\   / \\
+#         9   6 3   1"""
+explanation = "**问题分析**\n\n给定一棵二叉树的根节点 `root`，翻转整棵树并返回根节点。\n\n**翻转定义**\n\n- 交换每个节点的左右子树\n- 递归地对左右子树做同样的操作\n\n**示例**\n\n```\n输入:        4            输出:        4\n           / \\                      / \\\n          2   7                    7   2\n         / \\ / \\                  / \\ / \\\n        1  3 6  9                9  6 3  1\n```\n\n**关键观察**\n\n| 操作 | 说明 |\n|------|------|\n| base case | `root is None` → 返回 `None` |\n| 交换 | `root.left, root.right = root.right, root.left` |\n| 递归 | 对左右子树递归调用 |\n\n> 本题是经典递归题，关键在于每个节点都做同样的事：交换 + 递归。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + TreeNode + base case ───────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与 base case"
+titleEn = "Signature & Base Case"
+code = """# 226. 翻转二叉树
+# 给你一棵二叉树的根节点 root，翻转这棵二叉树，并返回其根节点
+#
+# 翻转定义：交换每个节点的左右子树
+#
+# 示例:
+#   输入:    [4,2,7,1,3,6,9]
+#
+#              4
+#            /   \\
+#           2     7
+#          / \\   / \\
+#         1   3 6   9
+#
+#   输出:    [4,7,2,9,6,3,1]
+#
+#              4
+#            /   \\
+#           7     2
+#          / \\   / \\
+#         9   6 3   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def invertTree(root: Optional[TreeNode]) -> Optional[TreeNode]:
+    \"\"\"翻转二叉树，返回根节点\"\"\"
+    if root is None:
+        return None
+    pass"""
+explanation = "**第 1 步：定义节点结构与 base case**\n\n- `TreeNode`：标准二叉树节点定义，包含 `val`、`left`、`right` 三个属性\n- 函数签名接收根节点 `root`，返回新的根节点\n- **base case**：`root is None` 时直接返回 `None`，防止对空节点递归崩溃\n\n```python\nif root is None:\n    return None\n```\n\n> base case 是递归的终止条件，对每个递归函数都至关重要。"
+visualizationType = "code-only"
+
+# ── Step 2: 交换左右子树 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "交换左右子树"
+titleEn = "Swap Left and Right"
+code = """# 226. 翻转二叉树
+# 给你一棵二叉树的根节点 root，翻转这棵二叉树，并返回其根节点
+#
+# 翻转定义：交换每个节点的左右子树
+#
+# 示例:
+#   输入:    [4,2,7,1,3,6,9]
+#
+#              4
+#            /   \\
+#           2     7
+#          / \\   / \\
+#         1   3 6   9
+#
+#   输出:    [4,7,2,9,6,3,1]
+#
+#              4
+#            /   \\
+#           7     2
+#          / \\   / \\
+#         9   6 3   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def invertTree(root: Optional[TreeNode]) -> Optional[TreeNode]:
+    \"\"\"翻转二叉树，返回根节点\"\"\"
+    if root is None:
+        return None
+    root.left, root.right = root.right, root.left
+    pass"""
+explanation = "**第 2 步：交换左右子树**\n\n```python\nroot.left, root.right = root.right, root.left\n```\n\n**为什么用 Python 的并行赋值？**\n\n- `a, b = b, a` 会先把右侧的 `(b, a)` 整体求值（构造临时元组），再赋给左侧\n- 因此**不需要手动用临时变量**保存 `root.left`\n- 一行代码完成交换，简洁又安全\n\n**对比写法**\n\n```python\n# 并行赋值（推荐）\nroot.left, root.right = root.right, root.left\n\n# 临时变量写法（其他语言常用）\ntmp = root.left\nroot.left = root.right\nroot.right = tmp\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 递归翻转左右子树 ──────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "递归翻转子树"
+titleEn = "Recursive Invert"
+code = """# 226. 翻转二叉树
+# 给你一棵二叉树的根节点 root，翻转这棵二叉树，并返回其根节点
+#
+# 翻转定义：交换每个节点的左右子树
+#
+# 示例:
+#   输入:    [4,2,7,1,3,6,9]
+#
+#              4
+#            /   \\
+#           2     7
+#          / \\   / \\
+#         1   3 6   9
+#
+#   输出:    [4,7,2,9,6,3,1]
+#
+#              4
+#            /   \\
+#           7     2
+#          / \\   / \\
+#         9   6 3   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def invertTree(root: Optional[TreeNode]) -> Optional[TreeNode]:
+    \"\"\"翻转二叉树，返回根节点\"\"\"
+    if root is None:
+        return None
+    root.left, root.right = root.right, root.left
+    invertTree(root.left)
+    invertTree(root.right)
+    pass"""
+explanation = "**第 3 步：递归翻转左右子树**\n\n```python\ninvertTree(root.left)\ninvertTree(root.right)\n```\n\n**为什么递归调用 `root.left` 而不是原始的左子树？**\n\n因为上一步已经交换过了，`root.left` 现在指向**原来的右子树**，对其递归调用即可翻转\"原右侧\"。\n\n**递归执行流程**\n\n```\ninvertTree(4)\n├─ 交换 4 的左右\n├─ invertTree(7)        # 原右子树\n│  ├─ 交换 7 的左右\n│  ├─ invertTree(9)\n│  └─ invertTree(6)\n└─ invertTree(2)        # 原左子树\n   ├─ 交换 2 的左右\n   ├─ invertTree(3)\n   └─ invertTree(1)\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 返回根节点 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 226. 翻转二叉树
+# 给你一棵二叉树的根节点 root，翻转这棵二叉树，并返回其根节点
+#
+# 翻转定义：交换每个节点的左右子树
+#
+# 示例:
+#   输入:    [4,2,7,1,3,6,9]
+#
+#              4
+#            /   \\
+#           2     7
+#          / \\   / \\
+#         1   3 6   9
+#
+#   输出:    [4,7,2,9,6,3,1]
+#
+#              4
+#            /   \\
+#           7     2
+#          / \\   / \\
+#         9   6 3   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def invertTree(root: Optional[TreeNode]) -> Optional[TreeNode]:
+    \"\"\"翻转二叉树，返回根节点\"\"\"
+    if root is None:
+        return None
+    root.left, root.right = root.right, root.left
+    invertTree(root.left)
+    invertTree(root.right)
+    return root"""
+explanation = "**最终结果**\n\n```\n输入:      [4,2,7,1,3,6,9]\n输出:      [4,7,2,9,6,3,1]\n```\n\n✅ DFS 递归 + 原地交换完成\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个节点访问一次 |\n| 空间复杂度 | O(h) — 递归栈深度，h 是树高 |\n\n**关键技巧**\n\n- **原地交换**：用 Python 并行赋值避免临时变量\n- **后序递归**：交换 → 递归左 → 递归右（或前序亦可）\n- 这道题也可用 BFS 层序遍历实现：每次出队时交换其左右子节点"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[4, 7, 2, 9, 6, 3, 1]", result = "[4, 7, 2, 9, 6, 3, 1]", highlightedIndices = [0, 1, 2, 3, 4, 5, 6] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(h)  # 递归栈"
+approach = "DFS 递归 + 原地交换"
+keyInsight = "交换左右子树后递归翻转：根 → 交换 → 递归；Python 并行赋值天然处理临时变量"

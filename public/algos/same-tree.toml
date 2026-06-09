@@ -1,0 +1,176 @@
+[algorithm]
+id = "same-tree"
+title = "相同的树"
+titleEn = "Same Tree"
+difficulty = "easy"
+tags = ["tree", "dfs"]
+testCase = "p = [1,2,3], q = [1,2,3]"
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 100. 相同的树
+# 判断两棵二叉树是否完全相同（结构和节点值都相同）
+#
+# 关键：DFS 同步遍历 + 三种 base case
+#
+# 示例:
+#   p = [1,2,3], q = [1,2,3]   (层序表示)
+#   1            1
+#  / \\          / \\
+# 2   3        2   3
+#   结果: true"""
+explanation = "**问题分析**\n\n判断两棵二叉树 `p` 和 `q` 是否完全相同，需同时满足：\n\n- **结构相同**：对应位置的节点存在性一致\n- **节点值相同**：所有对应节点的值相等\n\n**示例**\n\n```\np:      1            q:      1\n       / \\\\                 / \\\\\n      2   3               2   3\n   → true\n```\n\n**核心思路：DFS 同步遍历**\n\n> 同步访问 `p` 和 `q` 的对应节点，遇到不一致立即返回 `false`，全部通过则返回 `true`。\n\n**关键：三种 base case 必须按顺序判断**\n\n| 顺序 | 条件 | 返回 |\n|------|------|------|\n| 1 | `p` 和 `q` 都为 `None` | `true` |\n| 2 | 只有一个为 `None` | `false` |\n| 3 | 节点值不相等 | `false` |"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 双 None base case ─────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 100. 相同的树
+# 判断两棵二叉树是否完全相同（结构和节点值都相同）
+#
+# 关键：DFS 同步遍历 + 三种 base case
+#
+# 示例:
+#   p = [1,2,3], q = [1,2,3]   (层序表示)
+#   1            1
+#  / \\          / \\
+# 2   3        2   3
+#   结果: true
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def isSameTree(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
+    \"\"\"判断两棵二叉树是否完全相同\"\"\"
+    if p is None and q is None:
+        return True"""
+explanation = "**第 1 步：函数签名 + TreeNode 定义 + 第一种 base case**\n\n- `TreeNode` 是二叉树的标准节点类（`val`、`left`、`right`）\n- 函数 `isSameTree(p, q)` 返回 `bool`\n- 文档字符串说明函数用途\n\n**第一种 base case：双方都为 `None`**\n\n```python\nif p is None and q is None:\n    return True\n```\n\n> 两棵空树视为相同，返回 `true`。"
+visualizationType = "code-only"
+
+# ── Step 2: 单 None + 值不等 base case ───────────────────────
+[[algorithm.steps]]
+id = 2
+title = "值不等判断"
+titleEn = "Value Mismatch"
+code = """# 100. 相同的树
+# 判断两棵二叉树是否完全相同（结构和节点值都相同）
+#
+# 关键：DFS 同步遍历 + 三种 base case
+#
+# 示例:
+#   p = [1,2,3], q = [1,2,3]   (层序表示)
+#   1            1
+#  / \\          / \\
+# 2   3        2   3
+#   结果: true
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def isSameTree(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
+    \"\"\"判断两棵二叉树是否完全相同\"\"\"
+    if p is None and q is None:
+        return True
+    if p is None or q is None:
+        return False
+    if p.val != q.val:
+        return False"""
+explanation = "**第 2 步：补齐剩余两种 base case**\n\n**第二种 base case：单边为 `None`**\n\n```python\nif p is None or q is None:\n    return False\n```\n\n> 必须先排除 `p == q == None` 的情况（已在前一个 `if` 返回），所以这里走到时**必有一方非空**，结构不一致。\n\n**第三种 base case：值不等**\n\n```python\nif p.val != q.val:\n    return False\n```\n\n> 即使结构相同，节点值不同也视为不同树。\n\n**三种 base case 顺序至关重要**：\n\n1. 先判断**都为 `None`**（否则后面访问 `p.val` 会报错）\n2. 再判断**单边为 `None`**\n3. 最后才能安全访问 `p.val` 和 `q.val`"
+visualizationType = "code-only"
+
+# ── Step 3: 递归调用 ─────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "递归比较"
+titleEn = "Recursive Compare"
+code = """# 100. 相同的树
+# 判断两棵二叉树是否完全相同（结构和节点值都相同）
+#
+# 关键：DFS 同步遍历 + 三种 base case
+#
+# 示例:
+#   p = [1,2,3], q = [1,2,3]   (层序表示)
+#   1            1
+#  / \\          / \\
+# 2   3        2   3
+#   结果: true
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def isSameTree(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
+    \"\"\"判断两棵二叉树是否完全相同\"\"\"
+    if p is None and q is None:
+        return True
+    if p is None or q is None:
+        return False
+    if p.val != q.val:
+        return False
+    return isSameTree(p.left, q.left) and isSameTree(p.right, q.right)"""
+explanation = "**第 3 步：递归调用左右子树**\n\n```python\nreturn isSameTree(p.left, q.left) and isSameTree(p.right, q.right)\n```\n\n**递归逻辑**\n\n- 当前节点值相同（已通过 base case 3）\n- 必须**左右子树都相同**才算相同\n- 用 `and` 短路合并：任一子树不同则立即返回 `false`\n\n**DFS 同步遍历示意**\n\n```\np(1)  q(1)  → val 相等 → 递归\n├── p(2)  q(2)  → val 相等 → 递归\n│   ├── None, None → true\n│   └── None, None → true\n└── p(3)  q(3)  → val 相等 → 递归\n    ├── None, None → true\n    └── None, None → true\n\n最终: true ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ─────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 100. 相同的树
+# 判断两棵二叉树是否完全相同（结构和节点值都相同）
+#
+# 关键：DFS 同步遍历 + 三种 base case
+#
+# 示例:
+#   p = [1,2,3], q = [1,2,3]   (层序表示)
+#   1            1
+#  / \\          / \\
+# 2   3        2   3
+#   结果: true
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def isSameTree(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
+    \"\"\"判断两棵二叉树是否完全相同\"\"\"
+    if p is None and q is None:
+        return True
+    if p is None or q is None:
+        return False
+    if p.val != q.val:
+        return False
+    return isSameTree(p.left, q.left) and isSameTree(p.right, q.right)"""
+explanation = "**最终结果**\n\n✅ 同步 DFS 遍历完成\n\n```\n输入: p = [1,2,3], q = [1,2,3]\n输出: true\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(min(n, m)) — 每节点最多访问一次 |\n| 空间复杂度 | O(min(h₁, h₂)) — 递归栈深度取较浅者 |\n\n**关键启发：base case 顺序**\n\n- 必须**先判双 `None`**，再判单 `None`，最后才能访问 `val`\n- `and` 短路合并左右子树结果\n- 一旦发现不一致立即返回 `false`，无需遍历整棵树"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3]", result = "true", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(min(n, m))"
+spaceComplexity = "O(min(h1, h2))  # 递归栈"
+approach = "DFS 同步遍历"
+keyInsight = "三 base case：都 None → True；一 None → False；值不等 → False；否则递归左右子树"

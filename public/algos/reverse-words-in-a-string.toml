@@ -1,0 +1,143 @@
+[algorithm]
+id = "reverse-words-in-a-string"
+title = "反转字符串中的单词"
+titleEn = "Reverse Words in a String"
+difficulty = "medium"
+tags = ["string", "two-pointers"]
+testCase = "s = \"  hello world  \""
+expectedOutput = "\"world hello\""
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 反转字符串中的单词
+# 给定一个字符串 s，反转字符串中单词的顺序
+#
+# 规则:
+#   - 单词之间用单个空格分隔
+#   - 输入字符串可能在头部、尾部或单词之间包含多个空格
+#   - 反转后单词间应使用单个空格，且不包含多余空格
+#
+# 示例:
+#   "  hello world  "      → "world hello"
+#   "a good   example"     → "example good a"
+#   "  Bob    Loves  Alice" → "Alice Loves Bob"
+#
+# 进阶: 能否用 O(1) 额外空间原地完成？"""
+explanation = "**问题分析**\n\n反转字符串中的**单词顺序**，而不是字符顺序。需要处理：\n\n| 输入元素 | 处理方式 |\n|---------|----------|\n| 多个连续空格 | 合并为单个空格 |\n| 首尾空格 | 删除 |\n| 单词 | 保持内容，按出现顺序**倒序**排列 |\n\n**示例**\n\n```\n输入: \"  hello world  \"\n        └去掉首尾─┘\n\n步骤 1: split → [\"hello\", \"world\"]\n步骤 2: 反转   → [\"world\", \"hello\"]\n步骤 3: join   → \"world hello\"\n```\n\n> 难点不在反转，而在**处理多余空格**。\n\n**两种思路对比**\n\n| 方法 | 时间 | 空间 | 实现难度 |\n|------|------|------|----------|\n| **内置 split + 反转 + join** | **O(n)** | **O(n)** | 简单 |\n| 双反转（先整体反转，再逐单词反转） | O(n) | O(1) | 较难 |\n\n> 本题先用 Pythonic 的 `split` 解法讲解核心思路，进阶再讨论 O(1) 原地解。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 反转字符串中的单词
+# 给定一个字符串 s，反转字符串中单词的顺序
+#
+# 规则:
+#   - 单词之间用单个空格分隔
+#   - 输入字符串可能在头部、尾部或单词之间包含多个空格
+#   - 反转后单词间应使用单个空格，且不包含多余空格
+#
+# 示例:
+#   "  hello world  "      → "world hello"
+#   "a good   example"     → "example good a"
+#   "  Bob    Loves  Alice" → "Alice Loves Bob"
+#
+# 进阶: 能否用 O(1) 额外空间原地完成？
+
+def reverseWords(s: str) -> str:
+    \"\"\"反转字符串 s 中单词的顺序，单词间用单个空格分隔。\"\"\"
+    pass"""
+explanation = "**第 1 步：函数签名**\n\n- 参数：字符串 `s`\n- 返回：新字符串 `str`\n- 文档字符串明确描述语义：反转单词顺序、单词间单个空格\n\n> Python 中字符串是**不可变**的，所以无论哪种解法，函数都必须返回新字符串（虽然原地解会先把 `s` 转成 `list`，最终仍需 `join` 拼回）。"
+visualizationType = "code-only"
+
+# ── Step 2: split 切分单词 ────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "切分单词"
+titleEn = "Split Words"
+code = """# 反转字符串中的单词
+# 给定一个字符串 s，反转字符串中单词的顺序
+#
+# 规则:
+#   - 单词之间用单个空格分隔
+#   - 输入字符串可能在头部、尾部或单词之间包含多个空格
+#   - 反转后单词间应使用单个空格，且不包含多余空格
+#
+# 示例:
+#   "  hello world  "      → "world hello"
+#   "a good   example"     → "example good a"
+#   "  Bob    Loves  Alice" → "Alice Loves Bob"
+#
+# 进阶: 能否用 O(1) 额外空间原地完成？
+
+def reverseWords(s: str) -> str:
+    \"\"\"反转字符串 s 中单词的顺序，单词间用单个空格分隔。\"\"\"
+    words = s.split()  # 默认按任意空白字符切分，并自动去除空串"""
+explanation = "**第 2 步：用 split() 切分**\n\nPython 的 `str.split()` **不传参数** 时，会按任意连续的**空白字符**（空格、tab、换行）切分，并自动剔除空串。这正好满足「去除多余空格」的要求。\n\n**示例**\n\n```\ns = \"  hello world  \"\ns.split()  →  [\"hello\", \"world\"]\n\ns = \"a good   example\"\ns.split()  →  [\"a\", \"good\", \"example\"]   ← 多个空格被合并\n\ns = \"  Bob\\tLoves  Alice\\n\"\ns.split()  →  [\"Bob\", \"Loves\", \"Alice\"]   ← 多种空白字符都被识别\n```\n\n| `split()` 行为 | 说明 |\n|----------------|------|\n| 不传参数 | 按任意空白切分，自动 `strip` 首尾、压缩中间多余空白 |\n| 传 `\" \"` | 仅按单个空格切分，**多个空格会产生空串**，需要额外过滤 |\n\n> 推荐不传参数——天然适合本题的「任意连续空白当作一个分隔符」语义。"
+visualizationType = "code-only"
+
+# ── Step 3: 反转并用空格连接 ──────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "反转与连接"
+titleEn = "Reverse and Join"
+code = """# 反转字符串中的单词
+# 给定一个字符串 s，反转字符串中单词的顺序
+#
+# 规则:
+#   - 单词之间用单个空格分隔
+#   - 输入字符串可能在头部、尾部或单词之间包含多个空格
+#   - 反转后单词间应使用单个空格，且不包含多余空格
+#
+# 示例:
+#   "  hello world  "      → "world hello"
+#   "a good   example"     → "example good a"
+#   "  Bob    Loves  Alice" → "Alice Loves Bob"
+#
+# 进阶: 能否用 O(1) 额外空间原地完成？
+
+def reverseWords(s: str) -> str:
+    \"\"\"反转字符串 s 中单词的顺序，单词间用单个空格分隔。\"\"\"
+    words = s.split()  # 默认按任意空白字符切分，并自动去除空串
+    return ' '.join(words[::-1])  # 反转列表后用单个空格连接"""
+explanation = "**第 3 步：反转列表 + join 连接**\n\n一行搞定：\n\n```python\nreturn ' '.join(words[::-1])\n```\n\n**逐步展开**\n\n```\nwords        = [\"hello\", \"world\"]\nwords[::-1]  = [\"world\", \"hello\"]       ← 切片反转\n' '.join(...) = \"world hello\"            ← 单空格连接\n```\n\n**为什么用 `join` 而不是 `+` 拼接？**\n\n| 方式 | 示例 | 效率 |\n|------|------|------|\n| `+` 多次拼接 | `\"\" + w + \" \" + w + \" \" + ...` | O(n²)：每次新建字符串 |\n| `' '.join(list)` | `' '.join([...])` | **O(n)**：一次性预分配 |\n\n> 当 n 较大时（如上万单词），`join` 比 `+` 快几十到上百倍。\n\n**完整执行示例**\n\n```\ns = \"  Bob    Loves  Alice  \"\n\nwords       = [\"Bob\", \"Loves\", \"Alice\"]\nwords[::-1] = [\"Alice\", \"Loves\", \"Bob\"]\nresult      = \"Alice Loves Bob\"\n```\n\n**进阶：O(1) 原地解思路**\n\n如果题目要求原地修改（Python 字符串不可变，需转 `list`）：\n\n1. **去除多余空格**：双指针压缩到列表前面（类似「移除元素」）\n2. **整体反转**整个字符列表\n3. **逐单词反转**：遍历列表，每找到一个完整单词就反转它\n\n> 这套「先整体反转、再局部反转」的组合技巧，在很多字符串类题目（如 `rotate-array`）中都很有用。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 反转字符串中的单词
+# 给定一个字符串 s，反转字符串中单词的顺序
+#
+# 规则:
+#   - 单词之间用单个空格分隔
+#   - 输入字符串可能在头部、尾部或单词之间包含多个空格
+#   - 反转后单词间应使用单个空格，且不包含多余空格
+#
+# 示例:
+#   "  hello world  "      → "world hello"
+#   "a good   example"     → "example good a"
+#   "  Bob    Loves  Alice" → "Alice Loves Bob"
+#
+# 进阶: 能否用 O(1) 额外空间原地完成？
+
+def reverseWords(s: str) -> str:
+    \"\"\"反转字符串 s 中单词的顺序，单词间用单个空格分隔。\"\"\"
+    words = s.split()  # 默认按任意空白字符切分，并自动去除空串
+    return ' '.join(words[::-1])  # 反转列表后用单个空格连接"""
+explanation = "**最终结果**\n\n```\n输入: \"  hello world  \"     → 输出: \"world hello\"\n输入: \"a good   example\"    → 输出: \"example good a\"\n输入: \"  Bob  Loves  Alice\" → 输出: \"Alice Loves Bob\"\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — `split`、`[::-1]`、`join` 各遍历一次 |\n| 空间复杂度 | O(n) — 切分出的单词列表 |\n\n**关键技巧**\n\n- **`split()` 不传参数** → 自动按任意空白切分并去除空串，天然处理多余空格\n- **切片反转 `[::-1]`** → 简洁、O(1) 额外空间（返回新列表对象，但生成器式遍历是 O(n)）\n- **`' '.join(...)`** → 用单空格连接，避免 `+` 拼接的 O(n²) 开销\n\n**进阶解法：O(1) 原地反转**\n\n```python\ndef reverseWords(s):\n    arr = list(s)\n    # 1) 压缩多余空格\n    # 2) 整体反转 arr\n    # 3) 逐单词反转\n    return ''.join(arr)\n```\n\n> 三个步骤都是 O(n) 时间、O(1) 额外空间，体现「反转操作可组合」的强大能力。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"world\", \"hello\"]", result = "\"world hello\"", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "split + 反转列表 + join（Pythonic 一行解）"
+keyInsight = "split() 默认按任意空白切分并去除空串，配合 [::-1] 反转和 join 单空格连接，一行搞定"

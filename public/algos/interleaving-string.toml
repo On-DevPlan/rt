@@ -1,0 +1,172 @@
+[algorithm]
+id = "interleaving-string"
+title = "交错字符串"
+titleEn = "Interleaving String"
+difficulty = "medium"
+tags = ["string", "dynamic-programming"]
+testCase = "s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\""
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 97. 交错字符串
+# 判断 s3 是否由 s1 和 s2 交错组成
+# 交错定义：保持 s1 和 s2 内部字符的相对顺序
+#
+# 示例:
+#   s1 = "aabcc", s2 = "dbbca", s3 = "aadbbcbcac"
+#   s3 的字符来自 s1 或 s2，且保持了各自的相对顺序
+#   返回 true
+#
+# 关键思路：二维动态规划
+# dp[i][j] 表示：s1 的前 i 个字符和 s2 的前 j 个字符
+#              能否组成 s3 的前 i+j 个字符"""
+explanation = "**问题分析**\n\n给定三个字符串 `s1`、`s2`、`s3`，判断 `s3` 是否由 `s1` 和 `s2` **交错**组成。\n\n**交错定义**：\n- `s3` 的每个字符要么来自 `s1`，要么来自 `s2`\n- 必须保持 `s1` 和 `s2` **各自内部的相对顺序**\n\n**示例分析**：\n\n```\ns1 = \"aabcc\"\ns2 = \"dbbca\"\ns3 = \"aadbbcbcac\"\n\ns3 的构成：\n  a a d b b c b c a c\n  ↑ ↑     ↑ ↑ ↑ ↑\n  s1 s1   s2 s1 s2 s2 s1 s1 s2\n  0 1     0 1 2 3   2 3 4\n```\n\n**动态规划思路**\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 递归 + 记忆化 | O(m×n) | O(m×n) |\n| **二维 DP** | **O(m×n)** | **O(m×n)** |\n| **一维 DP** | **O(m×n)** | **O(n)** |\n\n> 核心是「能否到达」的状态转移，而非「如何到达」的路径记录。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名与初始化 ────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 97. 交错字符串
+# 判断 s3 是否由 s1 和 s2 交错组成
+# 交错定义：保持 s1 和 s2 内部字符的相对顺序
+#
+# 示例:
+#   s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"
+#   s3 的字符来自 s1 或 s2，且保持了各自的相对顺序
+#   返回 true
+#
+# 关键思路：二维动态规划
+# dp[i][j] 表示：s1 的前 i 个字符和 s2 的前 j 个字符
+#              能否组成 s3 的前 i+j 个字符
+
+from typing import List
+
+def isInterleave(s1: str, s2: str, s3: str) -> bool:
+    \"\"\"返回是否交错组成\"\"\"
+    m, n, l = len(s1), len(s2), len(s3)
+    if m + n != l:
+        return False
+    dp = [[False] * (n + 1) for _ in range(m + 1)]
+    dp[0][0] = True"""
+explanation = "**第 1 步：基础设置**\n\n**函数签名**\n\n- 接收三个字符串参数：`s1`、`s2`、`s3`\n- 返回布尔值：是否能交错组成\n\n**长度检查**\n\n```\nif m + n != l:\n    return False\n```\n\n如果 `s1` 和 `s2` 的长度之和不等于 `s3` 的长度，直接返回 `False`。\n\n**DP 表初始化**\n\n```python\ndp = [[False] * (n + 1) for _ in range(m + 1)]\ndp[0][0] = True\n```\n\n- `dp` 表大小：`(m+1) × (n+1)`\n- `dp[i][j]` 表示：用 `s1[0..i-1]` 和 `s2[0..j-1]` 能否组成 `s3[0..i+j-1]`\n- `dp[0][0] = True`：空字符串能组成空字符串\n\n**DP 表结构**\n\n```\n      s2: \"\"  d  b  b  c  a\ns1:\n\"\"     T  F  F  F  F  F\na       F\na       F\nb       F\nc       F\nc       F\n```"
+visualizationType = "code-only"
+
+# ── Step 2: 第一行和第一列初始化 ────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "边界初始化"
+titleEn = "Boundary Initialization"
+code = """# 97. 交错字符串
+# 判断 s3 是否由 s1 和 s2 交错组成
+# 交错定义：保持 s1 和 s2 内部字符的相对顺序
+#
+# 示例:
+#   s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"
+#   s3 的字符来自 s1 或 s2，且保持了各自的相对顺序
+#   返回 true
+#
+# 关键思路：二维动态规划
+# dp[i][j] 表示：s1 的前 i 个字符和 s2 的前 j 个字符
+#              能否组成 s3 的前 i+j 个字符
+
+from typing import List
+
+def isInterleave(s1: str, s2: str, s3: str) -> bool:
+    \"\"\"返回是否交错组成\"\"\"
+    m, n, l = len(s1), len(s2), len(s3)
+    if m + n != l:
+        return False
+    dp = [[False] * (n + 1) for _ in range(m + 1)]
+    dp[0][0] = True
+    for i in range(m + 1):
+        for j in range(n + 1):
+            if i > 0:
+                dp[i][j] = dp[i][j] or (dp[i - 1][j] and s1[i - 1] == s3[i + j - 1])"""
+explanation = "**第 2 步：初始化第一列**\n\n**双层循环遍历**\n\n```python\nfor i in range(m + 1):\n    for j in range(n + 1):\n        if i > 0:\n            dp[i][j] = dp[i][j] or (dp[i - 1][j] and s1[i - 1] == s3[i + j - 1])\n```\n\n**转移方程（来自 s1 的方向）**\n\n```\ndp[i][j] = dp[i][j] or (dp[i-1][j] and s1[i-1] == s3[i+j-1])\n```\n\n| 条件 | 含义 |\n|------|------|\n| `dp[i-1][j]` | 上一行可达（从 s1 取字符） |\n| `s1[i-1] == s3[i+j-1]` | 当前字符匹配 |\n\n**第一列填充示例（只使用 s1）**\n\n```\ns1 = \"aabcc\", s2 = \"\", s3 = \"aabcc\"\n\ni=0: dp[0][0] = True (初始化)\ni=1: dp[1][0] = dp[0][0] and s1[0]=='a' == s3[0]=='a' → True\ni=2: dp[2][0] = dp[1][0] and s1[1]=='a' == s3[1]=='a' → True\ni=3: dp[3][0] = dp[2][0] and s1[2]=='b' == s3[2]=='b' → True\n...\n```\n\n> 注意：`or` 运算保留之前的结果，第一次转移成功后保持 `True`。"
+visualizationType = "code-only"
+
+# ── Step 3: 完整转移方程 ─────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "完整转移"
+titleEn = "Complete Transition"
+code = """# 97. 交错字符串
+# 判断 s3 是否由 s1 和 s2 交错组成
+# 交错定义：保持 s1 和 s2 内部字符的相对顺序
+#
+# 示例:
+#   s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"
+#   s3 的字符来自 s1 或 s2，且保持了各自的相对顺序
+#   返回 true
+#
+# 关键思路：二维动态规划
+# dp[i][j] 表示：s1 的前 i 个字符和 s2 的前 j 个字符
+#              能否组成 s3 的前 i+j 个字符
+
+from typing import List
+
+def isInterleave(s1: str, s2: str, s3: str) -> bool:
+    \"\"\"返回是否交错组成\"\"\"
+    m, n, l = len(s1), len(s2), len(s3)
+    if m + n != l:
+        return False
+    dp = [[False] * (n + 1) for _ in range(m + 1)]
+    dp[0][0] = True
+    for i in range(m + 1):
+        for j in range(n + 1):
+            if i > 0:
+                dp[i][j] = dp[i][j] or (dp[i - 1][j] and s1[i - 1] == s3[i + j - 1])
+            if j > 0:
+                dp[i][j] = dp[i][j] or (dp[i][j - 1] and s2[j - 1] == s3[i + j - 1])"""
+explanation = "**第 3 步：添加来自 s2 的转移**\n\n**完整转移方程**\n\n```python\ndp[i][j] = (dp[i-1][j] and s1[i-1] == s3[i+j-1])  # 来自上方\n        or (dp[i][j-1] and s2[j-1] == s3[i+j-1])  # 来自左方\n```\n\n**两个转移方向**\n\n| 方向 | 条件 | 含义 |\n|------|------|------|\n| 上方 `dp[i-1][j]` | `s1[i-1] == s3[i+j-1]` | 从 `s1` 取当前字符 |\n| 左方 `dp[i][j-1]` | `s2[j-1] == s3[i+j-1]` | 从 `s2` 取当前字符 |\n\n**状态转移图示**\n\n```\n     j-1  j\n  ┌────┬────┐\ni-1│    │ ↑  │  从 s1 取字符\n  │    │    │\n  └────┴────┘\ni  │ ←  │    │  从 s2 取字符\n  │    │    │\n  └────┴────┘\n```\n\n**示例执行**（s1=\"aabcc\", s2=\"dbbca\", s3=\"aadbbcbcac\"）\n\n``ndp[0][0] = True\ni=0,j=1: dp[0][1] = dp[0][0] and s2[0]=='d'==s3[0]=='a'? No → False\ni=1,j=0: dp[1][0] = dp[0][0] and s1[0]=='a'==s3[0]=='a'? Yes → True\ni=1,j=1: dp[1][1] = (dp[0][1] and s1[0]==s3[0]) or (dp[1][0] and s2[0]==s3[1])\n                 = (False) or (True and 'd'=='a')? No → False\n...继续填充...```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 97. 交错字符串
+# 判断 s3 是否由 s1 和 s2 交错组成
+# 交错定义：保持 s1 和 s2 内部字符的相对顺序
+#
+# 示例:
+#   s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"
+#   s3 的字符来自 s1 或 s2，且保持了各自的相对顺序
+#   返回 true
+#
+# 关键思路：二维动态规划
+# dp[i][j] 表示：s1 的前 i 个字符和 s2 的前 j 个字符
+#              能否组成 s3 的前 i+j 个字符
+
+from typing import List
+
+def isInterleave(s1: str, s2: str, s3: str) -> bool:
+    \"\"\"返回是否交错组成\"\"\"
+    m, n, l = len(s1), len(s2), len(s3)
+    if m + n != l:
+        return False
+    dp = [[False] * (n + 1) for _ in range(m + 1)]
+    dp[0][0] = True
+    for i in range(m + 1):
+        for j in range(n + 1):
+            if i > 0:
+                dp[i][j] = dp[i][j] or (dp[i - 1][j] and s1[i - 1] == s3[i + j - 1])
+            if j > 0:
+                dp[i][j] = dp[i][j] or (dp[i][j - 1] and s2[j - 1] == s3[i + j - 1])
+    return dp[m][n]"""
+explanation = "**最终结果**\n\n✅ 动态规划完成\n\n```\n输入: s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"\n输出: true\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m×n) — 遍历整个 DP 表 |\n| 空间复杂度 | O(m×n) — 存储 (m+1)×(n+1) 的 DP 表 |\n\n**关键洞察**\n\n- `dp[i][j]` 只依赖于 `dp[i-1][j]` 和 `dp[i][j-1]`（上方和左方）\n- 可以用 `or` 运算累积多个可达路径的结果\n- 返回 `dp[m][n]` 表示：用完所有字符后是否能组成完整的 `s3`\n\n**优化方向**\n\n- 空间优化到 O(n)：每行只依赖上一行，可用一维数组\n- 提前终止：如果某一行全为 `False`，可以提前返回 `False`"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"a\", \"a\", \"b\", \"c\", \"c\"] + [\"d\", \"b\", \"b\", \"c\", \"a\"]", result = "true", highlightedIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] }
+
+[algorithm.summary]
+timeComplexity = "O(m × n)"
+spaceComplexity = "O(m × n)"
+approach = "二维动态规划"
+keyInsight = "dp[i][j] = s3[i+j-1] 能否由 s1[i-1] 或 s2[j-1] 组成；从两个方向转移（上方和左方）"

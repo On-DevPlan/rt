@@ -1,0 +1,177 @@
+[algorithm]
+id = "number-of-islands"
+title = "岛屿数量"
+titleEn = "Number of Islands"
+difficulty = "medium"
+tags = ["depth-first-search", "breadth-first-search", "union-find", "array", "matrix"]
+testCase = "grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"0\",\"0\",\"1\",\"0\",\"0\"],[\"0\",\"0\",\"0\",\"1\",\"1\"]]"
+expectedOutput = "3"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 200. 岛屿数量
+# 计算二维网格中由「1」（陆地）构成的岛屿数量
+# 关键：DFS 淹没 + 原地标记
+#
+# 示例:
+#   grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"1\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"0\",\"1\",\"1\"]]
+#   结果: 3"""
+explanation = "**问题分析**\n\n给你一个由 `'1'`（陆地）和 `'0'`（水）组成的二维网格，请计算其中岛屿的数量。\n\n**岛屿定义**：由相邻的 `'1'`（水平或垂直方向）连接形成的区域。\n\n**示例网格：**\n\n```\n1 1 0 0 0\n1 1 0 0 0\n0 0 1 0 0\n0 0 0 1 1\n```\n\n肉眼可数有 **3** 座岛屿：左上 2×2 块、中间单点、右下两块。\n\n**核心思路：DFS 淹没 + 原地标记**\n\n| 思路 | 说明 |\n|------|------|\n| 遍历每个格子 | 遇到 `'1'` 就发现一座新岛 |\n| DFS 把整座岛淹没 | 从该格子出发递归把所有相连的 `'1'` 改成 `'0'` |\n| 原地修改 | 省去 `visited` 数组，空间更省 |\n\n> 关键洞察：把一座岛彻底标记掉之后，下次再遇到 `'1'` 必然是新岛屿。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 边界 + m/n + dfs 定义 ──────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 200. 岛屿数量
+# 计算二维网格中由「1」（陆地）构成的岛屿数量
+# 关键：DFS 淹没 + 原地标记
+#
+# 示例:
+#   grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"1\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"0\",\"1\",\"1\"]]
+#   结果: 3
+
+from typing import List
+
+def numIslands(grid: List[List[str]]) -> int:
+    \"\"\"计算二维网格中岛屿的数量\"\"\"
+    if not grid or not grid[0]:
+        return 0
+    m, n = len(grid), len(grid[0])
+    def dfs(i: int, j: int) -> None:
+        pass"""
+explanation = "**第 1 步：搭建函数骨架**\n\n- **入参**：`grid: List[List[str]]`，元素为字符 `'1'` 或 `'0'`\n- **返回**：`int`，岛屿数量\n- **边界处理**：空网格直接返回 `0`\n- **网格尺寸**：`m = 行数`，`n = 列数`\n- **内嵌 `dfs`**：Python 闭包捕获 `grid`、`m`、`n`，递归时不用反复传参\n\n> `dfs(i, j)` 的作用是从 `(i, j)` 开始把整座岛淹没（把 `'1'` 改成 `'0'`）。"
+visualizationType = "code-only"
+
+# ── Step 2: dfs 边界检查 + 标记 + 四方向递归 ──────────────────
+[[algorithm.steps]]
+id = 2
+title = "DFS 淹没"
+titleEn = "DFS Flood Fill"
+code = """# 200. 岛屿数量
+# 计算二维网格中由「1」（陆地）构成的岛屿数量
+# 关键：DFS 淹没 + 原地标记
+#
+# 示例:
+#   grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"1\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"0\",\"1\",\"1\"]]
+#   结果: 3
+
+from typing import List
+
+def numIslands(grid: List[List[str]]) -> int:
+    \"\"\"计算二维网格中岛屿的数量\"\"\"
+    if not grid or not grid[0]:
+        return 0
+    m, n = len(grid), len(grid[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or grid[i][j] != '1':
+            return
+        grid[i][j] = '0'  # 标记已访问
+        dfs(i + 1, j)
+        dfs(i - 1, j)
+        dfs(i, j + 1)
+        dfs(i, j - 1)"""
+explanation = "**第 2 步：实现 DFS 淹没**\n\n**边界检查**（任一条件满足就退出）：\n\n- `i < 0` 或 `i >= m`：越出行范围\n- `j < 0` 或 `j >= n`：越出列范围\n- `grid[i][j] != '1'`：已是水 `'0'` 或被标记过\n\n**核心操作：`grid[i][j] = '0'`**\n\n原地把当前格子从陆地变成水，达到「标记已访问」的效果——无需额外 `visited` 集合。\n\n**四方向递归**\n\n| 方向 | 调用 |\n|------|------|\n| 上 | `dfs(i + 1, j)` |\n| 下 | `dfs(i - 1, j)` |\n| 右 | `dfs(i, j + 1)` |\n| 左 | `dfs(i, j - 1)` |\n\n> 当整座岛的所有 `'1'` 都被改成 `'0'`，DFS 自然终止。"
+visualizationType = "code-only"
+
+# ── Step 3: 双层循环 + 遇到 1 计数 + dfs ─────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历计数"
+titleEn = "Traverse and Count"
+code = """# 200. 岛屿数量
+# 计算二维网格中由「1」（陆地）构成的岛屿数量
+# 关键：DFS 淹没 + 原地标记
+#
+# 示例:
+#   grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"1\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"0\",\"1\",\"1\"]]
+#   结果: 3
+
+from typing import List
+
+def numIslands(grid: List[List[str]]) -> int:
+    \"\"\"计算二维网格中岛屿的数量\"\"\"
+    if not grid or not grid[0]:
+        return 0
+    m, n = len(grid), len(grid[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or grid[i][j] != '1':
+            return
+        grid[i][j] = '0'  # 标记已访问
+        dfs(i + 1, j)
+        dfs(i - 1, j)
+        dfs(i, j + 1)
+        dfs(i, j - 1)
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            if grid[i][j] == '1':
+                count += 1
+                dfs(i, j)
+    return count"""
+explanation = "**第 3 步：双层循环 + 触发 DFS**\n\n**主循环逻辑**\n\n遍历网格每个格子 `(i, j)`，当遇到 `'1'` 时：\n\n1. `count += 1` — 发现一座新岛\n2. 调用 `dfs(i, j)` — 把这座岛彻底淹没\n\n**为什么这样计数是正确的？**\n\n> 由于 DFS 会把整座岛的所有 `'1'` 改成 `'0'`，后续遍历再遇到这个区域的格子时就不会重复计数。\n\n**执行示例（前几格）：**\n\n```\ni=0, j=0: grid[0][0]='1' → count=1, DFS 淹没 (0,0)(0,1)(1,0)(1,1)\ni=0, j=1: grid[0][1]='0' (已被淹没) 跳过\n...\ni=2, j=2: grid[2][2]='1' → count=2, DFS 淹没 (2,2)\n...\ni=3, j=3: grid[3][3]='1' → count=3, DFS 淹没 (3,3)(3,4)\n```\n\n最终返回 `count = 3`。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 200. 岛屿数量
+# 计算二维网格中由「1」（陆地）构成的岛屿数量
+# 关键：DFS 淹没 + 原地标记
+#
+# 示例:
+#   grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"1\",\"1\",\"0\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"1\",\"0\",\"0\"],
+#           [\"0\",\"0\",\"0\",\"1\",\"1\"]]
+#   结果: 3
+
+from typing import List
+
+def numIslands(grid: List[List[str]]) -> int:
+    \"\"\"计算二维网格中岛屿的数量\"\"\"
+    if not grid or not grid[0]:
+        return 0
+    m, n = len(grid), len(grid[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or grid[i][j] != '1':
+            return
+        grid[i][j] = '0'  # 标记已访问
+        dfs(i + 1, j)
+        dfs(i - 1, j)
+        dfs(i, j + 1)
+        dfs(i, j - 1)
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            if grid[i][j] == '1':
+                count += 1
+                dfs(i, j)
+    return count"""
+explanation = "**最终结果**\n\n✅ DFS 淹没法完成岛屿计数\n\n```\n输入: grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],\n              [\"1\",\"1\",\"0\",\"0\",\"0\"],\n              [\"0\",\"0\",\"1\",\"0\",\"0\"],\n              [\"0\",\"0\",\"0\",\"1\",\"1\"]]\n输出: 3\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m·n) — 每个格子最多访问一次 |\n| 空间复杂度 | O(m·n) — 递归栈最坏情况（全为陆地时） |\n\n**关键技巧：原地标记代替 visited**\n\n- 不需要额外 `visited` 集合，直接把 `'1'` 改成 `'0'`\n- 节省 O(m·n) 的额外空间\n- 唯一代价是会修改输入；调用方需注意\n\n**替代方案对比**\n\n| 方法 | 时间 | 空间 | 备注 |\n|------|------|------|------|\n| DFS 原地标记 | O(m·n) | O(m·n) | 推荐，代码最简洁 |\n| BFS 原地标记 | O(m·n) | O(min(m,n)) | 队列空间更省 |\n| Union-Find | O(m·n·α) | O(m·n) | 适合动态合并 |\n\n> 本题用 DFS 写最简洁，BFS 写更稳健。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[1,1,0,0,0],[1,1,0,0,0],[0,0,1,0,0],[0,0,0,1,1]]", result = "3", highlightedIndices = [0, 8, 14] }
+
+[algorithm.summary]
+timeComplexity = "O(m*n)"
+spaceComplexity = "O(m*n)  # 最坏递归栈"
+approach = "DFS 淹没 + 原地标记"
+keyInsight = "遍历到 1 时计数 + DFS 把整座岛标记为 0；原地修改省去 visited 数组"

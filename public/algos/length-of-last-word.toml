@@ -1,0 +1,135 @@
+[algorithm]
+id = "length-of-last-word"
+title = "最后一个单词的长度"
+titleEn = "Length of Last Word"
+difficulty = "easy"
+tags = ["string"]
+testCase = "s = \"Hello World\""
+expectedOutput = "5"
+
+# ── Step0:理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """#最后一个单词的长度
+# 给定一个字符串 s，由若干英文单词组成，单词之间用空格分隔
+# 返回字符串中最后一个单词的长度
+#
+#单词定义：仅由字母组成、不含空格的连续子串
+#字符串可能以空格开头或结尾，也可能包含多个连续空格
+#
+# 示例:
+# "Hello World" →5
+# " fly me to the moon " →4"""
+explanation = "**问题分析**\n\n- 输入：字符串 `s`，可能含前后空格或连续空格\n- 输出：最后一个**单词**的长度（不含空格）\n\n**三种解法对比**\n\n| 方法 | 时间 |空间 |思路 |\n|------|------|------|------|\n| `split` 取最后 | O(n) | O(n) |拆分后取末尾 |\n| **`从后向前`** | **O(n)** | **O(1)** |跳过尾部空格再统计 |\n| `rfind`找空格 | O(n) | O(n) | Python字符串切片 |\n\n> 推荐**从后向前扫描**：先跳过尾部空格，再统计到下一个空格为止，避免拆分带来的额外空间。"
+visualizationType = "intro"
+
+# ── Step1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """#最后一个单词的长度
+# 给定一个字符串 s，由若干英文单词组成，单词之间用空格分隔
+# 返回字符串中最后一个单词的长度
+#
+#单词定义：仅由字母组成、不含空格的连续子串
+#字符串可能以空格开头或结尾，也可能包含多个连续空格
+#
+# 示例:
+# "Hello World" →5
+# " fly me to the moon " →4
+
+def lengthOfLastWord(s: str) -> int:
+ \"\"\"返回字符串 s 中最后一个单词的长度。\"\"\"
+ pass"""
+explanation = "**第1步：编写函数签名**\n\n- 入参：`s: str`\n- 返回：`int`，最后一个单词的长度\n-文档字符串说明函数用途"
+visualizationType = "code-only"
+
+# ── Step2:初始化指针 ────────────────────────────────────────
+[[algorithm.steps]]
+id =2
+title = "跳过尾部空格"
+titleEn = "Skip Trailing Spaces"
+code = """#最后一个单词的长度
+# 给定一个字符串 s，由若干英文单词组成，单词之间用空格分隔
+# 返回字符串中最后一个单词的长度
+#
+#单词定义：仅由字母组成、不含空格的连续子串
+#字符串可能以空格开头或结尾，也可能包含多个连续空格
+#
+# 示例:
+# "Hello World" →5
+# " fly me to the moon " →4
+
+def lengthOfLastWord(s: str) -> int:
+ \"\"\"返回字符串 s 中最后一个单词的长度。\"\"\"
+ i = len(s) -1
+ while i >=0 and s[i] == ' ':
+ i -=1"""
+explanation = "**第2步：从尾部向前跳过空格**\n\n```\ns = \" fly me to the moon \"\n索引:012\n0123456789012345678901234567890\n ↑\n i初始指向末尾空格\n```\n\n- `i = len(s) -1` 从字符串末尾开始\n-第一个 `while`跳过所有**尾部空格**，让 `i`指向最后一个单词的末尾字符\n\n> 处理 `\" fly me to the moon \"` 时，会跳过末尾2 个空格，停在 `n` 上。"
+visualizationType = "code-only"
+
+# ── Step3:统计单词长度 ──────────────────────────────────────
+[[algorithm.steps]]
+id =3
+title = "统计单词"
+titleEn = "Count Word Length"
+code = """#最后一个单词的长度
+# 给定一个字符串 s，由若干英文单词组成，单词之间用空格分隔
+# 返回字符串中最后一个单词的长度
+#
+#单词定义：仅由字母组成、不含空格的连续子串
+#字符串可能以空格开头或结尾，也可能包含多个连续空格
+#
+# 示例:
+# "Hello World" →5
+# " fly me to the moon " →4
+
+def lengthOfLastWord(s: str) -> int:
+ \"\"\"返回字符串 s 中最后一个单词的长度。\"\"\"
+ i = len(s) -1
+ while i >=0 and s[i] == ' ':
+ i -=1
+ end = i
+ while i >=0 and s[i] != ' ':
+ i -=1
+ return end - i"""
+explanation = "**第3步：统计最后一个单词的长度**\n\n- `end = i`：记录最后一个单词的末尾位置\n-第二个 `while`继续向前扫描，直到遇到空格或字符串开头\n- `end - i`：末尾位置减去终止位置 =单词长度\n\n**示例执行：**\n\n```\ns = \" fly me to the moon \"\n ... moon \n\ni =29 (末尾空格) →跳过2 个空格 → i =27 (指向 'n')\nend =27\n\n向前扫描:\n i=27 'n' (非空格) → i=26 'o' → ... → i=23 'm'\n i=22 ' ' (遇到空格) →退出循环\n\nend - i =27 -22 =5? 不对，是27 -23 +1 =5\n```\n\n> 注意：`end - i` 在 `i`刚减完最后一个字母后会再减1，所以差值正好等于单词长度。"
+visualizationType = "code-only"
+
+# ── Step4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id =4
+title = "完成"
+titleEn = "Complete"
+code = """#最后一个单词的长度
+# 给定一个字符串 s，由若干英文单词组成，单词之间用空格分隔
+# 返回字符串中最后一个单词的长度
+#
+#单词定义：仅由字母组成、不含空格的连续子串
+#字符串可能以空格开头或结尾，也可能包含多个连续空格
+#
+# 示例:
+# "Hello World" →5
+# " fly me to the moon " →4
+
+def lengthOfLastWord(s: str) -> int:
+ \"\"\"返回字符串 s 中最后一个单词的长度。\"\"\"
+ i = len(s) -1
+ while i >=0 and s[i] == ' ':
+ i -=1
+ end = i
+ while i >=0 and s[i] != ' ':
+ i -=1
+ return end - i"""
+explanation = "**最终结果**\n\n✅ 单次反向扫描完成\n\n```\n输入: \"Hello World\"\n输出:5\n\n输入: \" fly me to the moon \"\n输出:4\n```\n\n**算法复杂度**\n\n|指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) —最多扫描两遍（先跳空格再数单词） |\n|空间复杂度 | O(1) — 仅使用常数个指针 |\n\n**关键技巧：从后向前**\n\n-天然跳过尾部空格的边界问题\n- 两个 `while`循环合起来仍是单次扫描\n-避免了 `split()`产生的 O(n)额外空间"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\" \", \" \", \" \", \"f\", \"l\", \"y\", \" \", \"m\", \"e\", \" \", \" \", \" \", \"t\", \"o\", \" \", \" \", \" \", \"t\", \"h\", \"e\", \" \", \"m\", \"o\", \"o\", \"n\", \" \", \" \"]", result = "4", highlightedIndices = [21,22,23,24] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "从后向前扫描，跳过尾部空格后统计单词长度"
+keyInsight = "反向扫描天然避开尾部空格的边界条件，无需 split也能 O(1)空间"

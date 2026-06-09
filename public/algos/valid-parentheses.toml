@@ -1,0 +1,164 @@
+[algorithm]
+id = "valid-parentheses"
+title = "有效的括号"
+titleEn = "Valid Parentheses"
+difficulty = "easy"
+tags = ["string", "stack"]
+testCase = "s = \"()[]{}\""
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 有效的括号
+# 给定一个只包含字符 '()[]{}' 的字符串 s
+# 判断字符串中的括号是否匹配（闭合顺序正确）
+#
+# 匹配规则:
+#   1. 左括号必须用相同类型的右括号闭合
+#   2. 左括号必须以正确的顺序闭合
+#   3. 每个右括号都有一个对应的相同类型的左括号
+#
+# 示例:
+#   "()"      → true
+#   "()[]{}"  → true
+#   "(]"      → false
+#   "([)]"    → false
+#   "{[]}"    → true"""
+explanation = "**问题分析**\n\n给定一个只包含 `()[]{}` 六种字符的字符串，判断括号是否**正确匹配**。\n\n**匹配三原则**\n\n1. 左括号必须用**相同类型**的右括号闭合\n2. 左括号必须以**正确的顺序**闭合（后进先出）\n3. 每个右括号都有**对应**的左括号\n\n**示例对照**\n\n| 输入 | 结果 | 说明 |\n|------|------|------|\n| `\"()\"` | `true` | 简单匹配 |\n| `\"()[]{}\"` | `true` | 多个独立的括号对 |\n| `\"(]\"` | `false` | 类型不匹配 |\n| `\"([)]\"` | `false` | 交叉闭合，顺序错乱 |\n| `\"{[]}\"` | `true` | 嵌套匹配 |\n\n> 关键观察：**后进先出** → 用栈解决。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 有效的括号
+# 给定一个只包含字符 '()[]{}' 的字符串 s
+# 判断字符串中的括号是否匹配（闭合顺序正确）
+#
+# 匹配规则:
+#   1. 左括号必须用相同类型的右括号闭合
+#   2. 左括号必须以正确的顺序闭合
+#   3. 每个右括号都有一个对应的相同类型的左括号
+#
+# 示例:
+#   "()"      → true
+#   "()[]{}"  → true
+#   "(]"      → false
+#   "([)]"    → false
+#   "{[]}"    → true
+
+def isValid(s: str) -> bool:
+    \"\"\"判断括号字符串是否匹配。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 接收一个字符串 `s`（只含 `()[]{}`）\n- 返回 `bool`：匹配返回 `true`，否则 `false`\n- 使用类型注解明确参数和返回值类型\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化栈和映射 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化栈"
+titleEn = "Initialize Stack"
+code = """# 有效的括号
+# 给定一个只包含字符 '()[]{}' 的字符串 s
+# 判断字符串中的括号是否匹配（闭合顺序正确）
+#
+# 匹配规则:
+#   1. 左括号必须用相同类型的右括号闭合
+#   2. 左括号必须以正确的顺序闭合
+#   3. 每个右括号都有一个对应的相同类型的左括号
+#
+# 示例:
+#   "()"      → true
+#   "()[]{}"  → true
+#   "(]"      → false
+#   "([)]"    → false
+#   "{[]}"    → true
+
+def isValid(s: str) -> bool:
+    \"\"\"判断括号字符串是否匹配。\"\"\"
+    stack = []
+    pairs = {')': '(', ']': '[', '}': '{'}"""
+explanation = "**第 2 步：初始化栈和映射表**\n\n```python\nstack = []                      # 用来存放待匹配的左括号\npairs = {')': '(', ']': '[', '}': '{'}  # 右括号 → 对应左括号\n```\n\n| 数据结构 | 作用 |\n|----------|------|\n| `stack` | 后进先出，存放**已出现但尚未匹配**的左括号 |\n| `pairs` | 哈希表，从右括号**反查**应匹配的左括号 |\n\n> 用右括号做 key 是关键技巧：遇到右括号时只需 `pairs[c]` 就能找到它应匹配的左括号类型。"
+visualizationType = "code-only"
+
+# ── Step 3: 核心遍历 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历匹配"
+titleEn = "Traverse and Match"
+code = """# 有效的括号
+# 给定一个只包含字符 '()[]{}' 的字符串 s
+# 判断字符串中的括号是否匹配（闭合顺序正确）
+#
+# 匹配规则:
+#   1. 左括号必须用相同类型的右括号闭合
+#   2. 左括号必须以正确的顺序闭合
+#   3. 每个右括号都有一个对应的相同类型的左括号
+#
+# 示例:
+#   "()"      → true
+#   "()[]{}"  → true
+#   "(]"      → false
+#   "([)]"    → false
+#   "{[]}"    → true
+
+def isValid(s: str) -> bool:
+    \"\"\"判断括号字符串是否匹配。\"\"\"
+    stack = []
+    pairs = {')': '(', ']': '[', '}': '{'}
+    for c in s:
+        if c in '([{':
+            stack.append(c)
+        else:
+            if not stack or stack[-1] != pairs[c]:
+                return False
+            stack.pop()"""
+explanation = "**第 3 步：遍历字符串进行匹配**\n\n对每个字符 `c` 分两种情况处理：\n\n**情况 1：`c` 是左括号**\n\n```python\nstack.append(c)\n```\n\n把它压入栈，等待后续的右括号来匹配。\n\n**情况 2：`c` 是右括号**\n\n```python\nif not stack or stack[-1] != pairs[c]:\n    return False\nstack.pop()\n```\n\n| 条件 | 含义 | 处理 |\n|------|------|------|\n| `not stack` | 栈空，没有左括号可匹配 | `return False` |\n| `stack[-1] != pairs[c]` | 栈顶左括号类型不匹配 | `return False` |\n| 都不触发 | 栈顶左括号与当前右括号配对 | `stack.pop()` 出栈 |\n\n**示例执行：**\n\n```\ns = \"()[]{}\"\n\nc='(': 左括号 → stack=['(']\nc=')': 右括号 → 栈顶'(' 匹配')' → stack=[]\nc='[': 左括号 → stack=['[']\nc=']': 右括号 → 栈顶'[' 匹配']' → stack=[]\nc='{': 左括号 → stack=['{']\nc='}': 右括号 → 栈顶'{' 匹配'}' → stack=[]\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 有效的括号
+# 给定一个只包含字符 '()[]{}' 的字符串 s
+# 判断字符串中的括号是否匹配（闭合顺序正确）
+#
+# 匹配规则:
+#   1. 左括号必须用相同类型的右括号闭合
+#   2. 左括号必须以正确的顺序闭合
+#   3. 每个右括号都有一个对应的相同类型的左括号
+#
+# 示例:
+#   "()"      → true
+#   "()[]{}"  → true
+#   "(]"      → false
+#   "([)]"    → false
+#   "{[]}"    → true
+
+def isValid(s: str) -> bool:
+    \"\"\"判断括号字符串是否匹配。\"\"\"
+    stack = []
+    pairs = {')': '(', ']': '[', '}': '{'}
+    for c in s:
+        if c in '([{':
+            stack.append(c)
+        else:
+            if not stack or stack[-1] != pairs[c]:
+                return False
+            stack.pop()
+    return not stack"""
+explanation = "**最终结果**\n\n✅ 栈式括号匹配完成\n\n```\n输入: s = \"()[]{}\"   → true\n输入: s = \"(]\"       → false\n输入: s = \"([)]\"     → false\n输入: s = \"{[]}\"     → true\n```\n\n**返回值 `return not stack`**\n\n- `stack` 为空：所有左括号都成功匹配 → 返回 `true`\n- `stack` 非空：还有左括号未被匹配（如 `\"(\"` 这种**只有左**的情况）→ 返回 `false`\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | **O(n)** — 每个字符入栈/出栈最多一次 |\n| 空间复杂度 | **O(n)** — 栈深度最多 n |\n\n**关键技巧：栈的 LIFO 性质**\n\n- 栈完美契合括号匹配的**后进先出**要求\n- 用右括号做 key 的哈希表让匹配查询变成 O(1)\n- 遍历结束检查栈是否为空，可同时处理\"左括号过多\"的情况"
+visualizationType = "result"
+visualizationData = { mapContents = "{) → (, ] → [, } → {}", arrayState = "['(', ')', '[', ']', '{', '}']", result = "true", highlightedIndices = [0, 1, 2, 3, 4, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "栈（后进先出）"
+keyInsight = "左括号入栈，右括号与栈顶匹配；遍历结束栈空才说明所有括号都正确闭合"

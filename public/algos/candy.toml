@@ -1,0 +1,150 @@
+[algorithm]
+id = "candy"
+title = "分发糖果"
+titleEn = "Candy"
+difficulty = "hard"
+tags = ["array", "greedy"]
+testCase = "ratings = [1, 0, 2]"
+expectedOutput = "5"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 分发糖果
+# n 个孩子站成一排，每个孩子有一个评分 ratings[i]
+# 分糖果满足两个条件：
+#   1. 每个孩子至少分到 1 个糖果
+#   2. 评分高的孩子必须比相邻孩子获得更多糖果
+# 求最少需要多少糖果
+#
+# 示例:
+#   ratings = [1, 0, 2]
+#   一种最优分配: [2, 1, 2]  共 5 个糖果"""
+explanation = "**问题分析**\n\n`n` 个孩子排成一排，每人一个评分。要求：\n\n- 每个孩子至少 1 个糖果\n- 评分高的孩子比左右邻居拿到更多\n\n求**最少**糖果总数。\n\n**关键观察：双向约束**\n\n- 左→右规则：`ratings[i] > ratings[i-1]` ⇒ `candy[i] > candy[i-1]`\n- 右→左规则：`ratings[i] > ratings[i+1]` ⇒ `candy[i] > candy[i+1]`\n\n> 单次遍历只能处理一个方向。**两次遍历**才能同时满足两侧约束。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 初始化 ────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 分发糖果
+# n 个孩子站成一排，每个孩子有一个评分 ratings[i]
+# 分糖果满足两个条件：
+#   1. 每个孩子至少分到 1 个糖果
+#   2. 评分高的孩子必须比相邻孩子获得更多糖果
+# 求最少需要多少糖果
+#
+# 示例:
+#   ratings = [1, 0, 2]
+#   一种最优分配: [2, 1, 2]  共 5 个糖果
+
+from typing import List
+
+def candy(ratings: List[int]) -> int:
+    \"\"\"返回满足条件所需的最少糖果数。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 输入：`ratings: List[int]` — 每个孩子的评分\n- 输出：`int` — 最少糖果总数\n- 使用类型注解明确输入输出类型\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化 candy 数组 ────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化"
+titleEn = "Initialize"
+code = """# 分发糖果
+# n 个孩子站成一排，每个孩子有一个评分 ratings[i]
+# 分糖果满足两个条件：
+#   1. 每个孩子至少分到 1 个糖果
+#   2. 评分高的孩子必须比相邻孩子获得更多糖果
+# 求最少需要多少糖果
+#
+# 示例:
+#   ratings = [1, 0, 2]
+#   一种最优分配: [2, 1, 2]  共 5 个糖果
+
+from typing import List
+
+def candy(ratings: List[int]) -> int:
+    \"\"\"返回满足条件所需的最少糖果数。\"\"\"
+    n = len(ratings)
+    candy = [1] * n  # 每人初始 1 个糖果"""
+explanation = "**第 2 步：初始化 candy 数组**\n\n- `n = len(ratings)` — 孩子数量\n- `candy = [1] * n` — 每人初始 1 个糖果（满足条件 1）\n\n```\nratings = [1, 0, 2]\ncandy   = [1, 1, 1]   ← 初始状态\n```\n\n> 下一步将通过两次遍历处理左右邻居的约束。"
+visualizationType = "code-only"
+
+# ── Step 3: 两次遍历 + 返回 ────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "两次遍历"
+titleEn = "Two Passes"
+code = """# 分发糖果
+# n 个孩子站成一排，每个孩子有一个评分 ratings[i]
+# 分糖果满足两个条件：
+#   1. 每个孩子至少分到 1 个糖果
+#   2. 评分高的孩子必须比相邻孩子获得更多糖果
+# 求最少需要多少糖果
+#
+# 示例:
+#   ratings = [1, 0, 2]
+#   一种最优分配: [2, 1, 2]  共 5 个糖果
+
+from typing import List
+
+def candy(ratings: List[int]) -> int:
+    \"\"\"返回满足条件所需的最少糖果数。\"\"\"
+    n = len(ratings)
+    candy = [1] * n  # 每人初始 1 个糖果
+    # 左到右：保证右邻居比左邻居大时多 1 个
+    for i in range(1, n):
+        if ratings[i] > ratings[i-1]:
+            candy[i] = candy[i-1] + 1
+    # 右到左：保证左邻居比右邻居大时多 1 个
+    for i in range(n-2, -1, -1):
+        if ratings[i] > ratings[i+1]:
+            candy[i] = max(candy[i], candy[i+1] + 1)
+    return sum(candy)"""
+explanation = "**第 3 步：两次遍历 + 求和**\n\n**左→右遍历**\n\n```python\nfor i in range(1, n):\n    if ratings[i] > ratings[i-1]:\n        candy[i] = candy[i-1] + 1\n```\n\n当右侧评分更高时，糖果数至少比左侧多 1。\n\n**右→左遍历**\n\n```python\nfor i in range(n-2, -1, -1):\n    if ratings[i] > ratings[i+1]:\n        candy[i] = max(candy[i], candy[i+1] + 1)\n```\n\n当左侧评分更高时，糖果数至少比右侧多 1。`max` 保证不破坏已满足的左→右约束。\n\n**返回**\n\n`return sum(candy)` — 所有孩子糖果之和。\n\n**示例追踪：**\n\n```\nratings = [1, 0, 2]\ncandy   = [1, 1, 1]   ← 初始\n\n左→右:\n  i=1: ratings[1]=0 > ratings[0]=1? 否 → candy=[1,1,1]\n  i=2: ratings[2]=2 > ratings[1]=0? 是 → candy=[1,1,2]\n\n右→左:\n  i=1: ratings[1]=0 > ratings[2]=2? 否 → candy=[1,1,2]\n  i=0: ratings[0]=1 > ratings[1]=0? 是 → candy=[2,1,2]\n\nsum(candy) = 5 ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 分发糖果
+# n 个孩子站成一排，每个孩子有一个评分 ratings[i]
+# 分糖果满足两个条件：
+#   1. 每个孩子至少分到 1 个糖果
+#   2. 评分高的孩子必须比相邻孩子获得更多糖果
+# 求最少需要多少糖果
+#
+# 示例:
+#   ratings = [1, 0, 2]
+#   一种最优分配: [2, 1, 2]  共 5 个糖果
+
+from typing import List
+
+def candy(ratings: List[int]) -> int:
+    \"\"\"返回满足条件所需的最少糖果数。\"\"\"
+    n = len(ratings)
+    candy = [1] * n  # 每人初始 1 个糖果
+    # 左到右：保证右邻居比左邻居大时多 1 个
+    for i in range(1, n):
+        if ratings[i] > ratings[i-1]:
+            candy[i] = candy[i-1] + 1
+    # 右到左：保证左邻居比右邻居大时多 1 个
+    for i in range(n-2, -1, -1):
+        if ratings[i] > ratings[i+1]:
+            candy[i] = max(candy[i], candy[i+1] + 1)
+    return sum(candy)"""
+explanation = "**最终结果**\n\n✅ 算法完成\n\n```\n输入: ratings = [1, 0, 2]\n分配: candy   = [2, 1, 2]\n输出: 5\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 两次线性遍历 |\n| 空间复杂度 | O(n) — candy 数组 |\n\n**关键技巧：两次遍历**\n\n- 单次遍历只能处理一个方向的约束\n- 左→右 + 右→左两次扫描，独立处理两侧邻居关系\n- 右→左时用 `max` 保留左→右已建立的糖果数\n\n**为什么是最少？**\n\n每次只让必须增加的孩子 +1，其他保持 1，因此总和最小。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 1, 2]", result = "5", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "贪心：左右两次遍历"
+keyInsight = "两次遍历分别处理左右邻居的单向约束，max 操作合并两侧要求"

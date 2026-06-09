@@ -1,0 +1,263 @@
+[algorithm]
+id = "populating-next-right-pointers-in-each-node-ii"
+title = "填充每个节点的下一个右侧节点指针 II"
+titleEn = "Populating Next Right Pointers in Each Node II"
+difficulty = "medium"
+tags = ["tree", "bfs", "linked-list"]
+testCase = "root = [1,2,3,4,5,null,7]"
+expectedOutput = "[1,#,2,3,#,4,5,7,#]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 117. 填充每个节点的下一个右侧节点指针 II
+# 给定一个二叉树，填充它的每个 next 指针，让这个指针指向其下一个右侧节点
+# 如果找不到下一个右侧节点，则将 next 置为 NULL
+#
+# 与第 I 题（完美二叉树）不同：本题是任意二叉树，可能不是满的
+# 初始状态下，所有 next 指针都指向 NULL
+#
+# 示例:
+#   输入:    [1,2,3,4,5,null,7]
+#
+#              1
+#            /   \\
+#           2     3
+#          / \\     \\
+#         4   5     7
+#
+#   输出:    [1,#,2,3,#,4,5,7,#]
+#
+#              1 → NULL
+#            /   \\
+#           2  →  3 → NULL
+#          / \\     \\
+#         4 → 5  →  7 → NULL"""
+explanation = "**问题分析**\\n\\n给定一棵**任意二叉树**（不要求完美），用 `next` 指针把每层节点从左到右串联：\\n\\n- 每层最后一个节点的 `next` 设为 `NULL`（用 `#` 表示）\\n- 其他节点的 `next` 指向同一层右侧相邻的节点\\n\\n**示例**\\n\\n```\\n输入:               1\\n                  / \\\\\\n                 2   3\\n                / \\\\   \\\\\\n               4   5   7\\n\\n输出 next 链:\\n  1 → #\\n  2 → 3 → #\\n  4 → 5 → 7 → #\\n```\\n\\n**关键观察**\\n\\n| 方法 | 思路 | 适用 |\\n|------|------|------|\\n| DFS + 已建立 next | 利用上一层的 next 链遍历下一层 | 任意树 |\\n| **BFS 层序 + prev** | 用队列分批，每批维护 prev 串联 | 任意树 |\\n\\n> 本题采用 **BFS 层序 + prev** 思路：天然按层处理，维护 `prev` 节点把同层用 `next` 串成链表。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + Node + 边界 ────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与边界"
+titleEn = "Signature & Edge Case"
+code = """# 117. 填充每个节点的下一个右侧节点指针 II
+# 给定一个二叉树，填充它的每个 next 指针，让这个指针指向其下一个右侧节点
+# 如果找不到下一个右侧节点，则将 next 置为 NULL
+#
+# 与第 I 题（完美二叉树）不同：本题是任意二叉树，可能不是满的
+# 初始状态下，所有 next 指针都指向 NULL
+#
+# 示例:
+#   输入:    [1,2,3,4,5,null,7]
+#
+#              1
+#            /   \\
+#           2     3
+#          / \\     \\
+#         4   5     7
+#
+#   输出:    [1,#,2,3,#,4,5,7,#]
+#
+#              1 → NULL
+#            /   \\
+#           2  →  3 → NULL
+#          / \\     \\
+#         4 → 5  →  7 → NULL
+
+from typing import Optional
+from collections import deque
+
+class Node:
+    def __init__(self, val=0, left=None, right=None, next=None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+
+def connect(root: Optional['Node']) -> Optional['Node']:
+    \"\"\"用 next 指针连接每层节点\"\"\"
+    if not root:
+        return root
+    q = deque([root])"""
+explanation = "**第 1 步：定义节点结构与边界**\\n\\n- `Node`：相比 `TreeNode` 多一个 `next` 指针\\n- 函数签名：接收根节点 `root`，返回处理后的根节点（原地修改）\\n- **边界处理**：`if not root: return root` —— 空树直接返回\\n- **队列初始化**：把根节点放入双端队列 `deque`，为层序遍历做准备\\n\\n```python\\nq = deque([root])\\n```\\n\\n> `deque` 的 `popleft()` 是 O(1)，比 `list.pop(0)` 的 O(n) 更快。"
+visualizationType = "code-only"
+
+# ── Step 2: while 循环 + size + prev ──────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "层序循环框架"
+titleEn = "BFS Loop & Size"
+code = """# 117. 填充每个节点的下一个右侧节点指针 II
+# 给定一个二叉树，填充它的每个 next 指针，让这个指针指向其下一个右侧节点
+# 如果找不到下一个右侧节点，则将 next 置为 NULL
+#
+# 与第 I 题（完美二叉树）不同：本题是任意二叉树，可能不是满的
+# 初始状态下，所有 next 指针都指向 NULL
+#
+# 示例:
+#   输入:    [1,2,3,4,5,null,7]
+#
+#              1
+#            /   \\
+#           2     3
+#          / \\     \\
+#         4   5     7
+#
+#   输出:    [1,#,2,3,#,4,5,7,#]
+#
+#              1 → NULL
+#            /   \\
+#           2  →  3 → NULL
+#          / \\     \\
+#         4 → 5  →  7 → NULL
+
+from typing import Optional
+from collections import deque
+
+class Node:
+    def __init__(self, val=0, left=None, right=None, next=None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+
+def connect(root: Optional['Node']) -> Optional['Node']:
+    \"\"\"用 next 指针连接每层节点\"\"\"
+    if not root:
+        return root
+    q = deque([root])
+    while q:
+        size = len(q)
+        prev = None"""
+explanation = "**第 2 步：层序循环框架**\\n\\n**外层 `while q:`**\\n\\n只要队列非空就持续处理；每轮循环代表一层的节点。\\n\\n**`size = len(q)`**\\n\\n- 关键步骤：把当前队列长度**快照**保存\\n- `size` 即当前层的节点数\\n- 内层 `for _ in range(size)` 正好处理这一层，不会波及下一层新加入的节点\\n\\n**`prev = None`**\\n\\n- 维护\"同层上一个节点\"的指针\\n- 每层开始时置 `None`，因为层首节点没有前驱\\n- 每处理一个节点就更新 `prev = node`\\n\\n```\\n第 1 层: q = [1]        → size = 1\\n第 2 层: q = [2, 3]     → size = 2\\n第 3 层: q = [4, 5, 7]  → size = 3\\n```"
+visualizationType = "code-only"
+
+# ── Step 3: for 循环 + popleft + 串联 + 入队 ──────────────────
+[[algorithm.steps]]
+id = 3
+title = "串联节点并入队"
+titleEn = "Connect & Enqueue"
+code = """# 117. 填充每个节点的下一个右侧节点指针 II
+# 给定一个二叉树，填充它的每个 next 指针，让这个指针指向其下一个右侧节点
+# 如果找不到下一个右侧节点，则将 next 置为 NULL
+#
+# 与第 I 题（完美二叉树）不同：本题是任意二叉树，可能不是满的
+# 初始状态下，所有 next 指针都指向 NULL
+#
+# 示例:
+#   输入:    [1,2,3,4,5,null,7]
+#
+#              1
+#            /   \\
+#           2     3
+#          / \\     \\
+#         4   5     7
+#
+#   输出:    [1,#,2,3,#,4,5,7,#]
+#
+#              1 → NULL
+#            /   \\
+#           2  →  3 → NULL
+#          / \\     \\
+#         4 → 5  →  7 → NULL
+
+from typing import Optional
+from collections import deque
+
+class Node:
+    def __init__(self, val=0, left=None, right=None, next=None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+
+def connect(root: Optional['Node']) -> Optional['Node']:
+    \"\"\"用 next 指针连接每层节点\"\"\"
+    if not root:
+        return root
+    q = deque([root])
+    while q:
+        size = len(q)
+        prev = None
+        for _ in range(size):
+            node = q.popleft()
+            if prev:
+                prev.next = node
+            prev = node
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)"""
+explanation = "**第 3 步：逐个串联并入队**\\n\\n**循环内核心四步：**\\n\\n| 步骤 | 代码 | 作用 |\\n|------|------|------|\\n| 出队 | `node = q.popleft()` | 取当前层首个节点 |\\n| 串联 | `if prev: prev.next = node` | 把 prev 的 next 指向当前节点 |\\n| 更新 | `prev = node` | prev 推进到当前节点 |\\n| 入队 | `q.append(node.left/right)` | 把下一层子节点入队 |\\n\\n**串联的关键细节**\\n\\n- 第一次循环时 `prev is None`，跳过串联（层首无前驱）\\n- 后续每次：prev.next 指向当前 node\\n- 层内相邻节点自动被串成链表\\n\\n**示例执行（处理第 2 层 [2, 3]）**\\n\\n```\\n循环第 1 次: node=2, prev=None → 不串联, prev=2, 入队 4, 5\\n循环第 2 次: node=3, prev=2   → 2.next = 3, prev=3, 入队 7\\n```\\n\\n> 子节点入队顺序保持左→右，下一层处理时也是左→右，因此 `size` 边界严格成立。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 117. 填充每个节点的下一个右侧节点指针 II
+# 给定一个二叉树，填充它的每个 next 指针，让这个指针指向其下一个右侧节点
+# 如果找不到下一个右侧节点，则将 next 置为 NULL
+#
+# 与第 I 题（完美二叉树）不同：本题是任意二叉树，可能不是满的
+# 初始状态下，所有 next 指针都指向 NULL
+#
+# 示例:
+#   输入:    [1,2,3,4,5,null,7]
+#
+#              1
+#            /   \\
+#           2     3
+#          / \\     \\
+#         4   5     7
+#
+#   输出:    [1,#,2,3,#,4,5,7,#]
+#
+#              1 → NULL
+#            /   \\
+#           2  →  3 → NULL
+#          / \\     \\
+#         4 → 5  →  7 → NULL
+
+from typing import Optional
+from collections import deque
+
+class Node:
+    def __init__(self, val=0, left=None, right=None, next=None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+
+def connect(root: Optional['Node']) -> Optional['Node']:
+    \"\"\"用 next 指针连接每层节点\"\"\"
+    if not root:
+        return root
+    q = deque([root])
+    while q:
+        size = len(q)
+        prev = None
+        for _ in range(size):
+            node = q.popleft()
+            if prev:
+                prev.next = node
+            prev = node
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)
+        prev.next = None
+    return root"""
+explanation = "**最终结果**\\n\\n```\\n输入:  [1,2,3,4,5,null,7]\\n输出:  [1,#,2,3,#,4,5,7,#]\\n```\\n\\n✅ BFS 层序 + next 串联完成\\n\\n**算法复杂度**\\n\\n| 指标 | 值 |\\n|------|------|\\n| 时间复杂度 | O(n) — 每个节点访问一次 |\\n| 空间复杂度 | O(w) — 队列最大长度为最大层宽 w |\\n\\n**关键技巧**\\n\\n| 步骤 | 作用 |\\n|------|------|\\n| `size = len(q)` 快照 | 严格按层切割，避免污染下一层 |\\n| `prev = None` + `prev.next = node` | 用单变量串联同层，O(1) 额外空间 |\\n| 层末 `prev.next = None` | 题目要求末尾必须显式置空 |\\n\\n**为什么 `prev.next = None` 必不可少？**\\n\\n虽然初始状态下所有 `next` 都是 `None`，但**经过 `prev.next = node` 串联后**，层最后一个节点的 `next` 已被赋值为前一轮留下的某个节点；必须显式置 `None` 才符合题意。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 4, 5, 7]", result = "[1,#,2,3,#,4,5,7,#]", highlightedIndices = [0, 1, 2, 3, 4, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(w)  # w = 最大层宽"
+approach = "BFS 层序 + next 串联"
+keyInsight = "BFS 天然给出层序；维护 prev 节点把同层用 next 串成链表；每层末尾 next 置 None"

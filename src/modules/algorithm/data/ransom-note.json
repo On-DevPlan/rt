@@ -1,0 +1,155 @@
+{
+  "id": "ransom-note",
+  "title": "赎金信",
+  "titleEn": "Ransom Note",
+  "difficulty": "easy",
+  "tags": [
+    "hash-table",
+    "string",
+    "counting"
+  ],
+  "testCase": "ransomNote = \"aab\", magazine = \"baa\"",
+  "expectedOutput": "true",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 赎金信 (LeetCode 383)\n# 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine\n# 判断 ransomNote 能否由 magazine 中的字符构成\n#\n# 约束:\n#   每个字符只能使用一次\n#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次\n#\n# 示例:\n#   ransomNote = \"a\",   magazine = \"b\"   -> false\n#   ransomNote = \"aa\",  magazine = \"ab\"  -> false\n#   ransomNote = \"aa\",  magazine = \"aab\" -> true\n#   ransomNote = \"aab\", magazine = \"baa\" -> true",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 赎金信 (LeetCode 383)</span>",
+        "<span class=\"tokenComment\"># 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine</span>",
+        "<span class=\"tokenComment\"># 判断 ransomNote 能否由 magazine 中的字符构成</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 约束:</span>",
+        "<span class=\"tokenComment\">#   每个字符只能使用一次</span>",
+        "<span class=\"tokenComment\">#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;a&quot;,   magazine = &quot;b&quot;   -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;ab&quot;  -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;aab&quot; -&gt; true</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aab&quot;, magazine = &quot;baa&quot; -&gt; true</span>"
+      ],
+      "explanation": "**问题分析**\n\n判断 `ransomNote` 中的每个字符能否在 `magazine` 中找到对应字符，且 `magazine` 中每个字符只能被使用一次。\n\n**核心思路：字符计数**\n\n- 用哈希表统计 `magazine` 中每个字符的出现次数\n- 遍历 `ransomNote`，每用掉一个字符就把对应计数减 1\n- 若任何字符的计数被减到 0 之前就耗尽，则返回 `false`\n\n> 本题天然适合哈希表（Counter）—— 字符集是 26 个小写英文字母，理论上也可以用长度为 26 的数组实现，空间 O(1)。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 赎金信 (LeetCode 383)\n# 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine\n# 判断 ransomNote 能否由 magazine 中的字符构成\n#\n# 约束:\n#   每个字符只能使用一次\n#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次\n#\n# 示例:\n#   ransomNote = \"a\",   magazine = \"b\"   -> false\n#   ransomNote = \"aa\",  magazine = \"ab\"  -> false\n#   ransomNote = \"aa\",  magazine = \"aab\" -> true\n#   ransomNote = \"aab\", magazine = \"baa\" -> true\n\nfrom collections import Counter\n\ndef canConstruct(ransomNote: str, magazine: str) -> bool:\n    \"\"\"判断 ransomNote 能否由 magazine 构成。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 赎金信 (LeetCode 383)</span>",
+        "<span class=\"tokenComment\"># 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine</span>",
+        "<span class=\"tokenComment\"># 判断 ransomNote 能否由 magazine 中的字符构成</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 约束:</span>",
+        "<span class=\"tokenComment\">#   每个字符只能使用一次</span>",
+        "<span class=\"tokenComment\">#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;a&quot;,   magazine = &quot;b&quot;   -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;ab&quot;  -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;aab&quot; -&gt; true</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aab&quot;, magazine = &quot;baa&quot; -&gt; true</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> Counter",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">canConstruct</span>(ransomNote: <span class=\"tokenBuiltin\">str</span>, magazine: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 ransomNote 能否由 magazine 构成。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 接收两个字符串：`ransomNote` 和 `magazine`\n- 返回 `bool`：能否构成\n- 导入 `Counter` 用于字符计数\n- 文档字符串描述函数用途\n- `pass` 占位，下一步填充逻辑",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "统计字符",
+      "titleEn": "Count Characters",
+      "code": "# 赎金信 (LeetCode 383)\n# 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine\n# 判断 ransomNote 能否由 magazine 中的字符构成\n#\n# 约束:\n#   每个字符只能使用一次\n#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次\n#\n# 示例:\n#   ransomNote = \"a\",   magazine = \"b\"   -> false\n#   ransomNote = \"aa\",  magazine = \"ab\"  -> false\n#   ransomNote = \"aa\",  magazine = \"aab\" -> true\n#   ransomNote = \"aab\", magazine = \"baa\" -> true\n\nfrom collections import Counter\n\ndef canConstruct(ransomNote: str, magazine: str) -> bool:\n    \"\"\"判断 ransomNote 能否由 magazine 构成。\"\"\"\n    pass\n    cnt = Counter(magazine)",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 赎金信 (LeetCode 383)</span>",
+        "<span class=\"tokenComment\"># 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine</span>",
+        "<span class=\"tokenComment\"># 判断 ransomNote 能否由 magazine 中的字符构成</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 约束:</span>",
+        "<span class=\"tokenComment\">#   每个字符只能使用一次</span>",
+        "<span class=\"tokenComment\">#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;a&quot;,   magazine = &quot;b&quot;   -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;ab&quot;  -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;aab&quot; -&gt; true</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aab&quot;, magazine = &quot;baa&quot; -&gt; true</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> Counter",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">canConstruct</span>(ransomNote: <span class=\"tokenBuiltin\">str</span>, magazine: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 ransomNote 能否由 magazine 构成。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>",
+        "    cnt = Counter(magazine)"
+      ],
+      "explanation": "**第 2 步：统计 magazine 中各字符数量**\n\n新增一行：\n\n```python\ncnt = Counter(magazine)\n```\n\n以 `magazine = \"baa\"` 为例：\n\n```\nCounter({'a': 2, 'b': 1})\n```\n\n| 字符 | 计数 |\n|------|------|\n| `a` | 2 |\n| `b` | 1 |\n\n> `Counter` 是 `dict` 的子类，缺失键时返回 0（不会抛 `KeyError`），非常适合此类字符统计场景。",
+      "visualizationType": "map-create",
+      "visualizationData": {
+        "mapContents": "{a → 2, b → 1}",
+        "arrayState": "magazine = [b, a, a]",
+        "currentIndex": -1
+      }
+    },
+    {
+      "id": 3,
+      "title": "扣减计数",
+      "titleEn": "Decrement Counter",
+      "code": "# 赎金信 (LeetCode 383)\n# 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine\n# 判断 ransomNote 能否由 magazine 中的字符构成\n#\n# 约束:\n#   每个字符只能使用一次\n#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次\n#\n# 示例:\n#   ransomNote = \"a\",   magazine = \"b\"   -> false\n#   ransomNote = \"aa\",  magazine = \"ab\"  -> false\n#   ransomNote = \"aa\",  magazine = \"aab\" -> true\n#   ransomNote = \"aab\", magazine = \"baa\" -> true\n\nfrom collections import Counter\n\ndef canConstruct(ransomNote: str, magazine: str) -> bool:\n    \"\"\"判断 ransomNote 能否由 magazine 构成。\"\"\"\n    pass\n    cnt = Counter(magazine)\n    for c in ransomNote:\n        if cnt[c] == 0:\n            return False\n        cnt[c] -= 1\n    return True",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 赎金信 (LeetCode 383)</span>",
+        "<span class=\"tokenComment\"># 给定一个赎金信字符串 ransomNote 和一个杂志字符串 magazine</span>",
+        "<span class=\"tokenComment\"># 判断 ransomNote 能否由 magazine 中的字符构成</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 约束:</span>",
+        "<span class=\"tokenComment\">#   每个字符只能使用一次</span>",
+        "<span class=\"tokenComment\">#   magazine 中的字符可以被多次使用，但每个字符只能贡献一次</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;a&quot;,   magazine = &quot;b&quot;   -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;ab&quot;  -&gt; false</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;aab&quot; -&gt; true</span>",
+        "<span class=\"tokenComment\">#   ransomNote = &quot;aab&quot;, magazine = &quot;baa&quot; -&gt; true</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> Counter",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">canConstruct</span>(ransomNote: <span class=\"tokenBuiltin\">str</span>, magazine: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 ransomNote 能否由 magazine 构成。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>",
+        "    cnt = Counter(magazine)",
+        "    <span class=\"tokenKeyword\">for</span> c in ransomNote:",
+        "        <span class=\"tokenKeyword\">if</span> cnt[c] == <span class=\"tokenNumber\">0</span>:",
+        "            <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "        cnt[c] -= <span class=\"tokenNumber\">1</span>",
+        "    <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">True</span>"
+      ],
+      "explanation": "**第 3 步：遍历 ransomNote 逐个扣减**\n\n新增核心循环：\n\n```python\nfor c in ransomNote:\n    if cnt[c] == 0:\n        return False\n    cnt[c] -= 1\nreturn True\n```\n\n执行过程（`ransomNote = \"aab\"`）：\n\n| 步骤 | 当前字符 `c` | `cnt[c]` 扣减前 | 操作 |\n|------|------------|---------------|------|\n| 1 | `a` | 2 | 2 → 1 |\n| 2 | `a` | 1 | 1 → 0 |\n| 3 | `b` | 1 | 1 → 0 |\n\n循环结束未触发 `return False`，最终返回 `True`。\n\n> 若某字符在 `magazine` 中不存在（`cnt[c] == 0`），说明无法构成，立刻返回 `false`。",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{a → 0, b → 0}",
+        "arrayState": "ransomNote = [a, a, b]",
+        "result": "true",
+        "highlightedIndices": [
+          0,
+          1,
+          2
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(m + n)",
+    "spaceComplexity": "O(1)",
+    "approach": "Counter 字符计数 + 遍历扣减",
+    "keyInsight": "用 Counter 统计 magazine 字符数，遍历 ransomNote 逐个扣减，计数不足即返回 false"
+  }
+}

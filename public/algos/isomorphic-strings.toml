@@ -1,0 +1,250 @@
+[algorithm]
+id = "isomorphic-strings"
+title = "同构字符串"
+titleEn = "Isomorphic Strings"
+difficulty = "easy"
+tags = ["hash-table", "string"]
+testCase = "s = \"egg\", t = \"add\""
+expectedOutput = "true"
+
+# ── Step0:理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 同构字符串
+# 给定两个字符串 s 和 t，判断它们是否同构
+#
+# 同构定义:
+# s 中的每个字符都可以唯一地映射到 t 中的一个字符
+# 同时 t 中的每个字符也必须唯一地映射回 s（双射）
+# 所有出现相同字符的位置必须映射到相同字符
+#
+# 示例:
+# s = "egg", t = "add" → true (e→a, g→d)
+# s = "foo", t = "bar" → false (o→a 又 o→r冲突)
+# s = "paper", t = "title" → true (p→t, a→i, e→l, r→e)"""
+explanation = """**问题分析**
+
+判断两个字符串 `s` 和 `t` 是否**同构**——字符之间是否存在**一一对应**（即**双射**）。
+
+**关键约束（双射）**
+
+|方向 |含义 |
+|------|------|
+| `s → t` | `s` 中相同字符必须映射到 `t` 中相同字符 |
+| `t → s` | `t` 中相同字符必须只能由 `s` 中同一个字符映射而来 |
+
+> 仅检查单向 (`s → t`) 不够：例如 `s="ab"`、`t="aa"`表面上 `a→a, b→a`，但两个 `t`字符都来自不同的 `s`字符，**不是双射**。
+
+**示例对照**
+
+| s | t | 结果 |映射 |
+|---|---|------|------|
+| `"egg"` | `"add"` | `true` | `e→a, g→d` ✓ |
+| `"foo"` | `"bar"` | `false` | `o→a` 和 `o→r`冲突 |
+| `"paper"` | `"title"` | `true` | `p→t, a→i, e→l, r→e` ✓ |
+
+**思路**
+
+>维护两个哈希表 `s2t` 和 `t2s`，**同时**记录两个方向的映射，遇到冲突立刻返回 `false`。"""
+visualizationType = "intro"
+
+# ── Step1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 同构字符串
+# 给定两个字符串 s 和 t，判断它们是否同构
+#
+# 同构定义:
+# s 中的每个字符都可以唯一地映射到 t 中的一个字符
+# 同时 t 中的每个字符也必须唯一地映射回 s（双射）
+# 所有出现相同字符的位置必须映射到相同字符
+#
+# 示例:
+# s = "egg", t = "add" → true (e→a, g→d)
+# s = "foo", t = "bar" → false (o→a 又 o→r冲突)
+# s = "paper", t = "title" → true (p→t, a→i, e→l, r→e)
+
+def isIsomorphic(s: str, t: str) -> bool:
+ \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"
+ pass"""
+explanation = """**第1步：编写函数签名**
+
+- 入参：`s: str`、`t: str` 两个等长字符串
+- 返回：`bool` 同构返回 `true`，否则 `false`
+- 类型注解明确输入输出
+-文档字符串说明核心语义：**双射**"""
+visualizationType = "code-only"
+
+# ── Step2:初始化双映射表 ────────────────────────────────────
+[[algorithm.steps]]
+id =2
+title = "双映射表"
+titleEn = "Dual Maps"
+code = """# 同构字符串
+# 给定两个字符串 s 和 t，判断它们是否同构
+#
+# 同构定义:
+# s 中的每个字符都可以唯一地映射到 t 中的一个字符
+# 同时 t 中的每个字符也必须唯一地映射回 s（双射）
+# 所有出现相同字符的位置必须映射到相同字符
+#
+# 示例:
+# s = "egg", t = "add" → true (e→a, g→d)
+# s = "foo", t = "bar" → false (o→a 又 o→r冲突)
+# s = "paper", t = "title" → true (p→t, a→i, e→l, r→e)
+
+def isIsomorphic(s: str, t: str) -> bool:
+ \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"
+ s2t, t2s = {}, {}
+ pass"""
+explanation = """**第2步：初始化两个映射表**
+
+```python
+s2t, t2s = {}, {}
+```
+
+|字典 |含义 |角色 |
+|------|------|------|
+| `s2t` | `s` 中字符 → `t` 中对应字符 | 检查一致性 |
+| `t2s` | `t` 中字符 → `s` 中对应字符 | 检查反向一致性 |
+
+> **为什么需要两张表？**
+> - 单 `s2t` 会漏掉「`s` 中两个不同字符都映射到 `t` 中同一个字符」的情形（破坏单射）。
+> - 例如 `s="ab"`、`t="aa"`：仅看 `s2t` 会得到 `{a:a, b:a}`，看起来"一致"，但 `t` 中两个 `a` 对应 `s` 中两个不同字符，**不是双射**。
+
+```
+s = "egg" t = "add"
+ ↓
+s2t = {} t2s = {} ←初始空表
+```"""
+visualizationType = "map-create"
+visualizationData = { mapContents = "{}", arrayState = "['e','g','g'] × ['a','d','d']", currentIndex = -1 }
+
+# ── Step3:遍历检查双射 ──────────────────────────────────────
+[[algorithm.steps]]
+id =3
+title = "遍历检查"
+titleEn = "Iterate & Verify"
+code = """# 同构字符串
+# 给定两个字符串 s 和 t，判断它们是否同构
+#
+# 同构定义:
+# s 中的每个字符都可以唯一地映射到 t 中的一个字符
+# 同时 t 中的每个字符也必须唯一地映射回 s（双射）
+# 所有出现相同字符的位置必须映射到相同字符
+#
+# 示例:
+# s = "egg", t = "add" → true (e→a, g→d)
+# s = "foo", t = "bar" → false (o→a 又 o→r冲突)
+# s = "paper", t = "title" → true (p→t, a→i, e→l, r→e)
+
+def isIsomorphic(s: str, t: str) -> bool:
+ \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"
+ s2t, t2s = {}, {}
+ for a, b in zip(s, t):
+ if (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):
+ return False
+ s2t[a] = b
+ t2s[b] = a
+ pass"""
+explanation = """**第3步：遍历并检查双向一致性**
+
+```python
+for a, b in zip(s, t):
+ if (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):
+ return False
+ s2t[a] = b
+ t2s[b] = a
+```
+
+**冲突检测**
+
+|条件 |含义 | 结果 |
+|------|------|------|
+| `a in s2t and s2t[a] != b` | `s` 中同字符之前映射过另一字符 |破坏「一致性」→ `False` |
+| `b in t2s and t2s[b] != a` | `t` 中同字符之前被另一字符占用 |破坏「单射」→ `False` |
+
+**示例执行**（`s="egg"`、`t="add"`）：
+
+```
+i=0: a='e' b='a' → 无冲突 → s2t={e:a}, t2s={a:e}
+i=1: a='g' b='d' → 无冲突 → s2t={e:a, g:d}, t2s={a:e, d:g}
+i=2: a='g' b='d' → s2t[g]=d == b ✓ →继续
+循环结束 → 返回 True
+```
+
+**反例**（`s="foo"`、`t="bar"`）：
+
+```
+i=0: a='f' b='b' → 无冲突 → s2t={f:b}, t2s={b:f}
+i=1: a='o' b='a' → 无冲突 → s2t={f:b, o:a}, t2s={b:f, a:o}
+i=2: a='o' b='r' → s2t[o]=a ≠ r → 返回 False ✓
+```"""
+visualizationType = "array-iteration"
+visualizationData = { mapContents = "{e→a, g→d}", arrayState = "['e','g','g'] × ['a','d','d']", currentIndex =2, found = false }
+
+# ── Step4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id =4
+title = "完成"
+titleEn = "Complete"
+code = """# 同构字符串
+# 给定两个字符串 s 和 t，判断它们是否同构
+#
+# 同构定义:
+# s 中的每个字符都可以唯一地映射到 t 中的一个字符
+# 同时 t 中的每个字符也必须唯一地映射回 s（双射）
+# 所有出现相同字符的位置必须映射到相同字符
+#
+# 示例:
+# s = "egg", t = "add" → true (e→a, g→d)
+# s = "foo", t = "bar" → false (o→a 又 o→r冲突)
+# s = "paper", t = "title" → true (p→t, a→i, e→l, r→e)
+
+def isIsomorphic(s: str, t: str) -> bool:
+ \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"
+ s2t, t2s = {}, {}
+ for a, b in zip(s, t):
+ if (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):
+ return False
+ s2t[a] = b
+ t2s[b] = a
+ return True"""
+explanation = """**最终结果**
+
+✅ 双射检查完成
+
+**三个示例验证**
+
+| 输入 (s, t) |过程 | 返回值 |
+|-------------|------|--------|
+| `("egg", "add")` | 无冲突 | `true` |
+| `("foo", "bar")` | `o→a` 与 `o→r`冲突 | `false` |
+| `("paper", "title")` | 无冲突 | `true` |
+
+**算法复杂度**
+
+|指标 | 值 | 说明 |
+|------|------|------|
+| 时间复杂度 | **O(n)** |一次遍历，`dict`查找为 O(1) |
+|空间复杂度 | **O(n)** | 两张映射表最多保存 `n` 个字符对 |
+
+**关键技巧：双射 =双向一致性**
+
+- 仅维护 `s2t` 不够 → 可能漏掉「多对一」破坏单射的情形
+- 同时维护 `t2s` 才能保证**一一对应**
+- 也可以用 `set(zip(s, t)) == set(zip(t, s))` 的等价写法，但 `dict` 版本更直观
+
+> 这是「双射 / bijection」的典型应用：把"一一对应"翻译成两个方向都要查表。"""
+visualizationType = "result"
+visualizationData = { mapContents = "{e→a, g→d}", arrayState = "['e','g','g'] × ['a','d','d']", result = "true", highlightedIndices = [0,1,2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "双哈希表双向映射（双射检查）"
+keyInsight = "同构 = 双射：必须同时维护 s→t 和 t→s 两张映射表，单向检查会漏掉多对一的情形"

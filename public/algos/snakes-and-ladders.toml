@@ -1,0 +1,198 @@
+[algorithm]
+id = "snakes-and-ladders"
+title = "蛇梯棋"
+titleEn = "Snakes and Ladders"
+difficulty = "medium"
+tags = ["breadth-first-search", "array", "matrix"]
+testCase = "board = [[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1]]"
+expectedOutput = "-1"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 909. 蛇梯棋
+# BFS 求从格子 0 到 N²-1 的最少投骰次数
+# 关键：BFS + 蛇梯跳转 + 之字形坐标转换
+#
+# 示例:
+#   board = [[-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1]]
+#   结果: -1"""
+explanation = "**问题分析**\n\n给你一个 `n × n` 的棋盘，棋盘格编号从 `0`（左下角）到 `n² - 1`（右上角），按**之字形**排列。\n\n- `board[i][j] == -1`：该格无蛇也无梯\n- `board[i][j] != -1`：该格有蛇或梯，需跳到 `board[i][j] - 1`\n- 每次投骰前进 1-6 格，问从起点到终点的最少投骰次数\n\n**之字形编号示意（n=6）：**\n\n```\n35 34 33 32 31 30   ← 行 5（左→右反转）\n36 37 38 39 40 41   ← 行 4（右→左）\n...\n11 10  9  8  7  6\n 0  1  2  3  4  5\n```\n\n**核心思路：BFS 层次遍历**\n\n| 思路 | 说明 |\n|------|------|\n| 状态 | 格子编号（0 ~ n²-1） |\n| 转移 | 投 1-6 格，若目标格有蛇梯则跳转 |\n| BFS 层数 | 投骰次数（每 BFS 一层 = 投一次骰子） |\n\n> 这是一道「无权图最短路径」题，标准的 BFS 模板。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 初始化 ─────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 909. 蛇梯棋
+# BFS 求从格子 0 到 N²-1 的最少投骰次数
+# 关键：BFS + 蛇梯跳转 + 之字形坐标转换
+#
+# 示例:
+#   board = [[-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1]]
+#   结果: -1
+
+from typing import List
+from collections import deque
+
+def snakesAndLadders(board: List[List[int]]) -> int:
+    \"\"\"返回到达棋盘终点的最少投骰次数，无解返回 -1\"\"\"
+    n = len(board)
+    target = n * n - 1
+    dist = [-1] * (n * n)
+    dist[0] = 0
+    q = deque([0])"""
+explanation = "**第 1 步：搭建函数骨架**\n\n- **入参**：`board: List[List[int]]`，`-1` 表示普通格，否则为跳转目标编号（1-indexed）\n- **返回**：`int`，最少投骰次数；不可达返回 `-1`\n- **`n`**：棋盘边长\n- **`target`**：终点编号 `n² - 1`\n- **`dist`**：从起点到每个格子的最少投骰次数（`dist[i] == -1` 表示未访问）\n- **`q`**：BFS 队列，初始放入起点 `0`\n\n> `dist` 数组兼任「已访问」标记：未访问的格子不进入队列，避免重复 BFS。"
+visualizationType = "code-only"
+
+# ── Step 2: BFS 主循环 + 命中返回 ──────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "BFS 主循环"
+titleEn = "BFS Main Loop"
+code = """# 909. 蛇梯棋
+# BFS 求从格子 0 到 N²-1 的最少投骰次数
+# 关键：BFS + 蛇梯跳转 + 之字形坐标转换
+#
+# 示例:
+#   board = [[-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1]]
+#   结果: -1
+
+from typing import List
+from collections import deque
+
+def snakesAndLadders(board: List[List[int]]) -> int:
+    \"\"\"返回到达棋盘终点的最少投骰次数，无解返回 -1\"\"\"
+    n = len(board)
+    target = n * n - 1
+    dist = [-1] * (n * n)
+    dist[0] = 0
+    q = deque([0])
+    while q:
+        cur = q.popleft()
+        if cur == target:
+            return dist[cur]"""
+explanation = "**第 2 步：BFS 主循环**\n\n```python\nwhile q:\n    cur = q.popleft()\n    if cur == target:\n        return dist[cur]\n```\n\n**关键：BFS 的「层」对应投骰次数**\n\n- 起点 `0` 在第 0 层（投 0 次就到）\n- 投 1 步能到的格子在第 1 层\n- 投 2 步能到的格子在第 2 层\n- ……\n\n**为什么命中 `target` 就立即返回？**\n\n> BFS 按层扩展，先访问到的 `target` 一定是最短路径上的，直接返回 `dist[cur]` 即可。\n\n**最终未命中怎么办？**\n\n循环结束后 `target` 仍未被访问（`dist[target] == -1`），返回 `-1`。"
+visualizationType = "code-only"
+
+# ── Step 3: 6 步循环 + 坐标转换 + 蛇梯跳转 ─────────────────────
+[[algorithm.steps]]
+id = 3
+title = "投骰与跳转"
+titleEn = "Roll Dice and Teleport"
+code = """# 909. 蛇梯棋
+# BFS 求从格子 0 到 N²-1 的最少投骰次数
+# 关键：BFS + 蛇梯跳转 + 之字形坐标转换
+#
+# 示例:
+#   board = [[-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1]]
+#   结果: -1
+
+from typing import List
+from collections import deque
+
+def snakesAndLadders(board: List[List[int]]) -> int:
+    \"\"\"返回到达棋盘终点的最少投骰次数，无解返回 -1\"\"\"
+    n = len(board)
+    target = n * n - 1
+    dist = [-1] * (n * n)
+    dist[0] = 0
+    q = deque([0])
+    while q:
+        cur = q.popleft()
+        if cur == target:
+            return dist[cur]
+        for step in range(1, 7):
+            nxt = cur + step
+            if nxt > target:
+                break
+            r, c = divmod(nxt - 1, n)
+            r = n - 1 - r  # 之字形：行号反转
+            if (n - 1 - r) % 2 == 1:  # 奇数行（从底数）反向
+                c = n - 1 - c
+            if board[r][c] != -1:
+                nxt = board[r][c] - 1
+            if dist[nxt] == -1:
+                dist[nxt] = dist[cur] + 1
+                q.append(nxt)"""
+explanation = "**第 3 步：投骰 + 之字形坐标 + 蛇梯跳转**\n\n**3.1 投骰循环 `for step in range(1, 7)`**\n\n依次尝试前进 1~6 格，超过 `target` 直接 `break`。\n\n**3.2 编号 → 坐标转换**\n\n```python\nr, c = divmod(nxt - 1, n)   # 先按行展开\nr = n - 1 - r                # 之字形：行号反转\nif (n - 1 - r) % 2 == 1:    # 偶数行（自底向上）从左到右\n    c = n - 1 - c            # 奇数行（自底向上）从右到左，列反转\n```\n\n| 编号 nxt | divmod 结果 (r, c) | 反转行号后 (r, c) | 列方向 |\n|----------|-------------------|------------------|--------|\n| 0  | (0, 0) | (5, 0) | 左→右 |\n| 5  | (0, 5) | (5, 5) | 左→右 |\n| 6  | (1, 0) | (4, 5) | 右→左 |\n| 11 | (1, 5) | (4, 0) | 右→左 |\n\n**3.3 蛇梯跳转**\n\n`board[r][c] != -1` 表示该格有蛇或梯，`nxt` 更新为 `board[r][c] - 1`（题目用 1-indexed）。\n\n**3.4 标记并入队**\n\n`dist[nxt] == -1` 表示未访问，更新 `dist` 并加入队列。\n\n> 注意：蛇梯跳转后的目标格若之前已被访问，就不再重复入队（避免死循环）。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 909. 蛇梯棋
+# BFS 求从格子 0 到 N²-1 的最少投骰次数
+# 关键：BFS + 蛇梯跳转 + 之字形坐标转换
+#
+# 示例:
+#   board = [[-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1],
+#            [-1,-1,-1,-1,-1,-1]]
+#   结果: -1
+
+from typing import List
+from collections import deque
+
+def snakesAndLadders(board: List[List[int]]) -> int:
+    \"\"\"返回到达棋盘终点的最少投骰次数，无解返回 -1\"\"\"
+    n = len(board)
+    target = n * n - 1
+    dist = [-1] * (n * n)
+    dist[0] = 0
+    q = deque([0])
+    while q:
+        cur = q.popleft()
+        if cur == target:
+            return dist[cur]
+        for step in range(1, 7):
+            nxt = cur + step
+            if nxt > target:
+                break
+            r, c = divmod(nxt - 1, n)
+            r = n - 1 - r  # 之字形：行号反转
+            if (n - 1 - r) % 2 == 1:  # 奇数行（从底数）反向
+                c = n - 1 - c
+            if board[r][c] != -1:
+                nxt = board[r][c] - 1
+            if dist[nxt] == -1:
+                dist[nxt] = dist[cur] + 1
+                q.append(nxt)
+    return -1"""
+explanation = "**最终结果**\n\n✅ BFS + 蛇梯跳转 + 之字形坐标转换 完成\n\n```\n输入: 6×6 全 -1 棋盘（无蛇梯）\n输出: -1 （BFS 跑完仍未到达 n²-1）\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n²) — 每个格子最多入队一次，循环内 O(1) |\n| 空间复杂度 | O(n²) — `dist` 数组 + 队列 |\n\n**关键技巧**\n\n| 技巧 | 作用 |\n|------|------|\n| 之字形坐标转换 | 编号 `x` ↔ 棋盘坐标 `(r, c)` |\n| `dist` 数组 | 同时记录「步数」+ 「已访问」 |\n| 蛇梯判定 | `board[r][c] != -1` 即可跳 |\n| BFS 命中即返 | 首次访问到 `target` 即最短 |\n\n**为什么 BFS 是最短的？**\n\n> BFS 按层扩展，每次投骰 1-6 格相当于图的「边权为 1」，从起点到任意点的最短 BFS 路径 = 最少投骰次数。\n\n**易错点**\n\n- 之字形方向搞反（奇数行需要列反转）\n- 忘记把 `board[r][c]` 减 1（题目是 1-indexed）\n- 蛇梯跳过的目标格若已访问，不要再入队"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 4, 5, 6]", result = "-1", highlightedIndices = [0] }
+
+[algorithm.summary]
+timeComplexity = "O(n²)"
+spaceComplexity = "O(n²)  # dist 数组 + 队列"
+approach = "BFS + 蛇梯跳转 + 之字形坐标转换"
+keyInsight = "之字形编号：(n-1-r) 行号反转；奇偶行号方向交替；蛇梯 -1 表示无；BFS 层次即投骰次数"

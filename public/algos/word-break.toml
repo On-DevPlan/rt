@@ -1,0 +1,167 @@
+[algorithm]
+id = "word-break"
+title = "单词拆分"
+titleEn = "Word Break"
+difficulty = "medium"
+tags = ["hash-table", "string", "dynamic-programming"]
+testCase = "s = \"leetcode\", wordDict = [\"leet\",\"code\"]"
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 139. 单词拆分
+# 给定一个字符串 s 和一个字符串字典 wordDict
+# 判断 s 是否可以被拆分为一个或多个字典中的单词
+#
+# 关键条件:
+#   字典中的单词可以重复使用
+#   拆分时需要完全使用 s 中的所有字符
+#   不需要考虑字典中单词的顺序
+#
+# 示例:
+#   s = \"leetcode\", wordDict = [\"leet\",\"code\"]
+#   结果: true（\"leet\" + \"code\"）"""
+explanation = "**问题分析**\n\n给定字符串 `s = \"leetcode\"` 和字典 `wordDict = [\"leet\", \"code\"]`，需要判断 `s` 能否被拆分成字典中的单词。\n\n**关键思路：动态规划**\n\n定义 `dp[i]` 表示 `s[0:i]`（前 i 个字符）能否被拆分。\n\n| 方法 | 思路 |\n|------|------|\n| 暴力枚举 | 尝试所有拆分组合，指数时间复杂度 |\n| **动态规划** | **利用子问题重叠，线性时间求解** |\n\n> 核心思想：`dp[i] = true` 当且仅当存在 `j < i` 使得 `dp[j] = true` 且 `s[j:i]` 在字典中。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名和初始化 ───────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "初始化 DP 数组"
+titleEn = "Initialize DP Array"
+code = """# 139. 单词拆分
+# 给定一个字符串 s 和一个字符串字典 wordDict
+# 判断 s 是否可以被拆分为一个或多个字典中的单词
+#
+# 关键条件:
+#   字典中的单词可以重复使用
+#   拆分时需要完全使用 s 中的所有字符
+#   不需要考虑字典中单词的顺序
+#
+# 示例:
+#   s = \"leetcode\", wordDict = [\"leet\",\"code\"]
+#   结果: true（\"leet\" + \"code\"）
+
+from typing import List
+
+def wordBreak(s: str, wordDict: List[str]) -> bool:
+    \"\"\"返回能否拆分\"\"\"
+    word_set = set(wordDict)
+    n = len(s)
+    dp = [False] * (n + 1)
+    dp[0] = True"""
+explanation = "**第 1 步：初始化变量和 DP 数组**\n\n- `word_set`：将字典转为集合，O(1) 查找\n- `dp`：长度为 `n + 1` 的布尔数组\n- `dp[0] = True`：空字符串可以拆分（边界条件）\n\n```\ndp 数组初始状态：\n索引: 0  1  2  3  4  5  6  7  8\n值:  T  F  F  F  F  F  F  F  F\n           l  e  e  t  c  o  d  e\n```\n\n> `dp[i]` 表示 `s[0:i]` 能否被拆分。`dp[0] = True` 是递归的基准情况。"
+visualizationType = "code-only"
+
+# ─── Step 2: 外层循环 ─────────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "遍历所有位置"
+titleEn = "Iterate Positions"
+code = """# 139. 单词拆分
+# 给定一个字符串 s 和一个字符串字典 wordDict
+# 判断 s 是否可以被拆分为一个或多个字典中的单词
+#
+# 关键条件:
+#   字典中的单词可以重复使用
+#   拆分时需要完全使用 s 中的所有字符
+#   不需要考虑字典中单词的顺序
+#
+# 示例:
+#   s = \"leetcode\", wordDict = [\"leet\",\"code\"]
+#   结果: true（\"leet\" + \"code\"）
+
+from typing import List
+
+def wordBreak(s: str, wordDict: List[str]) -> bool:
+    \"\"\"返回能否拆分\"\"\"
+    word_set = set(wordDict)
+    n = len(s)
+    dp = [False] * (n + 1)
+    dp[0] = True
+
+    for i in range(1, n + 1):
+        for j in range(i):"""
+explanation = "**第 2 步：双重循环结构**\n\n外层循环遍历每个位置 `i`（从 1 到 n），内层循环检查所有可能的拆分点 `j`（从 0 到 i-1）。\n\n```\n对于 i = 4（s[0:4] = \"leet\"）：\n  j=0: 检查 s[0:4] = \"leet\"\n  j=1: 检查 s[1:4] = \"eet\"\n  j=2: 检查 s[2:4] = \"et\"\n  j=3: 检查 s[3:4] = \"t\"\n```\n\n| 变量 | 含义 |\n|------|------|\n| `i` | 当前考察的右端点（不包含） |\n| `j` | 尝试的拆分点 |\n\n> 如果存在某个 `j` 使得 `dp[j] = true` 且 `s[j:i]` 在字典中，则 `dp[i] = true`。"
+visualizationType = "code-only"
+
+# ─── Step 3: 状态转移 ─────────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "状态转移判断"
+titleEn = "State Transition"
+code = """# 139. 单词拆分
+# 给定一个字符串 s 和一个字符串字典 wordDict
+# 判断 s 是否可以被拆分为一个或多个字典中的单词
+#
+# 关键条件:
+#   字典中的单词可以重复使用
+#   拆分时需要完全使用 s 中的所有字符
+#   不需要考虑字典中单词的顺序
+#
+# 示例:
+#   s = \"leetcode\", wordDict = [\"leet\",\"code\"]
+#   结果: true（\"leet\" + \"code\"）
+
+from typing import List
+
+def wordBreak(s: str, wordDict: List[str]) -> bool:
+    \"\"\"返回能否拆分\"\"\"
+    word_set = set(wordDict)
+    n = len(s)
+    dp = [False] * (n + 1)
+    dp[0] = True
+
+    for i in range(1, n + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in word_set:
+                dp[i] = True
+                break"""
+explanation = "**第 3 步：实现状态转移逻辑**\n\n核心条件：`dp[j] and s[j:i] in word_set`\n\n- `dp[j] = true`：前 j 个字符可以拆分\n- `s[j:i] in word_set`：从 j 到 i 的子串在字典中\n- 满足条件时设置 `dp[i] = true` 并 `break`（无需继续检查）\n\n**示例执行：**\n\n```\ns = \"leetcode\", wordDict = [\"leet\", \"code\"]\n\ni=4: s[0:4]=\"leet\" 在字典中 → dp[4] = true\ndp = [T, F, F, F, T, F, F, F, F]\n\ni=8: s[4:8]=\"code\" 在字典中，且 dp[4]=true → dp[8] = true\ndp = [T, F, F, F, T, F, F, F, T]\n```"
+visualizationType = "code-only"
+
+# ─── Step 4: 完成 ────────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 139. 单词拆分
+# 给定一个字符串 s 和一个字符串字典 wordDict
+# 判断 s 是否可以被拆分为一个或多个字典中的单词
+#
+# 关键条件:
+#   字典中的单词可以重复使用
+#   拆分时需要完全使用 s 中的所有字符
+#   不需要考虑字典中单词的顺序
+#
+# 示例:
+#   s = \"leetcode\", wordDict = [\"leet\",\"code\"]
+#   结果: true（\"leet\" + \"code\"）
+
+from typing import List
+
+def wordBreak(s: str, wordDict: List[str]) -> bool:
+    \"\"\"返回能否拆分\"\"\"
+    word_set = set(wordDict)
+    n = len(s)
+    dp = [False] * (n + 1)
+    dp[0] = True
+
+    for i in range(1, n + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in word_set:
+                dp[i] = True
+                break
+    return dp[n]"""
+explanation = "**最终结果**\n\n✅ 动态规划完成，返回 `dp[n]` 表示整个字符串能否被拆分。\n\n```\n输入: s = \"leetcode\", wordDict = [\"leet\", \"code\"]\n输出: true（\"leet\" + \"code\"）\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n²) — 双重循环，子串检查 O(1) |\n| 空间复杂度 | O(n) — dp 数组和 word_set |\n\n**动态规划核心思想**\n\n- `dp[i]`：前 i 个字符能否拆分\n- 转移：存在 `j` 使得 `dp[j] = true` 且 `s[j:i]` 在字典中\n- 初始化：`dp[0] = true`（空字符串）\n- 结果：`dp[n]`（整个字符串）"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"l\", \"e\", \"e\", \"t\", \"c\", \"o\", \"d\", \"e\"]", result = "true", highlightedIndices = [0, 1, 2, 3, 4, 5, 6, 7] }
+
+[algorithm.summary]
+timeComplexity = "O(n²)"
+spaceComplexity = "O(n)"
+approach = "动态规划"
+keyInsight = "dp[i] = s[0:i] 能否拆分；检查所有 j < i，若 dp[j]=true 且 s[j:i] 在字典中则 dp[i]=true"

@@ -1,0 +1,177 @@
+{
+  "id": "group-anagrams",
+  "title": "字母异位词分组",
+  "titleEn": "Group Anagrams",
+  "difficulty": "medium",
+  "tags": [
+    "array",
+    "hash-table",
+    "string",
+    "sorting"
+  ],
+  "testCase": "strs = [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+  "expectedOutput": "[[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 字母异位词分组\n# 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。\n# 字母异位词: 由相同字符以相同数量重新排列形成的字符串。\n#\n# 示例:\n#   输入: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n#   输出: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\n#\n# 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 字母异位词分组</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 由相同字符以相同数量重新排列形成的字符串。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</span>",
+        "<span class=\"tokenComment\">#   输出: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。</span>"
+      ],
+      "explanation": "**问题分析**\n\n把字符串数组中**互为字母异位词**的字符串分到同一组。\n\n**字母异位词定义**\n\n> 两个字符串包含**相同的字符**，且**每个字符的出现次数相同**。\n\n例如：\n- `\"eat\"`、`\"tea\"`、`\"ate\"` 互为字母异位词（都包含 1 个 `a`、1 个 `e`、1 个 `t`）\n- `\"nat\"`、`\"tan\"` 互为字母异位词（都包含 1 个 `a`、1 个 `n`、1 个 `t`）\n- `\"bat\"` 单独一组\n\n**核心思路：寻找「签名 key」**\n\n两个字符串是异位词 ⇔ 它们有相同的「规范化表示」：\n\n| key 方案 | 构造方式 | 时间 |\n|---------|---------|------|\n| 排序后的字符串 | `''.join(sorted(s))` | O(k log k) |\n| 字符计数元组 | `tuple(sorted(Counter(s).items()))` | O(k) |\n\n> 其中 `k` 是字符串平均长度。本题采用排序方案作为示例，思路更直观。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 字母异位词分组\n# 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。\n# 字母异位词: 由相同字符以相同数量重新排列形成的字符串。\n#\n# 示例:\n#   输入: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n#   输出: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\n#\n# 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。\n\nfrom typing import List\nfrom collections import defaultdict\n\ndef groupAnagrams(strs: List[str]) -> List[List[str]]:\n    \"\"\"把字符串数组中互为字母异位词的字符串分到同一组。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 字母异位词分组</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 由相同字符以相同数量重新排列形成的字符串。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</span>",
+        "<span class=\"tokenComment\">#   输出: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> defaultdict",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">groupAnagrams</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; List[List[<span class=\"tokenBuiltin\">str</span>]]:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;把字符串数组中互为字母异位词的字符串分到同一组。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 入参 `strs: List[str]`：字符串数组\n- 返回 `List[List[str]]`：分组后的二维列表\n- 文档字符串说明函数用途\n- 提前 `import defaultdict`，方便后续初始化默认字典",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "初始化哈希表",
+      "titleEn": "Initialize Hash Map",
+      "code": "# 字母异位词分组\n# 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。\n# 字母异位词: 由相同字符以相同数量重新排列形成的字符串。\n#\n# 示例:\n#   输入: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n#   输出: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\n#\n# 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。\n\nfrom typing import List\nfrom collections import defaultdict\n\ndef groupAnagrams(strs: List[str]) -> List[List[str]]:\n    \"\"\"把字符串数组中互为字母异位词的字符串分到同一组。\"\"\"\n    groups = defaultdict(list)  # key: 排序后的字符串; value: 原字符串列表",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 字母异位词分组</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 由相同字符以相同数量重新排列形成的字符串。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</span>",
+        "<span class=\"tokenComment\">#   输出: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> defaultdict",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">groupAnagrams</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; List[List[<span class=\"tokenBuiltin\">str</span>]]:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;把字符串数组中互为字母异位词的字符串分到同一组。&quot;&quot;&quot;</span>",
+        "    groups = defaultdict(<span class=\"tokenBuiltin\">list</span>)  <span class=\"tokenComment\"># key: 排序后的字符串; value: 原字符串列表</span>"
+      ],
+      "explanation": "**第 2 步：用 defaultdict 建立分组表**\n\n```python\ngroups = defaultdict(list)\n```\n\n| 维度 | 内容 |\n|------|------|\n| key 类型 | `str`，即排序后的字符串 |\n| value 类型 | `List[str]`，所有互为异位词的字符串集合 |\n| 默认值 | `list`（首次访问时自动创建空列表） |\n\n**为什么用 defaultdict(list)？**\n\n普通 `dict` 在 `groups[key].append(s)` 时，如果 `key` 不存在会抛 `KeyError`。\n`defaultdict(list)` 会在第一次访问不存在的 key 时**自动创建一个空列表**，代码更简洁。\n\n> 备选方案：用 `set()` 替代 `list()` 也能去重，但题目要求保留原字符串的顺序和重复，本题使用 `list`。",
+      "visualizationType": "map-create",
+      "visualizationData": {
+        "mapContents": "{}",
+        "arrayState": "[\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"]",
+        "currentIndex": -1
+      }
+    },
+    {
+      "id": 3,
+      "title": "遍历分组",
+      "titleEn": "Iterate and Group",
+      "code": "# 字母异位词分组\n# 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。\n# 字母异位词: 由相同字符以相同数量重新排列形成的字符串。\n#\n# 示例:\n#   输入: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n#   输出: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\n#\n# 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。\n\nfrom typing import List\nfrom collections import defaultdict\n\ndef groupAnagrams(strs: List[str]) -> List[List[str]]:\n    \"\"\"把字符串数组中互为字母异位词的字符串分到同一组。\"\"\"\n    groups = defaultdict(list)  # key: 排序后的字符串; value: 原字符串列表\n    for s in strs:\n        key = ''.join(sorted(s))  # 排序后的字符串作为签名 key\n        groups[key].append(s)",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 字母异位词分组</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 由相同字符以相同数量重新排列形成的字符串。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</span>",
+        "<span class=\"tokenComment\">#   输出: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> defaultdict",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">groupAnagrams</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; List[List[<span class=\"tokenBuiltin\">str</span>]]:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;把字符串数组中互为字母异位词的字符串分到同一组。&quot;&quot;&quot;</span>",
+        "    groups = defaultdict(<span class=\"tokenBuiltin\">list</span>)  <span class=\"tokenComment\"># key: 排序后的字符串; value: 原字符串列表</span>",
+        "    <span class=\"tokenKeyword\">for</span> s in strs:",
+        "        key = <span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">&#x27;</span>.join(<span class=\"tokenBuiltin\">sorted</span>(s))  <span class=\"tokenComment\"># 排序后的字符串作为签名 key</span>",
+        "        groups[key].append(s)"
+      ],
+      "explanation": "**第 3 步：遍历每个字符串，按签名 key 归组**\n\n```python\nfor s in strs:\n    key = ''.join(sorted(s))\n    groups[key].append(s)\n```\n\n**三步操作**\n\n1. `sorted(s)`：把字符串按字符排序，例如 `\"eat\"` → `['a','e','t']`\n2. `''.join(...)`：把字符列表拼回字符串 `\"aet\"`\n3. `groups[key].append(s)`：把**原字符串**（不是 key）追加到对应组\n\n**示例执行追踪**\n\n| i | s | sorted(s) | key | groups 状态 |\n|---|------|-----------|---------|-------------|\n| 0 | \"eat\" | a,e,t | `\"aet\"` | `{aet → [eat]}` |\n| 1 | \"tea\" | a,e,t | `\"aet\"` | `{aet → [eat, tea]}` |\n| 2 | \"tan\" | a,n,t | `\"ant\"` | `{aet → [eat, tea], ant → [tan]}` |\n| 3 | \"ate\" | a,e,t | `\"aet\"` | `{aet → [eat, tea, ate], ant → [tan]}` |\n| 4 | \"nat\" | a,n,t | `\"ant\"` | `{aet → [eat, tea, ate], ant → [tan, nat]}` |\n| 5 | \"bat\" | a,b,t | `\"abt\"` | `{aet → [...], ant → [...], abt → [bat]}` |\n\n> 异位词因为排序结果相同，会自动归到同一个 key 下的列表。",
+      "visualizationType": "array-iteration",
+      "visualizationData": {
+        "mapContents": "{aet → [eat, tea, ate], ant → [tan, nat], abt → [bat]}",
+        "arrayState": "[\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"]",
+        "currentIndex": 5
+      }
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 字母异位词分组\n# 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。\n# 字母异位词: 由相同字符以相同数量重新排列形成的字符串。\n#\n# 示例:\n#   输入: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n#   输出: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\n#\n# 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。\n\nfrom typing import List\nfrom collections import defaultdict\n\ndef groupAnagrams(strs: List[str]) -> List[List[str]]:\n    \"\"\"把字符串数组中互为字母异位词的字符串分到同一组。\"\"\"\n    groups = defaultdict(list)  # key: 排序后的字符串; value: 原字符串列表\n    for s in strs:\n        key = ''.join(sorted(s))  # 排序后的字符串作为签名 key\n        groups[key].append(s)\n    return list(groups.values())",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 字母异位词分组</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，把所有字母异位词（anagram）分到同一组。</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 由相同字符以相同数量重新排列形成的字符串。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</span>",
+        "<span class=\"tokenComment\">#   输出: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 返回的顺序不重要，只要同一组内的字符串互为字母异位词即可。</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "<span class=\"tokenKeyword\">from</span> collections <span class=\"tokenKeyword\">import</span> defaultdict",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">groupAnagrams</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; List[List[<span class=\"tokenBuiltin\">str</span>]]:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;把字符串数组中互为字母异位词的字符串分到同一组。&quot;&quot;&quot;</span>",
+        "    groups = defaultdict(<span class=\"tokenBuiltin\">list</span>)  <span class=\"tokenComment\"># key: 排序后的字符串; value: 原字符串列表</span>",
+        "    <span class=\"tokenKeyword\">for</span> s in strs:",
+        "        key = <span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">&#x27;</span>.join(<span class=\"tokenBuiltin\">sorted</span>(s))  <span class=\"tokenComment\"># 排序后的字符串作为签名 key</span>",
+        "        groups[key].append(s)",
+        "    <span class=\"tokenKeyword\">return</span> <span class=\"tokenBuiltin\">list</span>(groups.values())"
+      ],
+      "explanation": "**最终结果**\n\n返回 `groups.values()` 的列表形式，即所有分组。\n\n```\n输入: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n输出: [[\"bat\"], [\"nat\",\"tan\"], [\"ate\",\"eat\",\"tea\"]]  （顺序不固定）\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n · k log k) — 每个字符串排序 O(k log k)，共 n 个 |\n| 空间复杂度 | O(n · k) — 哈希表存储所有原字符串 |\n\n> `n` 是字符串数量，`k` 是字符串平均长度。\n\n**关键技巧：排序签名**\n\n- **异位词本质**：字符种类 + 频次完全相同\n- **规范化签名**：排序后字符串天然唯一标识一个异位词集合\n- **defaultdict(list)**：避免手动判空，让代码更紧凑\n\n**进阶优化**\n\n如果对时间复杂度要求更严格，可以用**字符计数元组**作 key：\n\n```python\nfrom collections import Counter\nkey = tuple(sorted(Counter(s).items()))  # O(k)，省去排序的 log k\n```\n\n此时时间复杂度降至 **O(n · k)**。",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{aet → [eat, tea, ate], ant → [tan, nat], abt → [bat]}",
+        "arrayState": "[\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"]",
+        "result": "[[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]",
+        "highlightedIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(n · k log k)",
+    "spaceComplexity": "O(n · k)",
+    "approach": "排序签名 + 哈希表分组",
+    "keyInsight": "异位词排序后字符串相同，把它作为 defaultdict 的 key 即可自动归组"
+  }
+}

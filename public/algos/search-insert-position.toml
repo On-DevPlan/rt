@@ -1,0 +1,152 @@
+[algorithm]
+id = "search-insert-position"
+title = "搜索插入位置"
+titleEn = "Search Insert Position"
+difficulty = "easy"
+tags = ["array", "binary-search"]
+testCase = "nums = [1,3,5,6], target = 5"
+expectedOutput = "2"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 搜索插入位置
+# 在升序数组中查找目标值，如果存在则返回索引
+# 如果不存在，返回应该插入的位置（保持数组有序）
+#
+# 示例:
+#   nums = [1, 3, 5, 6], target = 5
+#   输出: 2（target 在索引 2）
+#
+#   nums = [1, 3, 5, 6], target = 2
+#   输出: 1（应该插入到索引 1）
+#
+# 关键: 数组有序，可以用二分查找"""
+explanation = "**问题分析**\n\n给定一个**升序数组** `nums` 和目标值 `target`：\n- 如果 `target` 存在，返回其索引\n- 如果不存在，返回应该插入的位置\n\n**为什么用二分查找？**\n\n| 方法 | 时间 |\n|------|------|\n| 线性扫描 | O(n) |\n| **二分查找** | **O(log n)** |\n\n数组有序且需要查找/插入位置，二分查找是最佳选择。\n\n**核心思路：左边界二分**\n\n找到第一个 **≥ target** 的位置，就是答案。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 搜索插入位置
+# 在升序数组中查找目标值，如果存在则返回索引
+# 如果不存在，返回应该插入的位置（保持数组有序）
+#
+# 示例:
+#   nums = [1, 3, 5, 6], target = 5
+#   输出: 2（target 在索引 2）
+#
+#   nums = [1, 3, 5, 6], target = 2
+#   输出: 1（应该插入到索引 1）
+#
+# 关键: 数组有序，可以用二分查找
+
+from typing import List
+
+def searchInsert(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引或插入位置。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 参数：`nums`（升序数组）、`target`（目标值）\n- 返回值：`int` — 目标索引或插入位置\n- 使用类型注解明确参数和返回值类型"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化边界 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化边界"
+titleEn = "Initialize Boundaries"
+code = """# 搜索插入位置
+# 在升序数组中查找目标值，如果存在则返回索引
+# 如果不存在，返回应该插入的位置（保持数组有序）
+#
+# 示例:
+#   nums = [1, 3, 5, 6], target = 5
+#   输出: 2（target 在索引 2）
+#
+#   nums = [1, 3, 5, 6], target = 2
+#   输出: 1（应该插入到索引 1）
+#
+# 关键: 数组有序，可以用二分查找
+
+from typing import List
+
+def searchInsert(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引或插入位置。\"\"\"
+    left, right = 0, len(nums)"""
+explanation = "**第 2 步：设置搜索区间**\n\n采用 **左闭右开区间** `[left, right)`：\n\n```\nnums = [1, 3, 5, 6], target = 5\n       [              ]\n        ↑              ↑\n       left          right\n        0              4\n```\n\n| 边界 | 值 | 含义 |\n|------|-----|------|\n| `left` | `0` | 搜索起点（包含） |\n| `right` | `len(nums)` | 搜索终点（不包含） |\n\n> 为什么右边界是 `len(nums)`？\n> 因为 `target` 可能比所有元素都大，需要插入到数组末尾。"
+visualizationType = "code-only"
+
+# ── Step 3: 二分循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "二分收缩"
+titleEn = "Binary Search Loop"
+code = """# 搜索插入位置
+# 在升序数组中查找目标值，如果存在则返回索引
+# 如果不存在，返回应该插入的位置（保持数组有序）
+#
+# 示例:
+#   nums = [1, 3, 5, 6], target = 5
+#   输出: 2（target 在索引 2）
+#
+#   nums = [1, 3, 5, 6], target = 2
+#   输出: 1（应该插入到索引 1）
+#
+# 关键: 数组有序，可以用二分查找
+
+from typing import List
+
+def searchInsert(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引或插入位置。\"\"\"
+    left, right = 0, len(nums)
+    while left < right:
+        mid = (left + right) // 2
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid"""
+explanation = "**第 3 步：二分查找循环**\n\n**循环不变量**：目标值（或插入位置）始终在 `[left, right)` 内。\n\n**收缩逻辑**\n\n| 条件 | 操作 | 说明 |\n|------|------|------|\n| `nums[mid] < target` | `left = mid + 1` | 目标在右半边，mid 太小 |\n| `nums[mid] >= target` | `right = mid` | 目标在左半边（含 mid），mid 可能是答案 |\n\n**示例：`nums = [1,3,5,6], target = 5`**\n\n```\n初始: left=0, right=4\n第1轮: mid=2, nums[2]=5 >= 5 → right=2\n第2轮: left=0, right=2, mid=1, nums[1]=3 < 5 → left=2\n终止: left=2, right=2，返回 2 ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 搜索插入位置
+# 在升序数组中查找目标值，如果存在则返回索引
+# 如果不存在，返回应该插入的位置（保持数组有序）
+#
+# 示例:
+#   nums = [1, 3, 5, 6], target = 5
+#   输出: 2（target 在索引 2）
+#
+#   nums = [1, 3, 5, 6], target = 2
+#   输出: 1（应该插入到索引 1）
+#
+# 关键: 数组有序，可以用二分查找
+
+from typing import List
+
+def searchInsert(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引或插入位置。\"\"\"
+    left, right = 0, len(nums)
+    while left < right:
+        mid = (left + right) // 2
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid
+    return left"""
+explanation = "**最终结果**\n\n✅ 返回 `left` 即为答案\n\n**为什么返回 `left`？**\n\n循环终止时 `left == right`，此时：\n- 如果 `target` 存在，`left` 指向第一个 ≥ target 的位置（即目标索引）\n- 如果 `target` 不存在，`left` 就是最小的插入位置\n\n**验证案例**\n\n| nums | target | 过程 | 返回 |\n|------|--------|------|------|\n| `[1,3,5,6]` | `5` | 找到 `nums[2]=5` | `2` |\n| `[1,3,5,6]` | `2` | 未找到，插入位置 | `1` |\n| `[1,3,5,6]` | `7` | 比所有元素大 | `4` |\n| `[1,3,5,6]` | `0` | 比所有元素小 | `0` |\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(log n) — 每次循环区间减半 |\n| 空间复杂度 | O(1) — 只用两个指针 |"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 3, 5, 6]", result = "2", highlightedIndices = [2] }
+
+[algorithm.summary]
+timeComplexity = "O(log n)"
+spaceComplexity = "O(1)"
+approach = "二分查找（左边界）"
+keyInsight = "循环不变量 [left, right)；终止时 left == right；返回 left 即可（不存在时也是插入位置）"

@@ -1,0 +1,171 @@
+[algorithm]
+id = "combination-sum"
+title = "组合总和"
+titleEn = "Combination Sum"
+difficulty = "medium"
+tags = ["backtracking", "array"]
+testCase = "candidates = [2,3,6,7], target = 7"
+expectedOutput = "[[2,2,3],[7]]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 39. 组合总和
+# 在无重复元素的 candidates 中找出所有和为 target 的组合
+# 关键约束:
+#   - 同一个 candidates 中的数可以被无限次重复使用
+#   - 组合之间无顺序要求（[2,2,3] 与 [2,3,2] 视为同一组合）
+#   - 解集不能包含重复的组合
+#
+# 示例:
+#   candidates = [2,3,6,7], target = 7
+#   结果: [[2,2,3], [7]]"""
+explanation = "**问题分析**\n\n给定一个**无重复元素**的整数数组 `candidates` 和一个目标数 `target`，找出 `candidates` 中所有可以使数字和为目标数 `target` 的**所有不同组合**。\n\n- 每个数可以被**无限次重复**选择\n- 组合之间**无顺序要求**：`[2,2,3]` 与 `[2,3,2]` 视为同一组合\n- 结果按非递减顺序排列\n\n**示例**\n\n```\ncandidates = [2, 3, 6, 7], target = 7\n结果: [[2, 2, 3], [7]]\n```\n\n> 本题与 46/47/77 排列组合问题的核心区别是**每个数可重复使用**，因此递归时仍传 `i` 而不是 `i+1`。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 排序 ──────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "签名与排序"
+titleEn = "Signature and Sort"
+code = """# 39. 组合总和
+# 在无重复元素的 candidates 中找出所有和为 target 的组合
+# 关键约束:
+#   - 同一个 candidates 中的数可以被无限次重复使用
+#   - 组合之间无顺序要求（[2,2,3] 与 [2,3,2] 视为同一组合）
+#   - 解集不能包含重复的组合
+#
+# 示例:
+#   candidates = [2,3,6,7], target = 7
+#   结果: [[2,2,3], [7]]
+
+from typing import List
+
+def combinationSum(candidates: List[int], target: int) -> List[List[int]]:
+    \"\"\"返回和为 target 的所有组合（每个数可重复使用）。\"\"\"
+    candidates.sort()  # 排序便于剪枝
+    res = []
+    def backtrack(start: int, path: List[int], remain: int) -> None:
+        if remain == 0:
+            res.append(path[:])
+            return"""
+explanation = "**第 1 步：函数签名 + 排序 + backtrack 框架**\n\n| 元素 | 作用 |\n|------|------|\n| `candidates.sort()` | 排序后，遍历时遇到 `candidates[i] > remain` 即可剪枝 |\n| `res` | 存放所有合法组合 |\n| `backtrack(start, path, remain)` | 回溯函数，start 是遍历起始位置 |\n| `remain == 0` | 找到合法组合，加入 `res` 并返回 |\n\n> 排序是剪枝的前提——只有升序排列，`candidates[i] > remain` → 后面的更大 才成立。"
+visualizationType = "code-only"
+
+# ── Step 2: for 循环 + 剪枝 + 选 i ────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "遍历与剪枝"
+titleEn = "Iterate and Prune"
+code = """# 39. 组合总和
+# 在无重复元素的 candidates 中找出所有和为 target 的组合
+# 关键约束:
+#   - 同一个 candidates 中的数可以被无限次重复使用
+#   - 组合之间无顺序要求（[2,2,3] 与 [2,3,2] 视为同一组合）
+#   - 解集不能包含重复的组合
+#
+# 示例:
+#   candidates = [2,3,6,7], target = 7
+#   结果: [[2,2,3], [7]]
+
+from typing import List
+
+def combinationSum(candidates: List[int], target: int) -> List[List[int]]:
+    \"\"\"返回和为 target 的所有组合（每个数可重复使用）。\"\"\"
+    candidates.sort()  # 排序便于剪枝
+    res = []
+    def backtrack(start: int, path: List[int], remain: int) -> None:
+        if remain == 0:
+            res.append(path[:])
+            return
+        for i in range(start, len(candidates)):
+            if candidates[i] > remain:
+                break  # 剪枝：后面的数更大，肯定都超
+            path.append(candidates[i])"""
+explanation = "**第 2 步：遍历候选数 + 剪枝**\n\n```python\nfor i in range(start, len(candidates)):\n    if candidates[i] > remain:\n        break  # 剪枝\n    path.append(candidates[i])\n```\n\n**遍历起点的意义**\n\n- 从 `start` 开始遍历，保证组合是**非递减**的（自动去重）\n- 比如先选 2 后，永远不会再选 3 之前的数\n\n**剪枝条件**\n\n- 数组已排序，若 `candidates[i] > remain` 则 `i` 之后的所有数都 `> remain`\n- 直接 `break` 退出循环，避免无效递归\n\n> 例：`remain = 1` 时，若 `candidates[i] = 2`，后面 3、6、7 也都超，可一次性剪掉。"
+visualizationType = "code-only"
+
+# ── Step 3: 递归 + pop ───────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "递归与回溯"
+titleEn = "Recurse and Backtrack"
+code = """# 39. 组合总和
+# 在无重复元素的 candidates 中找出所有和为 target 的组合
+# 关键约束:
+#   - 同一个 candidates 中的数可以被无限次重复使用
+#   - 组合之间无顺序要求（[2,2,3] 与 [2,3,2] 视为同一组合）
+#   - 解集不能包含重复的组合
+#
+# 示例:
+#   candidates = [2,3,6,7], target = 7
+#   结果: [[2,2,3], [7]]
+
+from typing import List
+
+def combinationSum(candidates: List[int], target: int) -> List[List[int]]:
+    \"\"\"返回和为 target 的所有组合（每个数可重复使用）。\"\"\"
+    candidates.sort()  # 排序便于剪枝
+    res = []
+    def backtrack(start: int, path: List[int], remain: int) -> None:
+        if remain == 0:
+            res.append(path[:])
+            return
+        for i in range(start, len(candidates)):
+            if candidates[i] > remain:
+                break  # 剪枝：后面的数更大，肯定都超
+            path.append(candidates[i])
+            backtrack(i, path, remain - candidates[i])  # 关键：传 i，不是 i+1
+            path.pop()  # 回溯：撤销选择"""
+explanation = "**第 3 步：递归 + 回溯**\n\n```python\nbacktrack(i, path, remain - candidates[i])  # 关键：传 i\npath.pop()                                   # 回溯\n```\n\n**核心：递归时传 `i` 而不是 `i+1`**\n\n| 写法 | 含义 |\n|------|------|\n| `backtrack(i+1, ...)` | 每个数只能用一次（77 题组合问题） |\n| **`backtrack(i, ...)`** | **每个数可以重复使用（本题）** |\n\n**回溯三步走**\n\n1. `path.append(candidates[i])` — 做选择\n2. `backtrack(i, path, remain - candidates[i])` — 进入下一层\n3. `path.pop()` — 撤销选择（恢复现场）\n\n> 没有 `pop` 的话，下次循环会带上前一次的脏数据，导致结果错误。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ─────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 39. 组合总和
+# 在无重复元素的 candidates 中找出所有和为 target 的组合
+# 关键约束:
+#   - 同一个 candidates 中的数可以被无限次重复使用
+#   - 组合之间无顺序要求（[2,2,3] 与 [2,3,2] 视为同一组合）
+#   - 解集不能包含重复的组合
+#
+# 示例:
+#   candidates = [2,3,6,7], target = 7
+#   结果: [[2,2,3], [7]]
+
+from typing import List
+
+def combinationSum(candidates: List[int], target: int) -> List[List[int]]:
+    \"\"\"返回和为 target 的所有组合（每个数可重复使用）。\"\"\"
+    candidates.sort()  # 排序便于剪枝
+    res = []
+    def backtrack(start: int, path: List[int], remain: int) -> None:
+        if remain == 0:
+            res.append(path[:])
+            return
+        for i in range(start, len(candidates)):
+            if candidates[i] > remain:
+                break  # 剪枝：后面的数更大，肯定都超
+            path.append(candidates[i])
+            backtrack(i, path, remain - candidates[i])  # 关键：传 i，不是 i+1
+            path.pop()  # 回溯：撤销选择
+    backtrack(0, [], target)
+    return res
+
+# 调用示例
+# candidates = [2,3,6,7], target = 7
+# print(combinationSum([2,3,6,7], 7))  # [[2, 2, 3], [7]]"""
+explanation = "**最终结果**\n\n```\n输入: candidates = [2, 3, 6, 7], target = 7\n输出: [[2, 2, 3], [7]]\n```\n\n**完整执行流程（递归树）**\n\n```\nbacktrack(0, [], 7)\n├─ 选 2 → backtrack(0, [2], 5)\n│   ├─ 选 2 → backtrack(0, [2,2], 3)\n│   │   ├─ 选 2 → [2,2,2] 剩 1, 跳过\n│   │   ├─ 选 3 → [2,2,3] 剩 0 ✓ 加入 res\n│   │   └─ 6, 7 都被剪枝\n│   └─ 选 3 → [2,3] 剩 2, 再选 3 剩 -1 跳过\n├─ 选 3 → [3] 剩 4, 选 3 → [3,3] 剩 1 跳过\n├─ 选 6 → 6 > 1 剪枝 (remain 之后变化不影响)\n└─ 选 7 → [7] 剩 0 ✓ 加入 res\n```\n\n**算法复杂度**\n\n| 指标 | 值 | 原因 |\n|------|------|------|\n| 时间复杂度 | O(2^n) | 每个数有「选/不选」两路，n 为递归深度 |\n| 空间复杂度 | O(target) | 递归栈深度 + path 长度 |\n\n**关键技巧**\n\n- **排序 + 剪枝**：`candidates[i] > remain` 时 `break`\n- **传 `i` 而非 `i+1`**：允许重复使用同一元素\n- **`path[:]` 拷贝**：加入 `res` 时必须深拷贝，否则后续 pop 会改到已存的列表"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 3, 6, 7]", result = "[[2, 2, 3], [7]]", highlightedIndices = [0, 1, 3] }
+
+[algorithm.summary]
+timeComplexity = "O(2^n)  # 指数级"
+spaceComplexity = "O(target)  # 递归栈 + path"
+approach = "回溯 + 起始位置 + 重复使用"
+keyInsight = "递归时仍传 i（不是 i+1）允许重复使用；排序 + 剪枝 = candidates[i] > remain 提前 break"

@@ -1,0 +1,171 @@
+[algorithm]
+id = "set-matrix-zeroes"
+title = "矩阵置零"
+titleEn = "Set Matrix Zeroes"
+difficulty = "medium"
+tags = ["array", "hash-table", "matrix"]
+testCase = "matrix = [[1,1,1],[1,0,1],[1,1,1]]"
+expectedOutput = "[[1,0,1],[0,0,0],[1,0,1]]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 矩阵置零
+# 给定一个 m x n 的矩阵，如果某元素为 0
+# 则把其所在行和列的所有元素都置 0
+#
+# 要求原地操作：直接修改原矩阵，不能用额外矩阵复制
+#
+# 示例:
+#   输入: [[1,1,1],[1,0,1],[1,1,1]]
+#   输出: [[1,0,1],[0,0,0],[1,0,1]]"""
+explanation = "**问题分析**\n\n给定一个 m x n 矩阵，如果某个位置 `(i, j)` 是 0，那么第 `i` 行和第 `j` 列所有元素都要变成 0。\n\n**关键约束**\n\n- **原地操作**：必须直接修改原矩阵，不能用额外的矩阵做 copy\n- 难点：如果先把一行置零，再遍历到这一行的 0，就会「污染」信息\n\n**两种解法对比**\n\n| 解法 | 时间 | 空间 | 思路 |\n|------|------|------|------|\n| 两个 set 记录要清零的行/列 | O(mn) | O(m+n) | 易讲清思路 |\n| **用第一行第一列做标记** | **O(mn)** | **O(1)** | 进阶，空间最优 |\n\n> 本题采用 set 法：思路直接、易懂，适合作为入门讲解。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 矩阵置零
+# 给定一个 m x n 的矩阵，如果某元素为 0
+# 则把其所在行和列的所有元素都置 0
+#
+# 要求原地操作：直接修改原矩阵，不能用额外矩阵复制
+#
+# 示例:
+#   输入: [[1,1,1],[1,0,1],[1,1,1]]
+#   输出: [[1,0,1],[0,0,0],[1,0,1]]
+
+from typing import List
+
+def setZeroes(matrix: List[List[int]]) -> None:
+    \"\"\"原地修改矩阵，把含 0 的行和列全部置零。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 参数：`matrix: List[List[int]]` — 二维整数列表\n- 返回值：`None` — **原地修改**矩阵\n- 文档字符串说明函数行为"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化两个 set ────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化两个集合"
+titleEn = "Initialize Two Sets"
+code = """# 矩阵置零
+# 给定一个 m x n 的矩阵，如果某元素为 0
+# 则把其所在行和列的所有元素都置 0
+#
+# 要求原地操作：直接修改原矩阵，不能用额外矩阵复制
+#
+# 示例:
+#   输入: [[1,1,1],[1,0,1],[1,1,1]]
+#   输出: [[1,0,1],[0,0,0],[1,0,1]]
+
+from typing import List
+
+def setZeroes(matrix: List[List[int]]) -> None:
+    \"\"\"原地修改矩阵，把含 0 的行和列全部置零。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    rows, cols = set(), set()"""
+explanation = "**第 2 步：获取矩阵尺寸，初始化两个 set**\n\n- `m` 是行数，`n` 是列数\n- `rows` 用来记录**所有需要清零的行索引**\n- `cols` 用来记录**所有需要清零的列索引**\n\n**为什么用 set？**\n\n- 自动去重：同一行有多个 0 也只记录一次\n- O(1) 查找/插入\n\n> 用 set 把「哪些行/列要清零」的信息先存下来，最后再统一处理，避免「一边遍历一边修改」导致信息丢失。"
+visualizationType = "code-only"
+
+# ── Step 3: 第一次扫描，记录 0 位置 ──────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "扫描记录 0"
+titleEn = "First Scan: Record Zeros"
+code = """# 矩阵置零
+# 给定一个 m x n 的矩阵，如果某元素为 0
+# 则把其所在行和列的所有元素都置 0
+#
+# 要求原地操作：直接修改原矩阵，不能用额外矩阵复制
+#
+# 示例:
+#   输入: [[1,1,1],[1,0,1],[1,1,1]]
+#   输出: [[1,0,1],[0,0,0],[1,0,1]]
+
+from typing import List
+
+def setZeroes(matrix: List[List[int]]) -> None:
+    \"\"\"原地修改矩阵，把含 0 的行和列全部置零。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    rows, cols = set(), set()
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == 0:
+                rows.add(i); cols.add(j)"""
+explanation = "**第 3 步：第一次扫描，记录所有 0 的位置**\n\n遍历整个矩阵，一旦发现 `matrix[i][j] == 0`：\n- 把行索引 `i` 加入 `rows`\n- 把列索引 `j` 加入 `cols`\n\n**示例执行**\n\n```\n初始矩阵:                  扫描结果:\n[1, 1, 1]                  rows = {1}\n[1, 0, 1]   →  发现 (1,1)  cols = {1}\n[1, 1, 1]\n```\n\n**关键点**：这一遍**只读不改**，原矩阵保持完好。\n\n| 复杂度 | 说明 |\n|------|------|\n| 时间 | O(mn) — 每个元素看一次 |\n| 空间 | O(m+n) — 两个 set 最坏情况 |\n\n> 下一阶段会根据 `rows` 和 `cols` 真正去置零。"
+visualizationType = "code-only"
+
+# ── Step 4: 第二次扫描，根据 set 置零 ─────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "置零行和列"
+titleEn = "Zero Out Rows and Columns"
+code = """# 矩阵置零
+# 给定一个 m x n 的矩阵，如果某元素为 0
+# 则把其所在行和列的所有元素都置 0
+#
+# 要求原地操作：直接修改原矩阵，不能用额外矩阵复制
+#
+# 示例:
+#   输入: [[1,1,1],[1,0,1],[1,1,1]]
+#   输出: [[1,0,1],[0,0,0],[1,0,1]]
+
+from typing import List
+
+def setZeroes(matrix: List[List[int]]) -> None:
+    \"\"\"原地修改矩阵，把含 0 的行和列全部置零。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    rows, cols = set(), set()
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == 0:
+                rows.add(i); cols.add(j)
+    for i in rows:
+        for j in range(n): matrix[i][j] = 0
+    for j in cols:
+        for i in range(m): matrix[i][j] = 0"""
+explanation = "**第 4 步：根据 set 把行和列全部置零**\n\n- 对 `rows` 中的每个行索引 `i`，把整行置 0\n- 对 `cols` 中的每个列索引 `j`，把整列置 0\n\n**为什么可以分开两步？**\n\n- 第一步只动行，不影响其他行的 0 信息\n- 第二步只动列，行已经被处理完\n- 不会产生「边遍历边污染」的问题\n\n**示例执行**\n\n```\n初始:                rows={1}, cols={1}\n[1, 1, 1]\n[1, 0, 1]\n[1, 1, 1]\n\n第 1 行置零 →\n[1, 1, 1]\n[0, 0, 0]\n[1, 1, 1]\n\n第 1 列置零 →\n[1, 0, 1]\n[0, 0, 0]\n[1, 0, 1]   ✅\n```\n\n**复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间 | O(mn) — 最多置 m*n 个元素 |\n| 空间 | O(m+n) — 两个 set |\n\n> 进阶：可以复用第一行第一列做标记，把空间压到 O(1)，但代码更绕。本解法思路更清晰。"
+visualizationType = "code-only"
+
+# ── Step 5: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 5
+title = "完成"
+titleEn = "Complete"
+code = """# 矩阵置零
+# 给定一个 m x n 的矩阵，如果某元素为 0
+# 则把其所在行和列的所有元素都置 0
+#
+# 要求原地操作：直接修改原矩阵，不能用额外矩阵复制
+#
+# 示例:
+#   输入: [[1,1,1],[1,0,1],[1,1,1]]
+#   输出: [[1,0,1],[0,0,0],[1,0,1]]
+
+from typing import List
+
+def setZeroes(matrix: List[List[int]]) -> None:
+    \"\"\"原地修改矩阵，把含 0 的行和列全部置零。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    rows, cols = set(), set()
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == 0:
+                rows.add(i); cols.add(j)
+    for i in rows:
+        for j in range(n): matrix[i][j] = 0
+    for j in cols:
+        for i in range(m): matrix[i][j] = 0"""
+explanation = "**最终结果**\n\n✅ 原地置零完成\n\n```\n输入: [[1,1,1],[1,0,1],[1,1,1]]\n输出: [[1,0,1],[0,0,0],[1,0,1]]\n```\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | O(mn) | 扫描 + 置零各一次 |\n| 空间复杂度 | O(m+n) | 两个 set 记录要清零的行/列 |\n\n**核心思想：分离读和写**\n\n1. **第一遍扫描**：只读，把「哪些行/列要清零」记下来\n2. **第二遍操作**：根据记录，统一置零\n\n**为什么不能边遍历边置零？**\n\n如果扫描时直接修改矩阵，新生成的 0 会「污染」还没扫描的位置，导致多置零行/列。**先记录、再操作**是矩阵原地修改的通用模式。\n\n**进阶提示**：可以用第一行第一列本身做标记，把空间压到 O(1)，但要先单独保存第一行/列的原始状态。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[1,0,1],[0,0,0],[1,0,1]]", result = "[[1,0,1],[0,0,0],[1,0,1]]", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(mn)"
+spaceComplexity = "O(m + n)"
+approach = "两个 set 分别记录要清零的行和列"
+keyInsight = "先扫描记录 0 的位置，再统一置零，避免边遍历边修改导致信息污染"

@@ -1,0 +1,229 @@
+[algorithm]
+id = "reverse-nodes-in-k-group"
+title = "K 个一组翻转链表"
+titleEn = "Reverse Nodes in k-Group"
+difficulty = "hard"
+category = "linked-list"
+tags = ["linked-list", "recursion"]
+testCase = "head = [1,2,3,4,5], k = 2"
+expectedOutput = "[2,1,4,3,5]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# K 个一组翻转链表
+# 给定一个链表的头节点 head 和整数 k
+# 每 k 个节点一组进行翻转，不足 k 的节点保持原样
+#
+# 示例:
+#   head = [1,2,3,4,5], k = 2  →  [2,1,4,3,5]
+#   head = [1,2,3,4,5], k = 3  →  [3,2,1,4,5]
+#
+# 边界:
+#   - 剩余节点不足 k 时，原样保留（不翻转）
+#   - k == 1 时链表不变
+#   - 链表为空或只有 1 个节点时直接返回"""
+explanation = "**问题分析**\n\n给定链表 `head` 和整数 `k`，按每 `k` 个一组翻转链表：\n\n- `[1,2,3,4,5]`, `k=2` → `[2,1,4,3,5]`\n- `[1,2,3,4,5]`, `k=3` → `[3,2,1,4,5]`\n\n**关键边界：不足 k 保持原样**\n\n```\nk=3 时:\n  [1,2,3,4,5]\n   └───┘    ↑ 剩 2 个，不足 3 → 保持 [4,5]\n  翻转这一组\n  → [3,2,1,4,5]\n```\n\n> 最后一组如果节点数 `< k`，**整体不翻转**，这是与「翻转全部」的核心区别。\n\n**解法对比**\n\n| 解法 | 时间 | 空间 | 思路 |\n|------|------|------|------|\n| **递归** | O(n) | O(n) | 每组反转后递归接剩余 |\n| 迭代 + 区间反转 | O(n) | O(1) | dummy + pre 指针 |\n\n> 推荐递归版：思路直接，代码更短。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# K 个一组翻转链表
+# 给定一个链表的头节点 head 和整数 k
+# 每 k 个节点一组进行翻转，不足 k 的节点保持原样
+#
+# 示例:
+#   head = [1,2,3,4,5], k = 2  →  [2,1,4,3,5]
+#   head = [1,2,3,4,5], k = 3  →  [3,2,1,4,5]
+#
+# 边界:
+#   - 剩余节点不足 k 时，原样保留（不翻转）
+#   - k == 1 时链表不变
+#   - 链表为空或只有 1 个节点时直接返回
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def reverseKGroup(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"每 k 个一组翻转链表，不足 k 的节点保持原样。\"\"\"
+    pass"""
+explanation = "**第 1 步：定义数据结构与函数签名**\n\n- 定义 `ListNode` 类：`val` + `next`\n- `reverseKGroup(head, k) -> Optional[ListNode]`\n- 使用类型注解 `Optional[ListNode]` 表示可能为 `None`\n- 文档字符串描述关键约束：**不足 k 保持原样**"
+visualizationType = "code-only"
+
+# ── Step 2: 检查剩余是否 ≥ k ────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "检查剩余长度"
+titleEn = "Check Remaining Length"
+code = """# K 个一组翻转链表
+# 给定一个链表的头节点 head 和整数 k
+# 每 k 个节点一组进行翻转，不足 k 的节点保持原样
+#
+# 示例:
+#   head = [1,2,3,4,5], k = 2  →  [2,1,4,3,5]
+#   head = [1,2,3,4,5], k = 3  →  [3,2,1,4,5]
+#
+# 边界:
+#   - 剩余节点不足 k 时，原样保留（不翻转）
+#   - k == 1 时链表不变
+#   - 链表为空或只有 1 个节点时直接返回
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def reverseKGroup(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"每 k 个一组翻转链表，不足 k 的节点保持原样。\"\"\"
+    cur = head
+    for _ in range(k):
+        if not cur:
+            return head
+        cur = cur.next"""
+explanation = "**第 2 步：递归基线 — 检查剩余是否 ≥ k**\n\n用指针 `cur` 走 `k` 步，看是否能走完：\n\n| 情况 | 处理 |\n|------|------|\n| 中途 `cur is None` | 剩余不足 `k` → 直接返回 `head`（保持原样） |\n| 走完 `k` 步都有效 | 进入下一阶段翻转 |\n\n**为什么是基线条件？**\n\n> 这是递归终止的关键 — 不足 `k` 的尾段**原样保留**，正好契合题目要求。\n\n```\n[1,2,3,4,5], k=3\ncur 走 3 步 → 到达 4（有效），可以翻转前 3 个\n[1,2,3,4,5,6], k=3\ncur 走 3 步 → 到达 4（有效），可以翻转前 3 个\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 反转前 k 个 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "反转前 k 个"
+titleEn = "Reverse First k"
+code = """# K 个一组翻转链表
+# 给定一个链表的头节点 head 和整数 k
+# 每 k 个节点一组进行翻转，不足 k 的节点保持原样
+#
+# 示例:
+#   head = [1,2,3,4,5], k = 2  →  [2,1,4,3,5]
+#   head = [1,2,3,4,5], k = 3  →  [3,2,1,4,5]
+#
+# 边界:
+#   - 剩余节点不足 k 时，原样保留（不翻转）
+#   - k == 1 时链表不变
+#   - 链表为空或只有 1 个节点时直接返回
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def reverseKGroup(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"每 k 个一组翻转链表，不足 k 的节点保持原样。\"\"\"
+    cur = head
+    for _ in range(k):
+        if not cur:
+            return head
+        cur = cur.next
+    prev, cur = None, head
+    for _ in range(k):
+        nxt = cur.next
+        cur.next = prev
+        prev = cur
+        cur = nxt"""
+explanation = "**第 3 步：反转前 k 个节点**\n\n用经典的三指针 `prev / cur / nxt` 反转链表（参考 lc206）：\n\n```\n初始:  head → 1 → 2 → 3 → 4 → 5\n       prev  cur\n\n第 1 步: prev=1, cur=2   (1 → None)\n第 2 步: prev=2, cur=3   (2 → 1)\n第 3 步: prev=3, cur=4   (3 → 2 → 1)\n\n结果:  prev → 3 → 2 → 1,  cur → 4 → 5\n```\n\n| 变量 | 作用 |\n|------|------|\n| `prev` | 已反转部分的尾（最终是新组的头） |\n| `cur` | 待处理的节点 |\n| `nxt` | 暂存 `cur.next`，防止断链 |\n\n> 反转结束后，`prev` 指向这组新头，`cur` 指向下一组的起点（即剩余部分）。"
+visualizationType = "code-only"
+
+# ── Step 4: 递归接剩余 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "递归接剩余"
+titleEn = "Recurse on Rest"
+code = """# K 个一组翻转链表
+# 给定一个链表的头节点 head 和整数 k
+# 每 k 个节点一组进行翻转，不足 k 的节点保持原样
+#
+# 示例:
+#   head = [1,2,3,4,5], k = 2  →  [2,1,4,3,5]
+#   head = [1,2,3,4,5], k = 3  →  [3,2,1,4,5]
+#
+# 边界:
+#   - 剩余节点不足 k 时，原样保留（不翻转）
+#   - k == 1 时链表不变
+#   - 链表为空或只有 1 个节点时直接返回
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def reverseKGroup(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"每 k 个一组翻转链表，不足 k 的节点保持原样。\"\"\"
+    cur = head
+    for _ in range(k):
+        if not cur:
+            return head
+        cur = cur.next
+    prev, cur = None, head
+    for _ in range(k):
+        nxt = cur.next
+        cur.next = prev
+        prev = cur
+        cur = nxt
+    head.next = reverseKGroup(cur, k)
+    return prev"""
+explanation = "**第 4 步：递归拼接**\n\n反转后状态：\n\n```\nprev → 3 → 2 → 1   (这一组已被反转)\n        ↑\n       head（原 head，现在是这组的尾）\ncur → 4 → 5 → ...  (剩余未处理的部分)\n```\n\n**两步关键操作：**\n\n1. `head.next = reverseKGroup(cur, k)`：让原 head（现在的尾）指向剩余部分的递归结果\n2. `return prev`：返回这一组的新头\n\n**完整示例推演 `[1,2,3,4,5], k=2`：**\n\n```\n第 1 组: 反转 [1,2]      → [2,1],    cur→[3,4,5]\n第 2 组: 反转 [3,4]      → [4,3],    cur→[5]\n第 3 组: 剩 [5] 不足 2   → 原样,    return head\n\n拼接:\n  1 → reverseKGroup([3,4,5])  →  1.next = [4,3,5]\n  3 → reverseKGroup([5])      →  3.next = [5]\n最终: [2,1,4,3,5] ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 5: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 5
+title = "完成"
+titleEn = "Complete"
+code = """# K 个一组翻转链表
+# 给定一个链表的头节点 head 和整数 k
+# 每 k 个节点一组进行翻转，不足 k 的节点保持原样
+#
+# 示例:
+#   head = [1,2,3,4,5], k = 2  →  [2,1,4,3,5]
+#   head = [1,2,3,4,5], k = 3  →  [3,2,1,4,5]
+#
+# 边界:
+#   - 剩余节点不足 k 时，原样保留（不翻转）
+#   - k == 1 时链表不变
+#   - 链表为空或只有 1 个节点时直接返回
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def reverseKGroup(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"每 k 个一组翻转链表，不足 k 的节点保持原样。\"\"\"
+    cur = head
+    for _ in range(k):
+        if not cur:
+            return head
+        cur = cur.next
+    prev, cur = None, head
+    for _ in range(k):
+        nxt = cur.next
+        cur.next = prev
+        prev = cur
+        cur = nxt
+    head.next = reverseKGroup(cur, k)
+    return prev"""
+explanation = "**最终结果**\n\n```\n输入: head = [1,2,3,4,5], k = 2\n输出: [2,1,4,3,5]\n\n输入: head = [1,2,3,4,5], k = 3\n输出: [3,2,1,4,5]\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | **O(n)** — 每个节点最多访问两次（一次检查、一次反转） |\n| 空间复杂度 | **O(n)** — 递归栈深度 = 节点数 / k |\n\n**核心思路**\n\n> **三阶段递归模式**：\n> 1. 检查剩余是否 ≥ k（基线）\n> 2. 反转前 k 个（标准链表反转）\n> 3. 递归处理剩余，把当前尾接上\n\n**边界条件再强调**\n\n- **不足 k 保持原样**：这是题目最容易被忽略的边界 — 基线返回 `head` 而非处理结果\n- **k=1 时**：每次都返回原 head，链表不变\n- **空链表 / 单节点**：`for k` 第一步就 `cur is None`，直接返回 `head`"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 1, 4, 3, 5]", result = "[2,1,4,3,5]", highlightedIndices = [0, 1, 2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "递归：检查剩余 ≥ k 后反转前 k 个，递归接剩余"
+keyInsight = "基线返回 head（不足 k 保持原样）+ 递归处理剩余部分"

@@ -1,0 +1,218 @@
+[algorithm]
+id = "flatten-binary-tree-to-linked-list"
+title = "二叉树展开为链表"
+titleEn = "Flatten Binary Tree to Linked List"
+difficulty = "medium"
+tags = ["tree", "dfs", "linked-list"]
+testCase = "root = [1,2,5,3,4,null,6]"
+expectedOutput = "[1,null,2,null,3,null,4,null,5,null,6]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 二叉树展开为链表
+# 给定二叉树 root，将它原地展开为单链表
+# 链表节点的顺序对应二叉树的先序遍历
+# 要求：
+#   - 所有节点 left 指针置 None
+#   - 使用 right 指针作为链表的 next
+#   - 原地修改，不创建新节点
+#
+# 示例:
+#   root = [1,2,5,3,4,null,6]
+#        1
+#       / \\
+#      2   5
+#     / \\   \\
+#    3   4   6
+#
+#   结果: 1 → 2 → 3 → 4 → 5 → 6
+#   [1,null,2,null,3,null,4,null,5,null,6]"""
+explanation = "**问题分析**\n\n把二叉树原地（in-place）拉成单链表，顺序是先序遍历：\n\n- 所有节点的 `left` 指针必须置 `None`\n- 使用 `right` 指针作为链表 `next`\n- 不能创建新节点，只能改指针\n\n**关键挑战：不能丢失子树**\n\n把左子树挂到 `root.right` 之前，必须先**把原来的右子树接到左子树末尾**。\n\n| 方法 | 思路 | 复杂度 |\n|------|------|--------|\n| 前序遍历存列表再重链 | 先存到数组，再串成链表 | O(n) 时间 + O(n) 空间 |\n| **后序 DFS + prev** | 反向遍历（先右后左）天然得到 prev | **O(n) 时间 + O(h) 空间** |\n\n> 反向遍历时，prev 始终是「下一个应挂在 node.right 的节点」。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 二叉树展开为链表
+# 给定二叉树 root，将它原地展开为单链表
+# 链表节点的顺序对应二叉树的先序遍历
+# 要求：
+#   - 所有节点 left 指针置 None
+#   - 使用 right 指针作为链表的 next
+#   - 原地修改，不创建新节点
+#
+# 示例:
+#   root = [1,2,5,3,4,null,6]
+#        1
+#       / \\
+#      2   5
+#     / \\   \\
+#    3   4   6
+#
+#   结果: 1 → 2 → 3 → 4 → 5 → 6
+#   [1,null,2,null,3,null,4,null,5,null,6]
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def flatten(root: Optional[TreeNode]) -> None:
+    \"\"\"将二叉树原地展平为链表（先序顺序）\"\"\"
+    pass"""
+explanation = "**第 1 步：定义结构与函数签名**\n\n- `TreeNode`：标准二叉树节点，包含 `val`、`left`、`right` 三个字段\n- `flatten(root: Optional[TreeNode]) -> None`\n  - 入参：`Optional[TreeNode]`，允许空树\n  - 返回：`None`，**原地修改**\n- 文档字符串说明函数目的"
+visualizationType = "code-only"
+
+# ── Step 2: prev 全局变量 + dfs 定义 ────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "prev 与 dfs 框架"
+titleEn = "prev and dfs Skeleton"
+code = """# 二叉树展开为链表
+# 给定二叉树 root，将它原地展开为单链表
+# 链表节点的顺序对应二叉树的先序遍历
+# 要求：
+#   - 所有节点 left 指针置 None
+#   - 使用 right 指针作为链表的 next
+#   - 原地修改，不创建新节点
+#
+# 示例:
+#   root = [1,2,5,3,4,null,6]
+#        1
+#       / \\
+#      2   5
+#     / \\   \\
+#    3   4   6
+#
+#   结果: 1 → 2 → 3 → 4 → 5 → 6
+#   [1,null,2,null,3,null,4,null,5,null,6]
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def flatten(root: Optional[TreeNode]) -> None:
+    \"\"\"将二叉树原地展平为链表（先序顺序）\"\"\"
+    pass
+    prev = [None]  # 用 list 包装，模拟闭包内可写的全局变量
+    def dfs(node: Optional[TreeNode]) -> None:
+        pass"""
+explanation = "**第 2 步：prev 指针 + dfs 框架**\n\n- `prev = [None]`：用长度为 1 的列表包一层，模拟「在嵌套函数里可写的外层变量」\n  - `prev[0]` 永远指向「上一次访问的节点」\n  - 初始化为 `None`，因为第一个访问的节点的 `right` 设为 `None`\n- 内部 `dfs(node)`：递归处理子树\n\n> **为什么用 list 而非 nonlocal？**\n> nonlocal 语法在某些老旧 Python 版本中支持不一致；用 list 容器是更通用的写法。"
+visualizationType = "code-only"
+
+# ── Step 3: dfs 递归体（反向遍历 + 重组指针） ────────────────
+[[algorithm.steps]]
+id = 3
+title = "反向 DFS 与重组指针"
+titleEn = "Reverse DFS and Re-link"
+code = """# 二叉树展开为链表
+# 给定二叉树 root，将它原地展开为单链表
+# 链表节点的顺序对应二叉树的先序遍历
+# 要求：
+#   - 所有节点 left 指针置 None
+#   - 使用 right 指针作为链表的 next
+#   - 原地修改，不创建新节点
+#
+# 示例:
+#   root = [1,2,5,3,4,null,6]
+#        1
+#       / \\
+#      2   5
+#     / \\   \\
+#    3   4   6
+#
+#   结果: 1 → 2 → 3 → 4 → 5 → 6
+#   [1,null,2,null,3,null,4,null,5,null,6]
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def flatten(root: Optional[TreeNode]) -> None:
+    \"\"\"将二叉树原地展平为链表（先序顺序）\"\"\"
+    pass
+    prev = [None]  # 用 list 包装，模拟闭包内可写的全局变量
+    def dfs(node: Optional[TreeNode]) -> None:
+        pass
+        if not node:
+            return
+        dfs(node.right)  # 关键：先右后左 → 反向先序
+        dfs(node.left)
+        node.right = prev[0]  # 当前的 right 指向上一个访问的节点
+        node.left = None      # left 必须置 None（链表要求）
+        prev[0] = node        # 更新 prev
+    dfs(root)"""
+explanation = "**第 3 步：反向 DFS + 重组指针**\n\n**遍历顺序：先右后左（反向先序）**\n\n| 步骤 | 顺序 | 说明 |\n|------|------|------|\n| 1 | `dfs(node.right)` | 先处理右子树 |\n| 2 | `dfs(node.left)` | 再处理左子树 |\n| 3 | `node.right = prev[0]` | 接到「上一个访问的节点」 |\n| 4 | `node.left = None` | 断开左指针 |\n| 5 | `prev[0] = node` | 更新 prev |\n\n**为什么反向遍历？**\n\n先序遍历：根 → 左 → 右。反过来就是 **右 → 左 → 根**。\n- 访问到 `node` 时，prev 已经是「在原树中先序排在 `node` 之后的节点」\n- 直接 `node.right = prev[0]` 即可，无需去「寻找右子树末尾」\n\n> 这种「反向链接」思路在链表/树重链中非常常见（如 206 反转链表）。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 二叉树展开为链表
+# 给定二叉树 root，将它原地展开为单链表
+# 链表节点的顺序对应二叉树的先序遍历
+# 要求：
+#   - 所有节点 left 指针置 None
+#   - 使用 right 指针作为链表的 next
+#   - 原地修改，不创建新节点
+#
+# 示例:
+#   root = [1,2,5,3,4,null,6]
+#        1
+#       / \\
+#      2   5
+#     / \\   \\
+#    3   4   6
+#
+#   结果: 1 → 2 → 3 → 4 → 5 → 6
+#   [1,null,2,null,3,null,4,null,5,null,6]
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def flatten(root: Optional[TreeNode]) -> None:
+    \"\"\"将二叉树原地展平为链表（先序顺序）\"\"\"
+    pass
+    prev = [None]  # 用 list 包装，模拟闭包内可写的全局变量
+    def dfs(node: Optional[TreeNode]) -> None:
+        pass
+        if not node:
+            return
+        dfs(node.right)  # 关键：先右后左 → 反向先序
+        dfs(node.left)
+        node.right = prev[0]  # 当前的 right 指向上一个访问的节点
+        node.left = None      # left 必须置 None（链表要求）
+        prev[0] = node        # 更新 prev
+    dfs(root)"""
+explanation = "**最终结果**\n\n输入树：\n\n```\n        1\n       / \\\n      2   5\n     / \\   \\\n    3   4   6\n```\n\n展平后：\n\n```\n1 → 2 → 3 → 4 → 5 → 6\n```\n\n**复杂度分析**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个节点访问一次 |\n| 空间复杂度 | O(h) — 递归栈深度，h 为树高 |\n\n**核心要点**\n\n- **反向遍历**：先序反过来走，`prev` 就是「下一个应链接的节点」\n- **原地修改**：不创建新节点，仅调整 `right/left` 指针\n- **`prev` 容器**：用 `list` 模拟可变的全局变量，避免 nonlocal 的兼容问题"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 4, 5, 6]", result = "[1, null, 2, null, 3, null, 4, null, 5, null, 6]", highlightedIndices = [0, 1, 2, 3, 4, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(h)  # 递归栈"
+approach = "后序 DFS + prev 指针重链"
+keyInsight = "反向遍历（右→左）天然给出'前一个节点'，避免寻找右子树末尾；原地修改 right/left"

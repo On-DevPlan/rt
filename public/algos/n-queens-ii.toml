@@ -1,0 +1,180 @@
+[algorithm]
+id = "n-queens-ii"
+title = "N 皇后 II"
+titleEn = "N-Queens II"
+difficulty = "hard"
+tags = ["backtracking"]
+testCase = "n = 4"
+expectedOutput = "2"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 52. N 皇后 II
+# 计算 n 皇后问题的不同解的数量
+#
+# 皇后攻击规则:
+#   - 同一行、同一列、同一对角线上不能有两个皇后
+#
+# 关键约束:
+#   - n 皇后 = 在 n×n 棋盘上放 n 个互不攻击的皇后
+#   - 经典结果: n=1→1, n=2→0, n=3→0, n=4→2, n=5→10
+#
+# 示例:
+#   n = 4 → 2 个解"""
+explanation = "**问题分析**\n\n**n 皇后问题**：在 `n×n` 棋盘上放 `n` 个皇后，要求任何两个皇后互不攻击。\n\n**互不攻击的含义**\n\n- 同一行只能有一个皇后\n- 同一列只能有一个皇后\n- 同一主对角线（↘）只能有一个皇后\n- 同一副对角线（↗）只能有一个皇后\n\n**n=4 的两个解**\n\n```\n. Q . .     . . Q .\n. . . Q     Q . . .\nQ . . .     . . . Q\n. . Q .     . Q . .\n```\n\n| n | 解数 |\n|---|------|\n| 1 | 1 |\n| 4 | 2 |\n| 8 | 92 |\n\n> 本题只需**计数**（返回解的总数），不需要枚举具体方案。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名与三个集合 ────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与三个集合"
+titleEn = "Signature & Sets"
+code = """# 52. N 皇后 II
+# 计算 n 皇后问题的不同解的数量
+#
+# 皇后攻击规则:
+#   - 同一行、同一列、同一对角线上不能有两个皇后
+#
+# 关键约束:
+#   - n 皇后 = 在 n×n 棋盘上放 n 个互不攻击的皇后
+#   - 经典结果: n=1→1, n=2→0, n=3→0, n=4→2, n=5→10
+#
+# 示例:
+#   n = 4 → 2 个解
+
+def totalNQueens(n: int) -> int:
+    \"\"\"返回 n 皇后问题的解的数量。\"\"\"
+    cols = set()
+    diag1 = set()  # r + c 主对角线
+    diag2 = set()  # r - c 副对角线
+    count = 0"""
+explanation = "**第 1 步：函数签名与三个集合**\n\n**冲突检测的关键观察**\n\n- **行冲突天然解决**：每行只放一个皇后，回溯时 `row` 逐行推进\n- **列冲突**：用 `cols` 记录已占列\n- **主对角线**（↘ `(0,0)→(1,1)→...`）：同一条对角线上所有点 `r + c` 相等 → 用 `diag1` 存 `r + c`\n- **副对角线**（↗ `(0,3)→(1,2)→...`）：同一条对角线上所有点 `r - c` 相等 → 用 `diag2` 存 `r - c`\n\n**数据结构**\n\n| 集合 | 含义 | 判冲突 |\n|------|------|--------|\n| `cols` | 已占列 | `col in cols` |\n| `diag1` | 已占主对角线 | `(r + c) in diag1` |\n| `diag2` | 已占副对角线 | `(r - c) in diag2` |\n\n> 三个集合都提供 O(1) 查找，效率高于位运算且易读。"
+visualizationType = "code-only"
+
+# ── Step 2: 回溯函数与终止条件 ────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "回溯函数与终止"
+titleEn = "Backtrack & Base Case"
+code = """# 52. N 皇后 II
+# 计算 n 皇后问题的不同解的数量
+#
+# 皇后攻击规则:
+#   - 同一行、同一列、同一对角线上不能有两个皇后
+#
+# 关键约束:
+#   - n 皇后 = 在 n×n 棋盘上放 n 个互不攻击的皇后
+#   - 经典结果: n=1→1, n=2→0, n=3→0, n=4→2, n=5→10
+#
+# 示例:
+#   n = 4 → 2 个解
+
+def totalNQueens(n: int) -> int:
+    \"\"\"返回 n 皇后问题的解的数量。\"\"\"
+    cols = set()
+    diag1 = set()  # r + c 主对角线
+    diag2 = set()  # r - c 副对角线
+    count = 0
+    def backtrack(row: int) -> None:
+        nonlocal count
+        if row == n:
+            count += 1
+            return"""
+explanation = "**第 2 步：回溯函数与终止条件**\n\n**为什么是嵌套函数？**\n\n- 需要访问外层的 `cols` / `diag1` / `diag2` / `count`\n- 用 `nonlocal count` 声明可变闭包变量\n\n**终止条件**\n\n```python\nif row == n:\n    count += 1\n    return\n```\n\n- 当 `row == n` 表示前 `n` 行都成功放了皇后\n- 找到一个**合法解** → `count += 1`\n- 不需要构造棋盘，只需计数\n\n**递归结构**\n\n```\nbacktrack(0)\n ├─ 尝试 col=0 → backtrack(1) → ...\n ├─ 尝试 col=1 → backtrack(1) → ...\n └─ 尝试 col=n-1 → backtrack(1) → ...\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 试列、冲突检查、标记、递归、撤销 ──────────────────
+[[algorithm.steps]]
+id = 3
+title = "试列、冲突检查、递归与撤销"
+titleEn = "Try, Mark, Recurse, Undo"
+code = """# 52. N 皇后 II
+# 计算 n 皇后问题的不同解的数量
+#
+# 皇后攻击规则:
+#   - 同一行、同一列、同一对角线上不能有两个皇后
+#
+# 关键约束:
+#   - n 皇后 = 在 n×n 棋盘上放 n 个互不攻击的皇后
+#   - 经典结果: n=1→1, n=2→0, n=3→0, n=4→2, n=5→10
+#
+# 示例:
+#   n = 4 → 2 个解
+
+def totalNQueens(n: int) -> int:
+    \"\"\"返回 n 皇后问题的解的数量。\"\"\"
+    cols = set()
+    diag1 = set()  # r + c 主对角线
+    diag2 = set()  # r - c 副对角线
+    count = 0
+    def backtrack(row: int) -> None:
+        nonlocal count
+        if row == n:
+            count += 1
+            return
+        for col in range(n):
+            if col in cols or (row + col) in diag1 or (row - col) in diag2:
+                continue
+            cols.add(col)
+            diag1.add(row + col)
+            diag2.add(row - col)
+            backtrack(row + 1)
+            cols.remove(col)
+            diag1.remove(row + col)
+            diag2.remove(row - col)"""
+explanation = "**第 3 步：核心回溯逻辑**\n\n**for 循环尝试每一列**\n\n```python\nfor col in range(n):\n    if col in cols or (row + col) in diag1 or (row - col) in diag2:\n        continue\n```\n\n- 三个冲突条件**任一**成立则跳过\n\n**做选择 → 递归 → 撤销选择**\n\n```python\ncols.add(col)              # 标记\ndiag1.add(row + col)\ndiag2.add(row - col)\nbacktrack(row + 1)         # 进入下一行\ncols.remove(col)           # 撤销（回溯关键！）\ndiag1.remove(row + col)\ndiag2.remove(row - col)\n```\n\n> 撤销三步必须**严格对称**于标记三步，否则下次循环会因残留标记而漏解。"
+visualizationType = "code-only"
+
+# ── Step 4: 启动回溯并返回结果 ────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "启动回溯并返回结果"
+titleEn = "Start & Return"
+code = """# 52. N 皇后 II
+# 计算 n 皇后问题的不同解的数量
+#
+# 皇后攻击规则:
+#   - 同一行、同一列、同一对角线上不能有两个皇后
+#
+# 关键约束:
+#   - n 皇后 = 在 n×n 棋盘上放 n 个互不攻击的皇后
+#   - 经典结果: n=1→1, n=2→0, n=3→0, n=4→2, n=5→10
+#
+# 示例:
+#   n = 4 → 2 个解
+
+def totalNQueens(n: int) -> int:
+    \"\"\"返回 n 皇后问题的解的数量。\"\"\"
+    cols = set()
+    diag1 = set()  # r + c 主对角线
+    diag2 = set()  # r - c 副对角线
+    count = 0
+    def backtrack(row: int) -> None:
+        nonlocal count
+        if row == n:
+            count += 1
+            return
+        for col in range(n):
+            if col in cols or (row + col) in diag1 or (row - col) in diag2:
+                continue
+            cols.add(col)
+            diag1.add(row + col)
+            diag2.add(row - col)
+            backtrack(row + 1)
+            cols.remove(col)
+            diag1.remove(row + col)
+            diag2.remove(row - col)
+    backtrack(0)
+    return count"""
+explanation = "**第 4 步：启动回溯并返回结果**\n\n```python\nbacktrack(0)   # 从第 0 行开始\nreturn count   # 返回累计的解数\n```\n\n**n=4 的执行轨迹（节选）**\n\n```\nrow=0, col=1  → row=1, col=3  → row=2, col=0  → row=3, col=2  ✓ 解 #1\nrow=0, col=2  → row=1, col=0  → row=2, col=3  → row=3, col=1  ✓ 解 #2\n```\n\n**最终结果**\n\n```\n输入: n = 4\n输出: 2\n```\n\n**复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n!) — 最坏情况枚举所有排列 |\n| 空间复杂度 | O(n) — 三个集合 + 递归栈深度 |\n\n**关键技巧**\n\n- `cols` + `diag1` + `diag2` 三集合实现 O(1) 冲突检测\n- `nonlocal` 关键字使内层函数可修改外层 `count`\n- 标记-递归-撤销的回溯范式，确保不漏解也不重解"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2]", result = "2", highlightedIndices = [0] }
+
+[algorithm.summary]
+timeComplexity = "O(n!)"
+spaceComplexity = "O(n)  # 三个集合 + 递归栈"
+approach = "回溯 + 三个冲突集合"
+keyInsight = "行冲突天然解决（一行一个）；列 = cols；主对角线 = r+c；副对角线 = r-c"

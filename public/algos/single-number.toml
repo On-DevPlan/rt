@@ -1,0 +1,149 @@
+[algorithm]
+id = "single-number"
+title = "只出现一次的数字"
+titleEn = "Single Number"
+difficulty = "easy"
+tags = ["array", "bit-manipulation"]
+testCase = "nums = [2,2,1]"
+expectedOutput = "1"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 只出现一次的数字
+# 给定一个非空整数数组，除某个元素只出现一次外，其余每个元素都出现两次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，仅使用常量额外空间
+#
+# 示例:
+#   输入: [2, 2, 1]
+#   输出: 1
+#
+# 示例:
+#   输入: [4, 1, 2, 1, 2]
+#   输出: 4"""
+explanation = "**问题分析**\n\n给定非空数组，除一个元素外其余都出现两次，找出只出现一次的元素。\n\n**约束条件**\n\n- 线性时间复杂度：O(n)\n- 常量空间复杂度：O(1)\n\n**为什么异或运算可行？**\n\n| 运算 | 结果 |\n|------|------|\n| `a ^ a` | `0` — 相同数异或为 0 |\n| `a ^ 0` | `a` — 任何数与 0 异或为自身 |\n| `a ^ b ^ a` | `b` — 异或满足交换律和结合律 |\n\n> 关键洞察：对所有元素进行异或，成对的数会互相抵消为 0，最后剩下的就是只出现一次的数。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 只出现一次的数字
+# 给定一个非空整数数组，除某个元素只出现一次外，其余每个元素都出现两次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，仅使用常量额外空间
+#
+# 示例:
+#   输入: [2, 2, 1]
+#   输出: 1
+#
+# 示例:
+#   输入: [4, 1, 2, 1, 2]
+#   输出: 4
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 参数 `nums`：整数数组\n- 返回值类型 `int`：只出现一次的元素\n- 使用类型注解明确参数类型\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化结果 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化结果"
+titleEn = "Initialize Result"
+code = """# 只出现一次的数字
+# 给定一个非空整数数组，除某个元素只出现一次外，其余每个元素都出现两次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，仅使用常量额外空间
+#
+# 示例:
+#   输入: [2, 2, 1]
+#   输出: 1
+#
+# 示例:
+#   输入: [4, 1, 2, 1, 2]
+#   输出: 4
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字。\"\"\"
+    result = 0"""
+explanation = "**第 2 步：初始化结果变量**\n\n- `result = 0`：初始值为 0\n- 原因：任何数与 0 异或都是其自身（`a ^ 0 = a`）\n- 后续遍历数组时，逐个元素与 `result` 异或"
+visualizationType = "code-only"
+
+# ── Step 3: 遍历并异或 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历异或"
+titleEn = "Iterate and XOR"
+code = """# 只出现一次的数字
+# 给定一个非空整数数组，除某个元素只出现一次外，其余每个元素都出现两次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，仅使用常量额外空间
+#
+# 示例:
+#   输入: [2, 2, 1]
+#   输出: 1
+#
+# 示例:
+#   输入: [4, 1, 2, 1, 2]
+#   输出: 4
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字。\"\"\"
+    result = 0
+    for num in nums:
+        result ^= num"""
+explanation = "**第 3 步：遍历数组并异或**\n\n- 遍历数组中每个元素 `num`\n- 将 `num` 与 `result` 异或：`result ^= num`\n\n**异或运算特性**\n\n- 交换律：`a ^ b = b ^ a`\n- 结合律：`(a ^ b) ^ c = a ^ (b ^ c)`\n- 自反：`a ^ a = 0`，`a ^ 0 = a`\n\n> 成对的数异或后为 0，互相抵消。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 只出现一次的数字
+# 给定一个非空整数数组，除某个元素只出现一次外，其余每个元素都出现两次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，仅使用常量额外空间
+#
+# 示例:
+#   输入: [2, 2, 1]
+#   输出: 1
+#
+# 示例:
+#   输入: [4, 1, 2, 1, 2]
+#   输出: 4
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字。\"\"\"
+    result = 0
+    for num in nums:
+        result ^= num
+    return result"""
+explanation = "**最终结果**\n\n✅ 算法完成\n\n```\n输入: [2, 2, 1]\n\n执行过程:\n  result = 0\n  result ^= 2  → result = 2\n  result ^= 2  → result = 0 (2 ^ 2 = 0)\n  result ^= 1  → result = 1 (0 ^ 1 = 1)\n\n输出: 1\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 遍历一次数组 |\n| 空间复杂度 | O(1) — 仅用变量 result |\n\n**核心思想**\n\n利用异或运算性质：\n- `a ^ a = 0`：相同数异或为 0\n- `a ^ 0 = a`：与 0 异或为自身\n- 成对的数互相抵消，剩下的就是只出现一次的数"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 2, 1]", result = "1", highlightedIndices = [2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "异或运算"
+keyInsight = "a ^ a = 0，a ^ 0 = a；所有数异或，成对的数变为 0，剩下的就是只出现一次的数"

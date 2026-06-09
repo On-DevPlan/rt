@@ -1,0 +1,278 @@
+[algorithm]
+id = "maximal-square"
+title = "最大正方形"
+titleEn = "Maximal Square"
+difficulty = "medium"
+tags = ["array", "dynamic-programming", "matrix"]
+testCase = """matrix = [["1","0","1","0","0"],["1","0","1","1","1"],["1","1","1","1","1"],["1","0","0","1","0"]]"""
+expectedOutput = "4"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 最大正方形
+# 在一个由 '0' 和 '1' 组成的二维矩阵中，找到只包含 '1' 的最大正方形，并返回其面积
+#
+# 关键思路:
+#   动态规划：dp[i][j] = 以 matrix[i][j] 为右下角的最大正方形边长
+#   转移方程: dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+#   初始化: 第一行/列直接复制 matrix 值
+#
+# 示例:
+#   matrix = [["1","0","1","0","0"],
+#             ["1","0","1","1","1"],
+#             ["1","1","1","1","1"],
+#             ["1","0","0","1","0"]]
+#   结果: 4 (2×2 正方形)"""
+explanation = """**问题分析**
+
+给定一个 `m×n` 的二进制矩阵，找出最大的全 `1` 正方形，返回其**面积**。
+
+| 输入 | 矩阵大小 | 最大正方形 | 面积 |
+|------|----------|-----------|------|
+| 4×5 矩阵 | 4 行 × 5 列 | 2×2 | 4 |
+
+**动态规划思路**
+
+定义 `dp[i][j]` 为以 `matrix[i][j]` 为右下角的最大正方形边长：
+
+```
+dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+```
+
+> 取「上、左、左上」三个位置的最小值 + 1，确保形成正方形。
+
+**空间优化**
+
+- 原地修改 `matrix`，空间复杂度 O(1)
+- 第一行/列：直接复制原值
+- 其他位置：按转移方程计算"""
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 最大正方形
+# 在一个由 '0' 和 '1' 组成的二维矩阵中，找到只包含 '1' 的最大正方形，并返回其面积
+#
+# 关键思路:
+#   动态规划：dp[i][j] = 以 matrix[i][j] 为右下角的最大正方形边长
+#   转移方程: dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+#   初始化: 第一行/列直接复制 matrix 值
+#
+# 示例:
+#   matrix = [["1","0","1","0","0"],
+#             ["1","0","1","1","1"],
+#             ["1","1","1","1","1"],
+#             ["1","0","0","1","0"]]
+#   结果: 4 (2×2 正方形)
+
+from typing import List
+
+def maximalSquare(matrix: List[List[str]]) -> int:
+    \"\"\"返回最大正方形面积\"\"\"
+    pass"""
+explanation = """**第 1 步：编写函数签名**
+
+- 输入：二维字符数组 `matrix`（元素为 `"0"` 或 `"1"`）
+- 输出：整数 `int`（最大正方形的面积）
+- 类型注解明确参数和返回值类型
+
+> 注意：矩阵元素是字符串类型，需要转换。"""
+visualizationType = "code-only"
+
+# ── Step 2: 边界检查与初始化 ────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "边界检查"
+titleEn = "Edge Cases"
+code = """# 最大正方形
+# 在一个由 '0' 和 '1' 组成的二维矩阵中，找到只包含 '1' 的最大正方形，并返回其面积
+#
+# 关键思路:
+#   动态规划：dp[i][j] = 以 matrix[i][j] 为右下角的最大正方形边长
+#   转移方程: dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+#   初始化: 第一行/列直接复制 matrix 值
+#
+# 示例:
+#   matrix = [["1","0","1","0","0"],
+#             ["1","0","1","1","1"],
+#             ["1","1","1","1","1"],
+#             ["1","0","0","1","0"]]
+#   结果: 4 (2×2 正方形)
+
+from typing import List
+
+def maximalSquare(matrix: List[List[str]]) -> int:
+    \"\"\"返回最大正方形面积\"\"\"
+    if not matrix or not matrix[0]:
+        return 0
+    m, n = len(matrix), len(matrix[0])
+    max_side = 0
+    for i in range(m):
+        for j in range(n):
+            pass"""
+explanation = """**第 2 步：边界检查与变量初始化**
+
+| 边界情况 | 处理 |
+|----------|------|
+| 空矩阵 | 返回 0 |
+| 空行 | 返回 0 |
+
+**变量说明**
+
+| 变量 | 含义 | 初始值 |
+|------|------|--------|
+| `m` | 矩阵行数 | `len(matrix)` |
+| `n` | 矩阵列数 | `len(matrix[0])` |
+| `max_side` | 最大边长 | `0` |
+
+接下来用双层循环遍历每个位置，原地修改 `matrix`。"""
+visualizationType = "code-only"
+
+# ── Step 3: 核心转移逻辑 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "转移方程"
+titleEn = "Transition Equation"
+code = """# 最大正方形
+# 在一个由 '0' 和 '1' 组成的二维矩阵中，找到只包含 '1' 的最大正方形，并返回其面积
+#
+# 关键思路:
+#   动态规划：dp[i][j] = 以 matrix[i][j] 为右下角的最大正方形边长
+#   转移方程: dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+#   初始化: 第一行/列直接复制 matrix 值
+#
+# 示例:
+#   matrix = [["1","0","1","0","0"],
+#             ["1","0","1","1","1"],
+#             ["1","1","1","1","1"],
+#             ["1","0","0","1","0"]]
+#   结果: 4 (2×2 正方形)
+
+from typing import List
+
+def maximalSquare(matrix: List[List[str]]) -> int:
+    \"\"\"返回最大正方形面积\"\"\"
+    if not matrix or not matrix[0]:
+        return 0
+    m, n = len(matrix), len(matrix[0])
+    max_side = 0
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == '1':
+                if i == 0 or j == 0:
+                    matrix[i][j] = int(matrix[i][j])
+                else:
+                    matrix[i][j] = min(int(matrix[i - 1][j]), int(matrix[i][j - 1]), int(matrix[i - 1][j - 1])) + 1
+                max_side = max(max_side, matrix[i][j])
+            else:
+                matrix[i][j] = 0"""
+explanation = """**第 3 步：动态规划转移**
+
+**核心逻辑**
+
+```python
+if matrix[i][j] == '1':
+    if i == 0 or j == 0:  # 第一行或第一列
+        matrix[i][j] = 1
+    else:  # 应用转移方程
+        matrix[i][j] = min(上, 左, 左上) + 1
+    max_side = max(max_side, matrix[i][j])
+else:  # 当前位置是 '0'
+    matrix[i][j] = 0
+```
+
+**为什么是 min(上, 左, 左上)？**
+
+```
+  上  左上
+   ↖  |
+    ↖ |
+     ↖●   ← 当前位置
+      ●
+      左
+```
+
+正方形的边长受限于三个方向的最小值。如果有一个方向是 0，就无法形成更大的正方形。
+
+| 条件 | dp[i][j] |
+|------|----------|
+| `i == 0 or j == 0` | `1`（边界，直接复制原值） |
+| `matrix[i][j] == '1'` | `min(上, 左, 左上) + 1` |
+| `matrix[i][j] == '0'` | `0` |"""
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 最大正方形
+# 在一个由 '0' 和 '1' 组成的二维矩阵中，找到只包含 '1' 的最大正方形，并返回其面积
+#
+# 关键思路:
+#   动态规划：dp[i][j] = 以 matrix[i][j] 为右下角的最大正方形边长
+#   转移方程: dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+#   初始化: 第一行/列直接复制 matrix 值
+#
+# 示例:
+#   matrix = [["1","0","1","0","0"],
+#             ["1","0","1","1","1"],
+#             ["1","1","1","1","1"],
+#             ["1","0","0","1","0"]]
+#   结果: 4 (2×2 正方形)
+
+from typing import List
+
+def maximalSquare(matrix: List[List[str]]) -> int:
+    \"\"\"返回最大正方形面积\"\"\"
+    if not matrix or not matrix[0]:
+        return 0
+    m, n = len(matrix), len(matrix[0])
+    max_side = 0
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == '1':
+                if i == 0 or j == 0:
+                    matrix[i][j] = int(matrix[i][j])
+                else:
+                    matrix[i][j] = min(int(matrix[i - 1][j]), int(matrix[i][j - 1]), int(matrix[i - 1][j - 1])) + 1
+                max_side = max(max_side, matrix[i][j])
+            else:
+                matrix[i][j] = 0
+    return max_side * max_side"""
+explanation = """**最终结果**
+
+✅ 动态规划完成，原地修改矩阵，返回最大正方形面积。
+
+```
+输入: 4×5 矩阵
+输出: 4 (2×2 正方形的面积)
+```
+
+**算法复杂度**
+
+| 指标 | 值 |
+|------|------|
+| 时间复杂度 | O(m×n) — 遍历每个元素 |
+| 空间复杂度 | O(1) — 原地修改 |
+
+**关键思想总结**
+
+1. **dp[i][j]**：以 `[i][j]` 为右下角的最大正方形边长
+2. **转移方程**：`min(上, 左, 左上) + 1`
+3. **边界处理**：第一行/列直接复制原值
+4. **返回面积**：`max_side × max_side`"""
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[1, 0, 1, 0, 0], [1, 0, 1, 1, 1], [1, 1, 1, 1, 1], [1, 0, 0, 1, 0]]", result = "4", highlightedIndices = [1, 1, 2, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(m×n)"
+spaceComplexity = "O(1)  # 原地修改"
+approach = "动态规划（原地修改）"
+keyInsight = "dp[i][j] = 以 [i][j] 为右下角的最大正方形边长；min(上、左、左上) + 1；返回面积"

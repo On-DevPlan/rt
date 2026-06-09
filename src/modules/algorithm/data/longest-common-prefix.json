@@ -1,0 +1,173 @@
+{
+  "id": "longest-common-prefix",
+  "title": "最长公共前缀",
+  "titleEn": "Longest Common Prefix",
+  "difficulty": "easy",
+  "tags": [
+    "string"
+  ],
+  "testCase": "strs = [\"flower\", \"flow\", \"flight\"]",
+  "expectedOutput": "\"fl\"",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 最长公共前缀\n# 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀\n# 若不存在公共前缀，返回空字符串 \"\"\n#\n# 示例:\n#   strs = [\"flower\", \"flow\", \"flight\"]\n#   结果: \"fl\"\n#\n#   strs = [\"dog\", \"racecar\", \"car\"]\n#   结果: \"\"（没有任何公共前缀）",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 最长公共前缀</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀</span>",
+        "<span class=\"tokenComment\"># 若不存在公共前缀，返回空字符串 &quot;&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;flower&quot;, &quot;flow&quot;, &quot;flight&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;fl&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;dog&quot;, &quot;racecar&quot;, &quot;car&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;&quot;（没有任何公共前缀）</span>"
+      ],
+      "explanation": "**问题分析**\n\n- 输入：一个字符串数组 `strs`\n- 输出：所有字符串的**最长公共前缀**\n- 若数组为空或前缀不存在，返回 `\"\"`\n\n**三种解法对比**\n\n| 方法 | 时间 | 空间 | 思路 |\n|------|------|------|------|\n| **逐列比较** | O(m·n) | O(1) | 固定第 0 个串，按列比对其他串 |\n| 排序后比首尾 | O(m·n log n) | O(1)~O(n) | 排序后最长前缀一定在首尾之间 |\n| 分治递归 | O(m·n) | O(m·n) | 拆两半分别求前缀，再合并 |\n\n> 推荐**逐列比较**：最直观、最省空间，O(m·n) 时间 O(1) 空间即可解决。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 最长公共前缀\n# 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀\n# 若不存在公共前缀，返回空字符串 \"\"\n#\n# 示例:\n#   strs = [\"flower\", \"flow\", \"flight\"]\n#   结果: \"fl\"\n#\n#   strs = [\"dog\", \"racecar\", \"car\"]\n#   结果: \"\"（没有任何公共前缀）\n\nfrom typing import List\n\ndef longestCommonPrefix(strs: List[str]) -> str:\n    \"\"\"返回字符串数组的最长公共前缀。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 最长公共前缀</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀</span>",
+        "<span class=\"tokenComment\"># 若不存在公共前缀，返回空字符串 &quot;&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;flower&quot;, &quot;flow&quot;, &quot;flight&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;fl&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;dog&quot;, &quot;racecar&quot;, &quot;car&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;&quot;（没有任何公共前缀）</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">longestCommonPrefix</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; <span class=\"tokenBuiltin\">str</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回字符串数组的最长公共前缀。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 接收一个字符串数组 `strs: List[str]`\n- 返回 `str`：最长公共前缀\n- 文档字符串描述函数用途\n\n> 关键边界：空数组返回 `\"\"`，单字符串返回自身。",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "边界与基准",
+      "titleEn": "Edge Cases and Pivot",
+      "code": "# 最长公共前缀\n# 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀\n# 若不存在公共前缀，返回空字符串 \"\"\n#\n# 示例:\n#   strs = [\"flower\", \"flow\", \"flight\"]\n#   结果: \"fl\"\n#\n#   strs = [\"dog\", \"racecar\", \"car\"]\n#   结果: \"\"（没有任何公共前缀）\n\nfrom typing import List\n\ndef longestCommonPrefix(strs: List[str]) -> str:\n    \"\"\"返回字符串数组的最长公共前缀。\"\"\"\n    if not strs:\n        return ''\n    pivot = strs[0]",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 最长公共前缀</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀</span>",
+        "<span class=\"tokenComment\"># 若不存在公共前缀，返回空字符串 &quot;&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;flower&quot;, &quot;flow&quot;, &quot;flight&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;fl&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;dog&quot;, &quot;racecar&quot;, &quot;car&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;&quot;（没有任何公共前缀）</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">longestCommonPrefix</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; <span class=\"tokenBuiltin\">str</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回字符串数组的最长公共前缀。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">if</span> not strs:",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">&#x27;</span>",
+        "    pivot = strs[<span class=\"tokenNumber\">0</span>]"
+      ],
+      "explanation": "**第 2 步：处理边界 + 选定基准串**\n\n```python\nif not strs:\n    return ''       # 空数组：无公共前缀\npivot = strs[0]     # 以第 0 个串为基准，按列比对其它串\n```\n\n**为什么选 `strs[0]` 作基准？**\n\n公共前缀一定是某个串的前缀，最长公共前缀必然也是 `strs[0]` 的前缀。固定 `strs[0]` 后，只需逐位检查其它串同位字符是否一致即可。\n\n> 例如 `[\"flower\",\"flow\",\"flight\"]`，基准 `flower`，公共前缀 `fl` 也是 `flower` 的前 2 个字符。",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 3,
+      "title": "逐列扫描",
+      "titleEn": "Scan Column by Column",
+      "code": "# 最长公共前缀\n# 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀\n# 若不存在公共前缀，返回空字符串 \"\"\n#\n# 示例:\n#   strs = [\"flower\", \"flow\", \"flight\"]\n#   结果: \"fl\"\n#\n#   strs = [\"dog\", \"racecar\", \"car\"]\n#   结果: \"\"（没有任何公共前缀）\n\nfrom typing import List\n\ndef longestCommonPrefix(strs: List[str]) -> str:\n    \"\"\"返回字符串数组的最长公共前缀。\"\"\"\n    if not strs:\n        return ''\n    pivot = strs[0]\n    for i in range(len(pivot)):\n        c = pivot[i]\n        for s in strs[1:]:\n            if i >= len(s) or s[i] != c:\n                return pivot[:i]",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 最长公共前缀</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀</span>",
+        "<span class=\"tokenComment\"># 若不存在公共前缀，返回空字符串 &quot;&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;flower&quot;, &quot;flow&quot;, &quot;flight&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;fl&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;dog&quot;, &quot;racecar&quot;, &quot;car&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;&quot;（没有任何公共前缀）</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">longestCommonPrefix</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; <span class=\"tokenBuiltin\">str</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回字符串数组的最长公共前缀。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">if</span> not strs:",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">&#x27;</span>",
+        "    pivot = strs[<span class=\"tokenNumber\">0</span>]",
+        "    <span class=\"tokenKeyword\">for</span> i in <span class=\"tokenBuiltin\">range</span>(<span class=\"tokenBuiltin\">len</span>(pivot)):",
+        "        c = pivot[i]",
+        "        <span class=\"tokenKeyword\">for</span> s in strs[<span class=\"tokenNumber\">1</span>:]:",
+        "            <span class=\"tokenKeyword\">if</span> i &gt;= <span class=\"tokenBuiltin\">len</span>(s) or s[i] != c:",
+        "                <span class=\"tokenKeyword\">return</span> pivot[:i]"
+      ],
+      "explanation": "**第 3 步：按列比较其他串**\n\n**外层循环**：遍历基准串的每一位 `i`\n\n**内层循环**：检查所有其他串在位置 `i` 处的字符是否等于 `pivot[i]`\n\n**两种触发返回的条件：**\n\n| 条件 | 含义 |\n|------|------|\n| `i >= len(s)` | 当前串在位置 `i` 之前已结束（基准更长） |\n| `s[i] != c` | 当前串在位置 `i` 字符不匹配 |\n\n> 任一条件命中，立刻返回 `pivot[:i]`——基准串的前 `i` 个字符就是答案。\n\n**示例执行（`strs = [\"flower\",\"flow\",\"flight\"]`）：**\n\n```\ni=0: pivot[0]='f',  其它 'f','f'  → 一致，继续\ni=1: pivot[1]='l',  其它 'l','l'  → 一致，继续\ni=2: pivot[2]='o',  flow[2]?   i(2)>=len(flow)(3)? 否\n                  但 s[2]='o'≠'w'? flow[2]='w'≠'o'  命中 → 返回 pivot[:2]=\"fl\"\n```",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 最长公共前缀\n# 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀\n# 若不存在公共前缀，返回空字符串 \"\"\n#\n# 示例:\n#   strs = [\"flower\", \"flow\", \"flight\"]\n#   结果: \"fl\"\n#\n#   strs = [\"dog\", \"racecar\", \"car\"]\n#   结果: \"\"（没有任何公共前缀）\n\nfrom typing import List\n\ndef longestCommonPrefix(strs: List[str]) -> str:\n    \"\"\"返回字符串数组的最长公共前缀。\"\"\"\n    if not strs:\n        return ''\n    pivot = strs[0]\n    for i in range(len(pivot)):\n        c = pivot[i]\n        for s in strs[1:]:\n            if i >= len(s) or s[i] != c:\n                return pivot[:i]\n    return pivot",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 最长公共前缀</span>",
+        "<span class=\"tokenComment\"># 给定一个字符串数组 strs，找出其中所有字符串共有的最长前缀</span>",
+        "<span class=\"tokenComment\"># 若不存在公共前缀，返回空字符串 &quot;&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;flower&quot;, &quot;flow&quot;, &quot;flight&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;fl&quot;</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\">#   strs = [&quot;dog&quot;, &quot;racecar&quot;, &quot;car&quot;]</span>",
+        "<span class=\"tokenComment\">#   结果: &quot;&quot;（没有任何公共前缀）</span>",
+        "",
+        "<span class=\"tokenKeyword\">from</span> typing <span class=\"tokenKeyword\">import</span> List",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">longestCommonPrefix</span>(strs: List[<span class=\"tokenBuiltin\">str</span>]) -&gt; <span class=\"tokenBuiltin\">str</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回字符串数组的最长公共前缀。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">if</span> not strs:",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">&#x27;</span>",
+        "    pivot = strs[<span class=\"tokenNumber\">0</span>]",
+        "    <span class=\"tokenKeyword\">for</span> i in <span class=\"tokenBuiltin\">range</span>(<span class=\"tokenBuiltin\">len</span>(pivot)):",
+        "        c = pivot[i]",
+        "        <span class=\"tokenKeyword\">for</span> s in strs[<span class=\"tokenNumber\">1</span>:]:",
+        "            <span class=\"tokenKeyword\">if</span> i &gt;= <span class=\"tokenBuiltin\">len</span>(s) or s[i] != c:",
+        "                <span class=\"tokenKeyword\">return</span> pivot[:i]",
+        "    <span class=\"tokenKeyword\">return</span> pivot"
+      ],
+      "explanation": "**最终结果**\n\n✅ 完整的最长公共前缀函数\n\n**为何最后还要 `return pivot`？**\n\n外层循环正常结束（基准串的每一位都被所有串匹配），说明整个 `pivot` 都是公共前缀，直接返回 `pivot`。\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m·n) — `m` 为基准串长度，`n` 为数组大小 |\n| 空间复杂度 | O(1) — 仅用常数个变量 |\n\n**关键技巧：固定基准 + 逐列比较**\n\n- 以 `strs[0]` 为基准，避免重复判断\n- 提前 break：发现不匹配立即返回切片\n- 兼顾「长度不一致」与「字符不一致」两种失败情况",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{}",
+        "arrayState": "[\"flower\", \"flow\", \"flight\"]",
+        "result": "\"fl\"",
+        "highlightedIndices": [
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(m·n)",
+    "spaceComplexity": "O(1)",
+    "approach": "逐列比较（以第一个串为基准）",
+    "keyInsight": "公共前缀一定是某串的前缀；固定 strs[0] 逐位比对，遇不等或越界即切片返回"
+  }
+}

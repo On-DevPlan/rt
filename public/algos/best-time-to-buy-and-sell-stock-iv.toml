@@ -1,0 +1,182 @@
+[algorithm]
+id = "best-time-to-buy-and-sell-stock-iv"
+title = "买卖股票的最佳时机 IV"
+titleEn = "Best Time to Buy and Sell Stock IV"
+difficulty = "hard"
+tags = ["array", "dynamic-programming"]
+testCase = "k = 2, prices = [1,2,3,0,2]"
+expectedOutput = "3"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 188. 买卖股票的最佳时机 IV
+# 给定一个整数数组 prices，第 i 个元素 prices[i] 是一支股票在第 i 天的价格
+# 最多完成 k 笔交易（一笔交易 = 买入 + 卖出）
+# 求最大利润
+#
+# 约束条件:
+#   1 ≤ k ≤ 100
+#   0 ≤ prices.length ≤ 1000
+#   0 ≤ prices[i] ≤ 1000
+#   多笔交易之间不能重叠（必须在买入前卖出之前的股票）
+#
+# 示例:
+#   k = 2, prices = [1,2,3,0,2]
+#   解释: 第 1 天买入(1) → 第 2 天卖出(2) → 第 4 天买入(0) → 第 5 天卖出(2)
+#   利润: (2-1) + (2-0) = 3"""
+explanation = "**问题分析**\n\n- 输入：最多交易次数 `k`、每日价格数组 `prices`\n- 输出：最大利润\n- 约束：不能同时持有多支股票（交易不能重叠）\n\n**核心思路：状态机动态规划**\n\n用 `hold[i]` 和 `released[i]` 分别表示第 `i` 笔交易的「持有」和「已卖出」状态的最大利润。\n\n```\n        买入          卖出\nreleased[i] -> hold[i] -> released[i+1]\n```\n\n> 每次价格变化时，更新所有可能交易次数的状态。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名与边界处理 ────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 188. 买卖股票的最佳时机 IV
+# 给定一个整数数组 prices，第 i 个元素 prices[i] 是一支股票在第 i 天的价格
+# 最多完成 k 笔交易（一笔交易 = 买入 + 卖出）
+# 求最大利润
+#
+# 约束条件:
+#   1 ≤ k ≤ 100
+#   0 ≤ prices.length ≤ 1000
+#   0 ≤ prices[i] ≤ 1000
+#   多笔交易之间不能重叠（必须在买入前卖出之前的股票）
+#
+# 示例:
+#   k = 2, prices = [1,2,3,0,2]
+#   解释: 第 1 天买入(1) → 第 2 天卖出(2) → 第 4 天买入(0) → 第 5 天卖出(2)
+#   利润: (2-1) + (2-0) = 3
+
+from typing import List
+
+def maxProfit(k: int, prices: List[int]) -> int:
+    \"\"\"返回最多 k 笔交易的最大利润。\"\"\"
+    if k == 0 or not prices:
+        return 0
+    if k >= len(prices) // 2:
+        return sum(max(prices[i + 1] - prices[i], 0) for i in range(len(prices) - 1))
+    pass"""
+explanation = "**第 1 步：处理边界情况**\n\n| 情况 | 处理 |\n|------|------|\n| `k == 0` 或空数组 | 直接返回 0 |\n| `k >= len(prices)//2` | 贪心：无限次交易，每次有收益就卖 |\n\n**为什么 `k >= n//2` 可以贪心？**\n\n- `n` 天最多 `n//2` 笔交易（每天买、次日卖）\n- 当 `k` 超够大时，相当于「无限次交易」\n- 此时可用贪心：只要明天比今天贵，就买卖"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化状态数组 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化状态"
+titleEn = "Initialize State"
+code = """# 188. 买卖股票的最佳时机 IV
+# 给定一个整数数组 prices，第 i 个元素 prices[i] 是一支股票在第 i 天的价格
+# 最多完成 k 笔交易（一笔交易 = 买入 + 卖出）
+# 求最大利润
+#
+# 约束条件:
+#   1 ≤ k ≤ 100
+#   0 ≤ prices.length ≤ 1000
+#   0 ≤ prices[i] ≤ 1000
+#   多笔交易之间不能重叠（必须在买入前卖出之前的股票）
+#
+# 示例:
+#   k = 2, prices = [1,2,3,0,2]
+#   解释: 第 1 天买入(1) → 第 2 天卖出(2) → 第 4 天买入(0) → 第 5 天卖出(2)
+#   利润: (2-1) + (2-0) = 3
+
+from typing import List
+
+def maxProfit(k: int, prices: List[int]) -> int:
+    \"\"\"返回最多 k 笔交易的最大利润。\"\"\"
+    if k == 0 or not prices:
+        return 0
+    if k >= len(prices) // 2:
+        return sum(max(prices[i + 1] - prices[i], 0) for i in range(len(prices) - 1))
+    hold = [-float('inf')] * (k + 1)
+    released = [0] * (k + 1)"""
+explanation = "**第 2 步：初始化状态数组**\n\n定义两个数组，长度为 `k + 1`（下标 0 不使用）：\n\n| 数组 | 含义 | 初始值 |\n|------|------|--------|\n| `hold[i]` | 完成第 `i` 笔交易买入后的最大利润 | `-∞`（不可能状态） |\n| `released[i]` | 完成第 `i` 笔交易卖出后的最大利润 | `0`（未交易时为 0） |\n\n> `hold[i] = -∞` 表示初始时不可能持有任何股票（必须先买入）。"
+visualizationType = "code-only"
+
+# ── Step 3: 状态转移循环 ───────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "状态转移"
+titleEn = "State Transition"
+code = """# 188. 买卖股票的最佳时机 IV
+# 给定一个整数数组 prices，第 i 个元素 prices[i] 是一支股票在第 i 天的价格
+# 最多完成 k 笔交易（一笔交易 = 买入 + 卖出）
+# 求最大利润
+#
+# 约束条件:
+#   1 ≤ k ≤ 100
+#   0 ≤ prices.length ≤ 1000
+#   0 ≤ prices[i] ≤ 1000
+#   多笔交易之间不能重叠（必须在买入前卖出之前的股票）
+#
+# 示例:
+#   k = 2, prices = [1,2,3,0,2]
+#   解释: 第 1 天买入(1) → 第 2 天卖出(2) → 第 4 天买入(0) → 第 5 天卖出(2)
+#   利润: (2-1) + (2-0) = 3
+
+from typing import List
+
+def maxProfit(k: int, prices: List[int]) -> int:
+    \"\"\"返回最多 k 笔交易的最大利润。\"\"\"
+    if k == 0 or not prices:
+        return 0
+    if k >= len(prices) // 2:
+        return sum(max(prices[i + 1] - prices[i], 0) for i in range(len(prices) - 1))
+    hold = [-float('inf')] * (k + 1)
+    released = [0] * (k + 1)
+    for price in prices:
+        for i in range(1, k + 1):
+            hold[i] = max(hold[i], released[i] - price)
+            released[i] = max(released[i], hold[i] + price)"""
+explanation = "**第 3 步：状态转移**\n\n遍历每个价格，更新所有交易次数的状态。\n\n**转移方程**\n\n```\nhold[i] = max(hold[i], released[i] - price)\n(released[i] 的钱买入当前价格)\n\nreleased[i] = max(released[i], hold[i] + price)\n(卖出当前持有的股票)\n```\n\n| 状态 | 更新方式 |\n|------|----------|\n| `hold[i]` | 要么不买，要么用 `released[i]` 的钱买入当前价格 |\n| `released[i]` | 要么不卖，要么卖出当前持有的股票 |\n\n> 关键：在内层循环中，`hold[i]` 使用的是**上一轮外层循环**的 `released[i]`，确保交易顺序正确（先卖出才能再买入）。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ───────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 188. 买卖股票的最佳时机 IV
+# 给定一个整数数组 prices，第 i 个元素 prices[i] 是一支股票在第 i 天的价格
+# 最多完成 k 笔交易（一笔交易 = 买入 + 卖出）
+# 求最大利润
+#
+# 约束条件:
+#   1 ≤ k ≤ 100
+#   0 ≤ prices.length ≤ 1000
+#   0 ≤ prices[i] ≤ 1000
+#   多笔交易之间不能重叠（必须在买入前卖出之前的股票）
+#
+# 示例:
+#   k = 2, prices = [1,2,3,0,2]
+#   解释: 第 1 天买入(1) → 第 2 天卖出(2) → 第 4 天买入(0) → 第 5 天卖出(2)
+#   利润: (2-1) + (2-0) = 3
+
+from typing import List
+
+def maxProfit(k: int, prices: List[int]) -> int:
+    \"\"\"返回最多 k 笔交易的最大利润。\"\"\"
+    if k == 0 or not prices:
+        return 0
+    if k >= len(prices) // 2:
+        return sum(max(prices[i + 1] - prices[i], 0) for i in range(len(prices) - 1))
+    hold = [-float('inf')] * (k + 1)
+    released = [0] * (k + 1)
+    for price in prices:
+        for i in range(1, k + 1):
+            hold[i] = max(hold[i], released[i] - price)
+            released[i] = max(released[i], hold[i] + price)
+    return released[k]"""
+explanation = "**最终结果**\n\n返回 `released[k]`：完成 `k` 笔交易后的最大利润\n\n```\n输入: k = 2, prices = [1, 2, 3, 0, 2]\n输出: 3\n\n解释:\n- 第 1 天买入 (price=1)\n- 第 2 天卖出 (price=2) -> 利润 +1\n- 第 4 天买入 (price=0)\n- 第 5 天卖出 (price=2) -> 利润 +2\n- 总利润: 1 + 2 = 3\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n * k) — n 个价格，每个更新 k 个状态 |\n| 空间复杂度 | O(k) — 两个长度为 k+1 的数组 |\n\n**关键技巧**\n\n- 当 `k >= n//2` 时贪心优化，避免 O(n * k) 退化\n- 状态机确保交易顺序：必须先卖出后才能再买入"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 0, 2]", result = "3", highlightedIndices = [0, 1, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n * k)"
+spaceComplexity = "O(k)"
+approach = "动态规划（状态机）"
+keyInsight = "k 笔交易 -> k+1 个状态；特殊优化：k >= n/2 时可无限交易（贪心）"

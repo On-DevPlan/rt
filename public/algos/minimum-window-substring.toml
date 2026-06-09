@@ -1,0 +1,178 @@
+[algorithm]
+id = "minimum-window-substring"
+title = "最小覆盖子串"
+titleEn = "Minimum Window Substring"
+difficulty = "hard"
+tags = ["hash-table", "string", "sliding-window"]
+testCase = 's = "ADOBECODEBANC", t = "ABC"'
+expectedOutput = '"BANC"'
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 最小覆盖子串
+# 给定字符串 s 和 t，在 s 中找出包含 t 中所有字符的最短子串
+# 要求子串中每个字符的出现次数 ≥ t 中对应字符的出现次数
+#
+# 示例:
+#   s = "ADOBECODEBANC"
+#   t = "ABC"
+#   最短覆盖子串: "BANC"（索引 9..12）
+#
+# 注意:
+#   - 字符顺序无所谓，只关心出现次数
+#   - t 中可能有重复字符（如 t = "AABC" 需要 2 个 A）
+#   - 如果 s 中不存在这样的子串，返回 \"\""""
+explanation = "**问题分析**\n\n在 `s` 中找包含 `t` 所有字符的**最短子串**（每个字符出现次数不少于 `t`）。\n\n**关键观察**\n\n- 子串的字符顺序不重要，只关心**频次**是否覆盖\n- 经典**滑动窗口**问题：右扩找可行解，左缩求最优解\n- `need` 哈希表记录 `t` 的字符频次；`missing` 记录还差多少字符\n\n**算法框架**\n\n| 阶段 | 操作 | 目的 |\n|------|------|------|\n| 右扩 | `right` 向右移动 | 收集字符直到覆盖 `t` |\n| 左缩 | `left` 向右移动 | 缩到无法再缩，得到当前最短 |\n| 记录 | 比较并保存最小窗口 | 答案 |\n\n> 时间复杂度 O(m+n)，空间复杂度 O(m+n)。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 最小覆盖子串
+# 给定字符串 s 和 t，在 s 中找出包含 t 中所有字符的最短子串
+# 要求子串中每个字符的出现次数 ≥ t 中对应字符的出现次数
+#
+# 示例:
+#   s = "ADOBECODEBANC"
+#   t = "ABC"
+#   最短覆盖子串: "BANC"（索引 9..12）
+#
+# 注意:
+#   - 字符顺序无所谓，只关心出现次数
+#   - t 中可能有重复字符（如 t = "AABC" 需要 2 个 A）
+#   - 如果 s 中不存在这样的子串，返回 \"\"
+
+from collections import Counter
+
+def minWindow(s: str, t: str) -> str:
+    \"\"\"返回 s 中包含 t 所有字符的最短子串；若不存在则返回空串。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 入参 `s: str`：待搜索的字符串\n- 入参 `t: str`：目标字符集合\n- 返回值 `str`：最短覆盖子串，找不到时返回 `\"\"`\n- 引入 `from collections import Counter` 用于字符频次统计\n- 文档字符串说明函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化哈希表与指针 ────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化计数"
+titleEn = "Initialize Counters"
+code = """# 最小覆盖子串
+# 给定字符串 s 和 t，在 s 中找出包含 t 中所有字符的最短子串
+# 要求子串中每个字符的出现次数 ≥ t 中对应字符的出现次数
+#
+# 示例:
+#   s = "ADOBECODEBANC"
+#   t = "ABC"
+#   最短覆盖子串: "BANC"（索引 9..12）
+#
+# 注意:
+#   - 字符顺序无所谓，只关心出现次数
+#   - t 中可能有重复字符（如 t = "AABC" 需要 2 个 A）
+#   - 如果 s 中不存在这样的子串，返回 \"\"
+
+from collections import Counter
+
+def minWindow(s: str, t: str) -> str:
+    \"\"\"返回 s 中包含 t 所有字符的最短子串；若不存在则返回空串。\"\"\"
+    need = Counter(t)          # t 中每个字符还需要的次数（>0 表示还缺）
+    missing = len(t)           # 还缺多少个字符未覆盖
+    left = start = end = 0     # 左指针、最优窗口 [start, end)"""
+explanation = "**第 2 步：初始化状态**\n\n```\ns = \"ADOBECODEBANC\"\nt = \"ABC\"\n\nneed = {'A': 1, 'B': 1, 'C': 1}   missing = 3\nleft = 0   start = 0   end = 0    ← 窗口 [start, end) 暂为空\n```\n\n| 变量 | 含义 | 初值 |\n|------|------|------|\n| `need` | 字符还需要的次数（>0 表示还缺） | `Counter(t)` |\n| `missing` | 还差多少字符未覆盖 | `len(t)` |\n| `left` | 窗口左边界 | `0` |\n| `start`, `end` | 当前最优窗口 `[start, end)` | `0, 0` |\n\n> `end == 0` 用作\"尚未找到合法窗口\"的哨兵。"
+visualizationType = "code-only"
+
+# ── Step 3: 右扩 + 左缩 + 记录 ────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "滑动窗口"
+titleEn = "Sliding Window"
+code = """# 最小覆盖子串
+# 给定字符串 s 和 t，在 s 中找出包含 t 中所有字符的最短子串
+# 要求子串中每个字符的出现次数 ≥ t 中对应字符的出现次数
+#
+# 示例:
+#   s = "ADOBECODEBANC"
+#   t = "ABC"
+#   最短覆盖子串: "BANC"（索引 9..12）
+#
+# 注意:
+#   - 字符顺序无所谓，只关心出现次数
+#   - t 中可能有重复字符（如 t = "AABC" 需要 2 个 A）
+#   - 如果 s 中不存在这样的子串，返回 \"\"
+
+from collections import Counter
+
+def minWindow(s: str, t: str) -> str:
+    \"\"\"返回 s 中包含 t 所有字符的最短子串；若不存在则返回空串。\"\"\"
+    need = Counter(t)          # t 中每个字符还需要的次数（>0 表示还缺）
+    missing = len(t)           # 还缺多少个字符未覆盖
+    left = start = end = 0     # 左指针、最优窗口 [start, end)
+
+    for right, c in enumerate(s, 1):
+        if need[c] > 0: missing -= 1
+        need[c] -= 1
+        if missing == 0:
+            while left < right and need[s[left]] < 0:
+                need[s[left]] += 1
+                left += 1
+            if not end or right - left <= end - start:
+                start, end = left, right
+            need[s[left]] += 1
+            missing += 1
+            left += 1
+    return s[start:end]"""
+explanation = "**第 3 步：滑动窗口核心逻辑**\n\n**右扩阶段**（`enumerate(s, 1)` 从 1 开始，方便切片）：\n\n1. `if need[c] > 0: missing -= 1` — 字符 `c` 之前还缺，现在收齐了一个\n2. `need[c] -= 1` — 不论是否收齐，`need[c]` 都要减 1（多出的记为负数）\n\n**左缩阶段**（当 `missing == 0`，窗口已覆盖 `t`）：\n\n- `while need[s[left]] < 0`: 该字符在窗口里有多余，可以丢弃，`left += 1`\n- 缩到刚好覆盖为止，更新最优窗口\n- 然后把 `s[left]` 重新\"还回去\"（`need[s[left]] += 1; missing += 1; left += 1`），开始寻找下一个窗口\n\n**示例执行**（`s=\"ADOBECODEBANC\"`, `t=\"ABC\"`）：\n\n| `right` | 窗口 | 状态 |\n|---------|------|------|\n| 6 | `ADOBEC` | missing=0，收录 |\n| 9 | `ADOBECODE` | 缩到 `CODE`，长度 4 |\n| 13 | `ADOBECODEBANCA` | 缩到 `BANC`，长度 4（最优）|\n\n> `return s[start:end]` 返回切片 `[start, end)`。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 最小覆盖子串
+# 给定字符串 s 和 t，在 s 中找出包含 t 中所有字符的最短子串
+# 要求子串中每个字符的出现次数 ≥ t 中对应字符的出现次数
+#
+# 示例:
+#   s = "ADOBECODEBANC"
+#   t = "ABC"
+#   最短覆盖子串: "BANC"（索引 9..12）
+#
+# 注意:
+#   - 字符顺序无所谓，只关心出现次数
+#   - t 中可能有重复字符（如 t = "AABC" 需要 2 个 A）
+#   - 如果 s 中不存在这样的子串，返回 \"\"
+
+from collections import Counter
+
+def minWindow(s: str, t: str) -> str:
+    \"\"\"返回 s 中包含 t 所有字符的最短子串；若不存在则返回空串。\"\"\"
+    need = Counter(t)          # t 中每个字符还需要的次数（>0 表示还缺）
+    missing = len(t)           # 还缺多少个字符未覆盖
+    left = start = end = 0     # 左指针、最优窗口 [start, end)
+
+    for right, c in enumerate(s, 1):
+        if need[c] > 0: missing -= 1
+        need[c] -= 1
+        if missing == 0:
+            while left < right and need[s[left]] < 0:
+                need[s[left]] += 1
+                left += 1
+            if not end or right - left <= end - start:
+                start, end = left, right
+            need[s[left]] += 1
+            missing += 1
+            left += 1
+    return s[start:end]"""
+explanation = "**最终结果**\n\n```\n输入: s = \"ADOBECODEBANC\", t = \"ABC\"\n输出: \"BANC\"\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m+n) — `right` 与 `left` 各只前进一次 |\n| 空间复杂度 | O(m+n) — `Counter` 最多存 `t` 与窗口去重字符 |\n\n**关键技巧**\n\n- `missing` 一次扫描即可判定窗口是否覆盖 `t`，无需每次 `O(|t|)` 比对\n- `need[c]` 既记录\"还需要的次数\"（>0），又记录\"多余的次数\"（<0），一套哈希表两种语义\n- `enumerate(s, 1)` 让 `right` 表示窗口右端的**下一位置**，切片 `s[start:end]` 自然正确\n- 每个字符最多被 `right` 和 `left` 各访问一次 → 严格 O(m+n)"
+visualizationType = "result"
+visualizationData = { mapContents = "{A → 1, B → 1, C → 1}", arrayState = "ADOBECODEBANC", result = "BANC", highlightedIndices = [9, 10, 11, 12] }
+
+[algorithm.summary]
+timeComplexity = "O(m + n)"
+spaceComplexity = "O(m + n)"
+approach = "滑动窗口 + 哈希表（need 计数器 + missing 哨兵）"
+keyInsight = "missing==0 触发左缩，need 兼做\"还需要的次数\"和\"多余次数\"两种语义"

@@ -1,0 +1,228 @@
+[algorithm]
+id = "max-points-on-a-line"
+title = "直线上最多的点数"
+titleEn = "Max Points on a Line"
+difficulty = "hard"
+tags = ["hash-table", "math", "geometry"]
+testCase = "points = [[1,1],[2,2],[3,3]]"
+expectedOutput = "3"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 149. 直线上最多的点数
+# 给定平面上 n 个点的坐标，找出最多点数共线的直线
+#
+# 核心思路：
+#   固定每个点作为基准点，计算它与其它所有点的斜率
+#   相同斜率的点在同一条直线上
+#   用哈希表统计每个斜率出现的次数，找出最大值
+#
+# 斜率表示：
+#   用 (dy, dx) 表示斜率，避免浮点精度问题
+#   约分：dy/g, dx/g，其中 g = gcd(dx, dy)
+#   垂直线：dx = 0，用特殊标记 'inf'
+#
+# 示例：
+#   points = [[1,1],[2,2],[3,3]]
+#   固定 [1,1]，与 [2,2] 斜率 (1,1)，与 [3,3] 斜率 (1,1)
+#   两个点斜率相同，都在直线 y=x 上
+#   结果：3 个点共线"""
+explanation = "**问题分析**\n\n给定二维平面上的点集，找出最多有多少点在同一条直线上。\n\n**核心思路：斜率哈希表**\n\n```\n固定点 P1，计算 P1 与其他点的斜率\n相同斜率 → 共线\n用哈希表统计斜率频次\n```\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 暴力枚举所有直线 | O(n³) | O(1) |\n| **斜率哈希表** | **O(n²)** | **O(n)** |\n\n**斜率表示技巧**\n\n- 用 `(dy/g, dx/g)` 代替浮点数，避免精度误差\n- `g = gcd(dx, dy)` 约分到最简\n- 垂直线用 `'inf'` 标记\n\n> 固定每个点，哈希表统计斜率，最大频次+1 即为经过该点的最多点数。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 149. 直线上最多的点数
+# 给定平面上 n 个点的坐标，找出最多点数共线的直线
+#
+# 核心思路：
+#   固定每个点作为基准点，计算它与其它所有点的斜率
+#   相同斜率的点在同一条直线上
+#   用哈希表统计每个斜率出现的次数，找出最大值
+#
+# 斜率表示：
+#   用 (dy, dx) 表示斜率，避免浮点精度问题
+#   约分：dy/g, dx/g，其中 g = gcd(dx, dy)
+#   垂直线：dx = 0，用特殊标记 'inf'
+#
+# 示例：
+#   points = [[1,1],[2,2],[3,3]]
+#   固定 [1,1]，与 [2,2] 斜率 (1,1)，与 [3,3] 斜率 (1,1)
+#   两个点斜率相同，都在直线 y=x 上
+#   结果：3 个点共线
+
+from typing import List
+from collections import defaultdict
+import math
+
+def maxPoints(points: List[List[int]]) -> int:
+    \"\"\"返回最多点数。\"\"\"
+    n = len(points)
+    if n <= 2:
+        return n
+    result = 0"""
+explanation = "**第 1 步：编写函数签名**\n\n- 参数：`points` — 二维坐标数组\n- 返回：最多共线点数\n- 边界条件：≤2 个点必共线\n- 初始化 `result = 0`，后续遍历更新\n\n**导入模块**\n\n- `defaultdict` — 斜率哈希表\n- `math.gcd` — 计算最大公约数约分斜率"
+visualizationType = "code-only"
+
+# ── Step 2: 外层循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "外层循环"
+titleEn = "Outer Loop"
+code = """# 149. 直线上最多的点数
+# 给定平面上 n 个点的坐标，找出最多点数共线的直线
+#
+# 核心思路：
+#   固定每个点作为基准点，计算它与其它所有点的斜率
+#   相同斜率的点在同一条直线上
+#   用哈希表统计每个斜率出现的次数，找出最大值
+#
+# 斜率表示：
+#   用 (dy, dx) 表示斜率，避免浮点精度问题
+#   约分：dy/g, dx/g，其中 g = gcd(dx, dy)
+#   垂直线：dx = 0，用特殊标记 'inf'
+#
+# 示例：
+#   points = [[1,1],[2,2],[3,3]]
+#   固定 [1,1]，与 [2,2] 斜率 (1,1)，与 [3,3] 斜率 (1,1)
+#   两个点斜率相同，都在直线 y=x 上
+#   结果：3 个点共线
+
+from typing import List
+from collections import defaultdict
+import math
+
+def maxPoints(points: List[List[int]]) -> int:
+    \"\"\"返回最多点数。\"\"\"
+    n = len(points)
+    if n <= 2:
+        return n
+    result = 0
+    for i in range(n):
+        slope_count = defaultdict(int)
+        same_point = 1
+        for j in range(i + 1, n):
+            dx = points[j][0] - points[i][0]
+            dy = points[j][1] - points[i][1]"""
+explanation = "**第 2 步：双重循环结构**\n\n**外层循环 `for i`**\n\n- 固定点 `points[i]` 作为基准点\n- 每次循环统计「经过 `points[i]` 的最大共线点数」\n\n**内层循环 `for j`**\n\n- 遍历 `points[i+1:]`，避免重复计算\n- 计算 `dx, dy` — 两点坐标差\n\n**初始化**\n\n| 变量 | 用途 |\n|------|------|\n| `slope_count` | 哈希表，斜率 → 出现次数 |\n| `same_point = 1` | 重合点计数（包含自身） |\n\n> 从 `i+1` 开始而非 `0`，避免重复计算。"
+visualizationType = "code-only"
+
+# ── Step 3: 斜率分类 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "斜率分类"
+titleEn = "Classify Slopes"
+code = """# 149. 直线上最多的点数
+# 给定平面上 n 个点的坐标，找出最多点数共线的直线
+#
+# 核心思路：
+#   固定每个点作为基准点，计算它与其它所有点的斜率
+#   相同斜率的点在同一条直线上
+#   用哈希表统计每个斜率出现的次数，找出最大值
+#
+# 斜率表示：
+#   用 (dy, dx) 表示斜率，避免浮点精度问题
+#   约分：dy/g, dx/g，其中 g = gcd(dx, dy)
+#   垂直线：dx = 0，用特殊标记 'inf'
+#
+# 示例：
+#   points = [[1,1],[2,2],[3,3]]
+#   固定 [1,1]，与 [2,2] 斜率 (1,1)，与 [3,3] 斜率 (1,1)
+#   两个点斜率相同，都在直线 y=x 上
+#   结果：3 个点共线
+
+from typing import List
+from collections import defaultdict
+import math
+
+def maxPoints(points: List[List[int]]) -> int:
+    \"\"\"返回最多点数。\"\"\"
+    n = len(points)
+    if n <= 2:
+        return n
+    result = 0
+    for i in range(n):
+        slope_count = defaultdict(int)
+        same_point = 1
+        for j in range(i + 1, n):
+            dx = points[j][0] - points[i][0]
+            dy = points[j][1] - points[i][1]
+            if dx == 0 and dy == 0:
+                same_point += 1
+            elif dx == 0:
+                slope_count['inf'] += 1
+            else:
+                g = math.gcd(dx, dy)
+                slope = (dy // g, dx // g)
+                slope_count[slope] += 1"""
+explanation = "**第 3 步：斜率分类处理**\n\n**三种情况**\n\n| 条件 | 含义 | 处理 |\n|------|------|------|\n| `dx == 0 and dy == 0` | 重合点 | `same_point += 1` |\n| `dx == 0` | 垂直线 | `slope_count['inf'] += 1` |\n| 否则 | 普通斜率 | 约分后存入哈希表 |\n\n**斜率约分**\n\n```python\ng = math.gcd(dx, dy)  # 最大公约数\nslope = (dy // g, dx // g)  # 约分后的斜率\n```\n\n> 用 `(dy/g, dx/g)` 代替浮点，避免精度问题。\n\n**示例**\n\n```\npoints = [[1,1], [2,2], [3,3]]\n固定 [1,1]：\n  [2,2]: dx=1, dy=1 → slope=(1,1)\n  [3,3]: dx=2, dy=2 → slope=(1,1)\nslope_count = {(1,1): 2}\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 149. 直线上最多的点数
+# 给定平面上 n 个点的坐标，找出最多点数共线的直线
+#
+# 核心思路：
+#   固定每个点作为基准点，计算它与其它所有点的斜率
+#   相同斜率的点在同一条直线上
+#   用哈希表统计每个斜率出现的次数，找出最大值
+#
+# 斜率表示：
+#   用 (dy, dx) 表示斜率，避免浮点精度问题
+#   约分：dy/g, dx/g，其中 g = gcd(dx, dy)
+#   垂直线：dx = 0，用特殊标记 'inf'
+#
+# 示例：
+#   points = [[1,1],[2,2],[3,3]]
+#   固定 [1,1]，与 [2,2] 斜率 (1,1)，与 [3,3] 斜率 (1,1)
+#   两个点斜率相同，都在直线 y=x 上
+#   结果：3 个点共线
+
+from typing import List
+from collections import defaultdict
+import math
+
+def maxPoints(points: List[List[int]]) -> int:
+    \"\"\"返回最多点数。\"\"\"
+    n = len(points)
+    if n <= 2:
+        return n
+    result = 0
+    for i in range(n):
+        slope_count = defaultdict(int)
+        same_point = 1
+        for j in range(i + 1, n):
+            dx = points[j][0] - points[i][0]
+            dy = points[j][1] - points[i][1]
+            if dx == 0 and dy == 0:
+                same_point += 1
+            elif dx == 0:
+                slope_count['inf'] += 1
+            else:
+                g = math.gcd(dx, dy)
+                slope = (dy // g, dx // g)
+                slope_count[slope] += 1
+        current_max = same_point
+        for count in slope_count.values():
+            current_max = max(current_max, count + same_point)
+        result = max(result, current_max)
+    return result"""
+explanation = "**最终结果**\n\n✅ 算法完成\n\n```\n输入: points = [[1,1],[2,2],[3,3]]\n输出: 3\n```\n\n**计算当前最大**\n\n```python\ncurrent_max = same_point\nfor count in slope_count.values():\n    current_max = max(current_max, count + same_point)\n```\n\n- `count` — 某斜率出现的次数\n- `count + same_point` — 该斜率对应直线的总点数\n- 取所有斜率中的最大值\n\n**更新全局结果**\n\n```python\nresult = max(result, current_max)\n```\n\n遍历所有固定点，返回最大值。\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n²) — 双重循环 |\n| 空间复杂度 | O(n) — 哈希表最多存 n-1 个斜率 |\n\n**关键技巧**\n\n- 斜率用 `(dy/g, dx/g)` 表示，避免浮点误差\n- 固定每个点，哈希表统计斜率频次\n- 重合点单独计数"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[1, 1], [2, 2], [3, 3]]", result = "3", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(n²)"
+spaceComplexity = "O(n)"
+approach = "斜率哈希表 + 枚举固定点"
+keyInsight = "固定每个点计算与其他点的斜率；相同斜率 → 共线；用 (dy/g, dx/g) 表示斜率避免浮点误差"

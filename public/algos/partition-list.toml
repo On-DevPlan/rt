@@ -1,0 +1,174 @@
+[algorithm]
+id = "partition-list"
+title = "分隔链表"
+titleEn = "Partition List"
+difficulty = "medium"
+tags = ["linked-list", "two-pointers"]
+testCase = "head = [1,4,3,2,5,2], x =3"
+expectedOutput = "[1,2,2,4,3,5]"
+
+# ── Step0:理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 分隔链表
+# 给定一个链表的头节点 head 和一个特定值 x
+# 将所有小于 x 的节点排在大于或等于 x 的节点之前
+# 注意:保持节点相对顺序即可，不需要完全排序
+#
+# 示例:
+# head = [1,4,3,2,5,2], x =3
+# 结果: [1,2,2,4,3,5]
+# <3 <3 ≥3 ≥3"""
+explanation = "**问题分析**\n\n给定链表和一个值 `x`，把链表分成两段：\n- 前段：所有 **小于** `x` 的节点\n- 后段：所有 **大于或等于** `x` 的节点\n\n**关键点**\n\n- 不要求完全排序，只需按 `x`切分\n-保持节点原有**相对顺序**\n- 必须**稳定**地处理相同大小的节点\n\n| 输入 | x | 输出 |\n|------|---|------|\n| `[1,4,3,2,5,2]` | `3` | `[1,2,2,4,3,5]` |\n\n> 双虚拟头 +一次遍历 +拼接 是这道题最优雅的解法。"
+visualizationType = "intro"
+
+# ── Step1: ListNode + 函数签名 ───────────────────────────────
+[[algorithm.steps]]
+id =1
+title = "链表节点"
+titleEn = "ListNode + Signature"
+code = """# 分隔链表
+# 给定一个链表的头节点 head 和一个特定值 x
+# 将所有小于 x 的节点排在大于或等于 x 的节点之前
+# 注意:保持节点相对顺序即可，不需要完全排序
+#
+# 示例:
+# head = [1,4,3,2,5,2], x =3
+# 结果: [1,2,2,4,3,5]
+# <3 <3 ≥3 ≥3
+
+from typing import Optional
+
+class ListNode:
+ def __init__(self, val=0, next=None):
+ self.val = val
+ self.next = next
+
+def partition(head: Optional[ListNode], x: int) -> Optional[ListNode]:
+ \"\"\"将链表按 x分为前后两段，小于 x 在前\"\"\"
+ pass"""
+explanation = "**第1步：定义链表节点与函数签名**\n\n- `ListNode`：标准的链表节点，含 `val` 和 `next`\n- 函数签名：\n - `head`：链表头节点\n - `x`：分隔阈值\n - 返回值：分隔后的新链表头\n\n> 使用 `Optional` 类型注解表示节点可能为 `None`，符合链表操作的常规写法。"
+visualizationType = "code-only"
+
+# ── Step2: 创建两个虚拟头 ────────────────────────────────────
+[[algorithm.steps]]
+id =2
+title = "双虚拟头"
+titleEn = "Two Dummy Heads"
+code = """# 分隔链表
+# 给定一个链表的头节点 head 和一个特定值 x
+# 将所有小于 x 的节点排在大于或等于 x 的节点之前
+# 注意:保持节点相对顺序即可，不需要完全排序
+#
+# 示例:
+# head = [1,4,3,2,5,2], x =3
+# 结果: [1,2,2,4,3,5]
+# <3 <3 ≥3 ≥3
+
+from typing import Optional
+
+class ListNode:
+ def __init__(self, val=0, next=None):
+ self.val = val
+ self.next = next
+
+def partition(head: Optional[ListNode], x: int) -> Optional[ListNode]:
+ \"\"\"将链表按 x分为前后两段，小于 x 在前\"\"\"
+ less = ListNode(0) # 小于 x 的链表的虚拟头
+ greater = ListNode(0) # ≥ x 的链表的虚拟头
+ less_cur = less # less链表的当前尾
+ greater_cur = greater # greater链表的当前尾"""
+explanation = "**第2步：建立两条链表**\n\n**核心思想：维护两条独立的小/大链表**\n\n```\nless (虚拟头) greater (虚拟头)\n ↓ ↓\n [0]  less_cur → [0]  greater_cur →\n```\n\n|变量 |作用 |\n|------|------|\n| `less` | 小于 x链表的虚拟头 |\n| `greater` | ≥ x链表的虚拟头 |\n| `less_cur` | less链表的当前尾节点指针 |\n| `greater_cur` | greater链表的当前尾节点指针 |\n\n>虚拟头（dummy head）避免了对第一个节点的特殊处理，是链表问题的常用技巧。"
+visualizationType = "code-only"
+
+# ── Step3:一次遍历分发节点 ──────────────────────────────────
+[[algorithm.steps]]
+id =3
+title = "遍历分发"
+titleEn = "Iterate and Dispatch"
+code = """# 分隔链表
+# 给定一个链表的头节点 head 和一个特定值 x
+# 将所有小于 x 的节点排在大于或等于 x 的节点之前
+# 注意:保持节点相对顺序即可，不需要完全排序
+#
+# 示例:
+# head = [1,4,3,2,5,2], x =3
+# 结果: [1,2,2,4,3,5]
+# <3 <3 ≥3 ≥3
+
+from typing import Optional
+
+class ListNode:
+ def __init__(self, val=0, next=None):
+ self.val = val
+ self.next = next
+
+def partition(head: Optional[ListNode], x: int) -> Optional[ListNode]:
+ \"\"\"将链表按 x分为前后两段，小于 x 在前\"\"\"
+ less = ListNode(0) # 小于 x 的链表的虚拟头
+ greater = ListNode(0) # ≥ x 的链表的虚拟头
+ less_cur = less # less链表的当前尾
+ greater_cur = greater # greater链表的当前尾
+ cur = head
+ while cur:
+ if cur.val < x:
+ less_cur.next = cur
+ less_cur = less_cur.next
+ else:
+ greater_cur.next = cur
+ greater_cur = greater_cur.next
+ cur = cur.next"""
+explanation = "**第3步：一次遍历分发节点**\n\n遍历原链表，按 `val` 与 `x` 的关系挂到对应链表的尾部：\n\n|条件 | 操作 |\n|------|------|\n| `cur.val < x` |挂到 less链尾 |\n| 否则 |挂到 greater链尾 |\n|循环末尾 | `cur = cur.next` 前移 |\n\n**示例执行（x=3）：**\n\n```\ncur=1:1<3 → less: [0→1]\ncur=4:4≥3 → greater:[0→4]\ncur=3:3≥3 → greater:[0→4→3]\ncur=2:2<3 → less: [0→1→2]\ncur=5:5≥3 → greater:[0→4→3→5]\ncur=2:2<3 → less: [0→1→2→2]\ncur=None →退出循环\n```\n\n>节点复用：`cur.next` 未被清空，所以两条链尾的 next仍指向原链表的下一节点。"
+visualizationType = "code-only"
+
+# ── Step4:拼接 +断尾 + 返回 ────────────────────────────────
+[[algorithm.steps]]
+id =4
+title = "拼接完成"
+titleEn = "Splice and Return"
+code = """# 分隔链表
+# 给定一个链表的头节点 head 和一个特定值 x
+# 将所有小于 x 的节点排在大于或等于 x 的节点之前
+# 注意:保持节点相对顺序即可，不需要完全排序
+#
+# 示例:
+# head = [1,4,3,2,5,2], x =3
+# 结果: [1,2,2,4,3,5]
+# <3 <3 ≥3 ≥3
+
+from typing import Optional
+
+class ListNode:
+ def __init__(self, val=0, next=None):
+ self.val = val
+ self.next = next
+
+def partition(head: Optional[ListNode], x: int) -> Optional[ListNode]:
+ \"\"\"将链表按 x分为前后两段，小于 x 在前\"\"\"
+ less = ListNode(0) # 小于 x 的链表的虚拟头
+ greater = ListNode(0) # ≥ x 的链表的虚拟头
+ less_cur = less # less链表的当前尾
+ greater_cur = greater # greater链表的当前尾
+ cur = head
+ while cur:
+ if cur.val < x:
+ less_cur.next = cur
+ less_cur = less_cur.next
+ else:
+ greater_cur.next = cur
+ greater_cur = greater_cur.next
+ cur = cur.next
+ greater_cur.next = None #断开原链表尾部，避免成环
+ less_cur.next = greater.next # less链尾接上 greater链头
+ return less.next # 返回 less虚拟头的下一节点"""
+explanation = "**第4步：拼接与收尾**\n\n三步收尾：\n\n1. **`greater_cur.next = None`** —断开原链表尾部，避免拼接到原链表造成环\n2. **`less_cur.next = greater.next`** — less链尾接上 greater链首（跳过虚拟头）\n3. **`return less.next`** — 返回 less虚拟头的下一个节点，即真正的结果头\n\n**最终结果**\n\n```\nless: [0] →1 →2 →2\ngreater: [0] →4 →3 →5\n\n拼接后:1 →2 →2 →4 →3 →5 ✓\n```\n\n|指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) —一次遍历 |\n|空间复杂度 | O(1) —节点复用，只用常数指针 |\n\n>关键洞察：双虚拟头让两条子链独立生长，最后拼接即可；不需要新建节点，纯指针操作。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1,2,2,4,3,5]", result = "[1,2,2,4,3,5]", highlightedIndices = [0,1,2,3,4,5] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "双虚拟头 +一次遍历 +拼接"
+keyInsight = "维护两条小/大链表：遍历时按规则挂入对应链尾，最后拼接并断原尾"

@@ -1,0 +1,231 @@
+[algorithm]
+id = "implement-trie-prefix-tree"
+title = "实现 Trie (前缀树)"
+titleEn = "Implement Trie (Prefix Tree)"
+difficulty = "medium"
+tags = ["hash-table", "string", "design", "trie"]
+testCase = "[\"Trie\",\"insert\",\"search\",\"search\",\"startsWith\",\"insert\",\"search\"]"
+expectedOutput = "[null,null,true,false,true,null,true]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 208. 实现 Trie (前缀树)
+# 设计一个 Trie 类，支持以下三个操作:
+#   insert(word)        - 插入一个单词
+#   search(word)        - 查找完整单词是否存在
+#   startsWith(prefix)  - 判断是否存在以 prefix 为前缀的单词
+#
+# 示例:
+#   Trie trie = Trie()
+#   trie.insert("apple")
+#   trie.search("apple")    -> True
+#   trie.search("app")      -> False
+#   trie.startsWith("app")  -> True
+#   trie.insert("app")
+#   trie.search("app")      -> True"""
+explanation = "**问题分析**\n\n需要实现一个**前缀树 (Trie)** 数据结构，支持三种操作：\n\n| 操作 | 功能 | 时间 |\n|------|------|------|\n| `insert(word)` | 插入单词 | O(L) |\n| `search(word)` | 查找完整单词 | O(L) |\n| `startsWith(prefix)` | 前缀匹配 | O(L) |\n\n其中 `L` = 字符串长度。\n\n> **关键区分**：`search` 必须精确匹配单词结尾；`startsWith` 只需前缀匹配。\n> 例如：插入 `\"apple\"` 后，`search(\"app\")` 为 `False`，但 `startsWith(\"app\")` 为 `True`。\n\n**数据结构**\n\n每个节点包含：\n- `children`：26 个字母的字典（只存出现过的字符）\n- `is_end`：标记该节点是否是某个单词的结尾"
+visualizationType = "intro"
+
+# ── Step 1: TrieNode 与 Trie 骨架 ─────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "节点与类骨架"
+titleEn = "Node & Class Skeleton"
+code = """# 208. 实现 Trie (前缀树)
+# 设计一个 Trie 类，支持以下三个操作:
+#   insert(word)        - 插入一个单词
+#   search(word)        - 查找完整单词是否存在
+#   startsWith(prefix)  - 判断是否存在以 prefix 为前缀的单词
+#
+# 示例:
+#   Trie trie = Trie()
+#   trie.insert("apple")
+#   trie.search("apple")    -> True
+#   trie.search("app")      -> False
+#   trie.startsWith("app")  -> True
+#   trie.insert("app")
+#   trie.search("app")      -> True
+
+
+class TrieNode:
+    \"\"\"Trie 节点: children 字典 + is_end 标志\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+
+
+class Trie:
+    \"\"\"前缀树\"\"\"
+    def __init__(self):
+        self.root = TrieNode()"""
+explanation = "**第 1 步：定义节点结构与类骨架**\n\n**TrieNode 节点**\n\n```python\nclass TrieNode:\n    def __init__(self):\n        self.children = {}   # 子节点字典: char → TrieNode\n        self.is_end = False  # 是否是某个单词的结尾\n```\n\n- `children` 用字典而不是 26 长度的数组 —— **节省空间**（稀疏字符集）\n- `is_end` 区分 `\"apple\"` 与 `\"app\"`：前者 `'e'` 节点 `is_end=True`，后者 `'p'` 节点 `is_end=True`\n\n**Trie 类**\n\n- 仅持有一个根节点 `self.root`\n- 根节点的 `is_end` 始终为 `False`（空串不是合法单词）"
+visualizationType = "code-only"
+
+# ── Step 2: insert 方法 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "insert 方法"
+titleEn = "Insert Method"
+code = """# 208. 实现 Trie (前缀树)
+# 设计一个 Trie 类，支持以下三个操作:
+#   insert(word)        - 插入一个单词
+#   search(word)        - 查找完整单词是否存在
+#   startsWith(prefix)  - 判断是否存在以 prefix 为前缀的单词
+#
+# 示例:
+#   Trie trie = Trie()
+#   trie.insert("apple")
+#   trie.search("apple")    -> True
+#   trie.search("app")      -> False
+#   trie.startsWith("app")  -> True
+#   trie.insert("app")
+#   trie.search("app")      -> True
+
+
+class TrieNode:
+    \"\"\"Trie 节点: children 字典 + is_end 标志\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+
+
+class Trie:
+    \"\"\"前缀树\"\"\"
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word: str) -> None:
+        \"\"\"逐字符插入单词\"\"\"
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True"""
+explanation = "**第 2 步：实现 `insert`**\n\n**思路**\n\n从根节点出发，逐字符遍历 `word`：\n\n1. 若当前字符不在 `node.children` 中 → 创建新 `TrieNode`\n2. 否则复用已存在的子节点\n3. 移动到该子节点继续\n4. 循环结束后，**标记末节点的 `is_end = True`**\n\n**示例：插入 `\"apple\"`**\n\n```\nroot → 'a' → 'p' → 'p' → 'l' → 'e' (is_end=True)\n```\n\n> 路径共享：插入 `\"app\"` 时只需把 `'p'` 节点的 `is_end` 置为 `True`，无需重建路径。"
+visualizationType = "code-only"
+
+# ── Step 3: search 方法 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "search 方法"
+titleEn = "Search Method"
+code = """# 208. 实现 Trie (前缀树)
+# 设计一个 Trie 类，支持以下三个操作:
+#   insert(word)        - 插入一个单词
+#   search(word)        - 查找完整单词是否存在
+#   startsWith(prefix)  - 判断是否存在以 prefix 为前缀的单词
+#
+# 示例:
+#   Trie trie = Trie()
+#   trie.insert("apple")
+#   trie.search("apple")    -> True
+#   trie.search("app")      -> False
+#   trie.startsWith("app")  -> True
+#   trie.insert("app")
+#   trie.search("app")      -> True
+
+
+class TrieNode:
+    \"\"\"Trie 节点: children 字典 + is_end 标志\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+
+
+class Trie:
+    \"\"\"前缀树\"\"\"
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word: str) -> None:
+        \"\"\"逐字符插入单词\"\"\"
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+
+    def search(self, word: str) -> bool:
+        \"\"\"查找完整单词是否存在\"\"\"
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                return False
+            node = node.children[ch]
+        return node.is_end"""
+explanation = "**第 3 步：实现 `search`**\n\n**思路**\n\n同样逐字符查找路径，但**最终必须验证末节点的 `is_end`**：\n\n| 情形 | 结果 |\n|------|------|\n| 路径中途字符不存在 | `False` |\n| 路径走完但 `is_end=False` | `False`（只是前缀，不是完整单词） |\n| 路径走完且 `is_end=True` | `True` |\n\n**示例**\n\n假设已插入 `\"apple\"`：\n\n- `search(\"apple\")` → 走完后 `is_end=True` → `True` ✓\n- `search(\"app\")` → `'p'` 节点 `is_end=False` → `False` ✓\n- `search(\"zoo\")` → `'z'` 不存在 → `False` ✓\n\n> **这是与 `startsWith` 最关键的区别**：必须显式检查 `is_end`。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 208. 实现 Trie (前缀树)
+# 设计一个 Trie 类，支持以下三个操作:
+#   insert(word)        - 插入一个单词
+#   search(word)        - 查找完整单词是否存在
+#   startsWith(prefix)  - 判断是否存在以 prefix 为前缀的单词
+#
+# 示例:
+#   Trie trie = Trie()
+#   trie.insert("apple")
+#   trie.search("apple")    -> True
+#   trie.search("app")      -> False
+#   trie.startsWith("app")  -> True
+#   trie.insert("app")
+#   trie.search("app")      -> True
+
+
+class TrieNode:
+    \"\"\"Trie 节点: children 字典 + is_end 标志\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+
+
+class Trie:
+    \"\"\"前缀树\"\"\"
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word: str) -> None:
+        \"\"\"逐字符插入单词\"\"\"
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+
+    def search(self, word: str) -> bool:
+        \"\"\"查找完整单词是否存在\"\"\"
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                return False
+            node = node.children[ch]
+        return node.is_end
+
+    def startsWith(self, prefix: str) -> bool:
+        \"\"\"判断是否存在以 prefix 为前缀的单词\"\"\"
+        node = self.root
+        for ch in prefix:
+            if ch not in node.children:
+                return False
+            node = node.children[ch]
+        return True"""
+explanation = "**第 4 步：补全 `startsWith`**\n\n`startsWith` 与 `search` 几乎相同，**唯一区别是末尾不检查 `is_end`**：\n\n```python\ndef startsWith(self, prefix: str) -> bool:\n    node = self.root\n    for ch in prefix:\n        if ch not in node.children:\n            return False\n        node = node.children[ch]\n    return True   # 只要路径存在即可，不需要 is_end\n```\n\n**执行测试用例**\n\n```python\ntrie = Trie()\ntrie.insert(\"apple\")     # None\ntrie.search(\"apple\")     # True\ntrie.search(\"app\")       # False   (是前缀但不是单词)\ntrie.startsWith(\"app\")   # True    (前缀匹配)\ntrie.insert(\"app\")       # None\ntrie.search(\"app\")       # True    (现在 \"app\" 也是一个单词)\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | `O(L)` — `L` 为字符串长度 |\n| 空间复杂度 | `O(n * L)` — `n` 为单词数，最坏情况无前缀共享 |\n\n**核心要点**\n\n- `children` 用字典节省稀疏字符空间\n- `search` 末尾检查 `is_end` 区分 `\"app\"` / `\"apple\"`\n- `startsWith` 不检查 `is_end`，仅前缀匹配"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"Trie\", \"insert\", \"search\", \"search\", \"startsWith\", \"insert\", \"search\"]", result = "[null, null, true, false, true, null, true]", highlightedIndices = [2, 3, 4, 6] }
+
+[algorithm.summary]
+timeComplexity = "O(L)  # L = 串长"
+spaceComplexity = "O(n * L)  # n 单词数"
+approach = "TrieNode + children 字典 + is_end 标志"
+keyInsight = "search 必须末尾 is_end=True（区分 apple/apples）；startsWith 不需要 is_end（匹配前缀即可）"

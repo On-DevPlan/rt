@@ -1,0 +1,211 @@
+[algorithm]
+id = "count-complete-tree-nodes"
+title = "完全二叉树的节点个数"
+titleEn = "Count Complete Tree Nodes"
+difficulty = "easy"
+tags = ["tree", "binary-search", "recursion"]
+testCase = "root = [1,2,3,4,5,6]"
+expectedOutput = "6"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 222. 完全二叉树的节点个数
+# 给定一棵完全二叉树的根节点 root，返回该树的节点总数
+#
+# 完全二叉树定义:
+#   除最后一层外，每一层节点数都达到最大值
+#   最后一层节点都集中在左侧
+#
+# 示例:
+#   root = [1,2,3,4,5,6]  →  6
+#
+#       1
+#      / \\
+#     2   3
+#    / \\  /
+#   4  5 6"""
+explanation = "**问题分析**\n\n给定一棵**完全二叉树**的根节点，求节点总数。\n\n**示例**\n\n```\n        1\n       / \\\n      2   3\n     / \\  /\n    4  5 6\n```\n\n| 解法 | 时间 | 是否利用性质 |\n|------|------|--------------|\n| 普通遍历 | O(n) | 否 |\n| **完全二叉树 + 高度比较** | **O(h²) = O((log n)²)** | **是** |\n\n> 完全二叉树的左右子树至少有一个是满二叉树，利用这一点可以避免遍历整个树。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 222. 完全二叉树的节点个数
+# 给定一棵完全二叉树的根节点 root，返回该树的节点总数
+#
+# 完全二叉树定义:
+#   除最后一层外，每一层节点数都达到最大值
+#   最后一层节点都集中在左侧
+#
+# 示例:
+#   root = [1,2,3,4,5,6]  →  6
+#
+#       1
+#      / \\
+#     2   3
+#    / \\  /
+#   4  5 6
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def countNodes(root: Optional[TreeNode]) -> int:
+    \"\"\"返回完全二叉树的节点总数\"\"\"
+    pass"""
+explanation = "**第 1 步：定义树节点 + 函数签名**\n\n- `TreeNode`：标准的二叉树节点类\n- `countNodes(root)`：接收根节点，返回节点总数\n- `Optional[TreeNode]`：根节点可能为空（空树）\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 计算左右子树高度 ──────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "计算高度"
+titleEn = "Compute Depths"
+code = """# 222. 完全二叉树的节点个数
+# 给定一棵完全二叉树的根节点 root，返回该树的节点总数
+#
+# 完全二叉树定义:
+#   除最后一层外，每一层节点数都达到最大值
+#   最后一层节点都集中在左侧
+#
+# 示例:
+#   root = [1,2,3,4,5,6]  →  6
+#
+#       1
+#      / \\
+#     2   3
+#    / \\  /
+#   4  5 6
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def countNodes(root: Optional[TreeNode]) -> int:
+    \"\"\"返回完全二叉树的节点总数\"\"\"
+    if not root:
+        return 0
+    def depth(node: Optional[TreeNode]) -> int:
+        d = 0
+        while node:
+            node = node.left
+            d += 1
+        return d
+    left_d = depth(root.left)
+    right_d = depth(root.right)"""
+explanation = "**第 2 步：计算左右子树高度**\n\n**关键技巧：沿最左侧路径走即可得到深度**\n\n```python\ndef depth(node):\n    d = 0\n    while node:\n        node = node.left   # 一直向左下走\n        d += 1\n    return d\n```\n\n| 变量 | 含义 | 示例 |\n|------|------|------|\n| `left_d` | 左子树最左路径长度 | 对 [1,2,3,4,5,6] → `left_d = 3` |\n| `right_d` | 右子树最左路径长度 | 对 [1,2,3,4,5,6] → `right_d = 2` |\n\n> `depth()` 每次 O(h)，比普通 DFS 求高度快。"
+visualizationType = "code-only"
+
+# ── Step 3: 利用性质比较并递归 ────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "比较递归"
+titleEn = "Compare and Recurse"
+code = """# 222. 完全二叉树的节点个数
+# 给定一棵完全二叉树的根节点 root，返回该树的节点总数
+#
+# 完全二叉树定义:
+#   除最后一层外，每一层节点数都达到最大值
+#   最后一层节点都集中在左侧
+#
+# 示例:
+#   root = [1,2,3,4,5,6]  →  6
+#
+#       1
+#      / \\
+#     2   3
+#    / \\  /
+#   4  5 6
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def countNodes(root: Optional[TreeNode]) -> int:
+    \"\"\"返回完全二叉树的节点总数\"\"\"
+    if not root:
+        return 0
+    def depth(node: Optional[TreeNode]) -> int:
+        d = 0
+        while node:
+            node = node.left
+            d += 1
+        return d
+    left_d = depth(root.left)
+    right_d = depth(root.right)
+    if left_d == right_d:
+        return (1 << left_d) + countNodes(root.right)
+    return (1 << right_d) + countNodes(root.left)"""
+explanation = "**第 3 步：利用完全二叉树性质**\n\n**核心性质**：完全二叉树的左右子树至少有一个是**满二叉树**。\n\n| 情况 | 结论 | 公式 |\n|------|------|------|\n| `left_d == right_d` | 左子树是满二叉树（深度 `left_d`） | `2^left_d - 1 + 1 + countNodes(root.right)` |\n| `left_d != right_d` | 右子树是满二叉树（深度 `right_d`） | `2^right_d - 1 + 1 + countNodes(root.left)` |\n\n**位运算小技巧**：`1 << k` 等价于 `2^k`\n\n```\nif left_d == right_d:\n    return (1 << left_d) + countNodes(root.right)   # 左满\nreturn (1 << right_d) + countNodes(root.left)       # 右满\n```\n\n> 满二叉树节点数 = 2^h - 1（h 为深度），加 1 是当前根节点，再加上递归的另一边。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 222. 完全二叉树的节点个数
+# 给定一棵完全二叉树的根节点 root，返回该树的节点总数
+#
+# 完全二叉树定义:
+#   除最后一层外，每一层节点数都达到最大值
+#   最后一层节点都集中在左侧
+#
+# 示例:
+#   root = [1,2,3,4,5,6]  →  6
+#
+#       1
+#      / \\
+#     2   3
+#    / \\  /
+#   4  5 6
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def countNodes(root: Optional[TreeNode]) -> int:
+    \"\"\"返回完全二叉树的节点总数\"\"\"
+    if not root:
+        return 0
+    def depth(node: Optional[TreeNode]) -> int:
+        d = 0
+        while node:
+            node = node.left
+            d += 1
+        return d
+    left_d = depth(root.left)
+    right_d = depth(root.right)
+    if left_d == right_d:
+        return (1 << left_d) + countNodes(root.right)
+    return (1 << right_d) + countNodes(root.left)"""
+explanation = "**最终结果**\n\n```\n输入: root = [1, 2, 3, 4, 5, 6]\n        1\n       / \\\n      2   3\n     / \\  /\n    4  5 6\n输出: 6\n```\n\n**执行追踪（根节点）**\n\n| 步骤 | `left_d` | `right_d` | 判断 | 结果 |\n|------|----------|-----------|------|------|\n| 根节点 | 3 | 2 | 不相等 → 右满 | `2² + countNodes(left)` |\n| 左子树(2) | 2 | 1 | 不相等 → 右满 | `2¹ + countNodes(left)` |\n| 节点 4 | 1 | 0 | 不相等 → 右满 | `2⁰ + 0 = 1` |\n| 节点 5 | 0 | 0 | 相等 → 左满 | `2⁰ + 0 = 1` |\n\n合计：`4 + 2 + 1 + 1 = 6` ✓\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(h²) = O((log n)²) — 每层 O(h)，共 h 层 |\n| 空间复杂度 | O(h) — 递归栈深度 |\n\n**关键洞察**\n\n- 完全二叉树的左右子树必有一边是满二叉树\n- 满二叉树节点数可用 `2^h - 1` 直接算出（O(1)）\n- 不必遍历整棵树，复杂度从 O(n) 降到 O((log n)²)"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 4, 5, 6]", result = "6", highlightedIndices = [0, 1, 2, 3, 4, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(h^2)  # h = log n"
+spaceComplexity = "O(h)  # 递归栈"
+approach = "完全二叉树性质 + 高度比较"
+keyInsight = "若左右高相等 → 左满（2^h - 1 + 1 + 递归右）；否则右满（递归左 + 2^h）"

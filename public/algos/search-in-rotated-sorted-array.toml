@@ -1,0 +1,164 @@
+[algorithm]
+id = "search-in-rotated-sorted-array"
+title = "搜索旋转排序数组"
+titleEn = "Search in Rotated Sorted Array"
+difficulty = "medium"
+tags = ["array", "binary-search"]
+testCase = "nums = [4,5,6,7,0,1,2], target = 0"
+expectedOutput = "4"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 33. 搜索旋转排序数组
+# 在旋转过的升序数组中查找目标
+#
+# 问题特征:
+#   数组在某个点被旋转，例如 [0,1,2,4,5,6,7] → [4,5,6,7,0,1,2]
+#   旋转后，数组被分成两个有序的子数组
+#   要求 O(log n) 时间复杂度
+#
+# 示例:
+#   nums = [4,5,6,7,0,1,2], target = 0
+#   返回: 4（target 在索引 4 处）"""
+explanation = "**问题分析**\n\n数组在某点旋转后，形成两个有序部分：\n- 左半边：`[4, 5, 6, 7]` — 升序\n- 右半边：`[0, 1, 2]` — 升序\n\n**核心洞察：双轴二分**\n\n虽然整体不有序，但**任意一半必有一半是有序的**：\n\n| 条件 | 有序半边 |\n|------|---------|\n| `nums[left] ≤ nums[mid]` | 左半边有序 |\n| `nums[left] > nums[mid]` | 右半边有序 |\n\n一旦知道哪半边有序，就判断目标是否在有序半边内，缩小搜索范围。\n\n**执行流程（示例：查找 0）**\n\n```\n初始: left=0, right=6, nums=[4,5,6,7,0,1,2]\n\n第1轮: mid=3, nums[mid]=7 ≠ 0\n       nums[left]=4 ≤ nums[mid]=7 → 左半边有序\n       0 在 [4,7] 之外 → 搜索右半边\n\n第2轮: left=4, right=6, mid=5, nums[mid]=1 ≠ 0\n       nums[left]=0 ≤ nums[mid]=1 → 左半边有序\n       0 在 [0,1] 之内 → 搜索左半边\n\n第3轮: left=4, right=4, mid=4, nums[mid]=0 == 0 → 找到！\n```"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 指针初始化 ────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 33. 搜索旋转排序数组
+# 在旋转过的升序数组中查找目标
+#
+# 问题特征:
+#   数组在某个点被旋转，例如 [0,1,2,4,5,6,7] → [4,5,6,7,0,1,2]
+#   旋转后，数组被分成两个有序的子数组
+#   要求 O(log n) 时间复杂度
+#
+# 示例:
+#   nums = [4,5,6,7,0,1,2], target = 0
+#   返回: 4（target 在索引 4 处）
+
+from typing import List
+
+def search(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引，不存在返回 -1\"\"\"
+    left, right = 0, len(nums) - 1
+    while left <= right:
+        mid = (left + right) // 2"""
+explanation = "**第 1 步：定义函数签名和循环框架**\n\n```python\ndef search(nums: List[int], target: int) -> int:\n    \"\"\"返回目标索引，不存在返回 -1\"\"\"\n```\n\n**初始化搜索区间**\n\n| 变量 | 初始值 | 含义 |\n|------|--------|------|\n| `left` | `0` | 搜索区间的左边界 |\n| `right` | `len(nums) - 1` | 搜索区间的右边界 |\n\n**循环条件 `left <= right`**\n\n- 区间有效时继续搜索\n- 当 `left > right` 时，区间为空，目标不存在"
+visualizationType = "code-only"
+
+# ── Step 2: 快速检查 ─────────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "快速检查"
+titleEn = "Quick Check"
+code = """# 33. 搜索旋转排序数组
+# 在旋转过的升序数组中查找目标
+#
+# 问题特征:
+#   数组在某个点被旋转，例如 [0,1,2,4,5,6,7] → [4,5,6,7,0,1,2]
+#   旋转后，数组被分成两个有序的子数组
+#   要求 O(log n) 时间复杂度
+#
+# 示例:
+#   nums = [4,5,6,7,0,1,2], target = 0
+#   返回: 4（target 在索引 4 处）
+
+from typing import List
+
+def search(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引，不存在返回 -1\"\"\"
+    left, right = 0, len(nums) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if nums[mid] == target:
+            return mid"""
+explanation = "**第 2 步：直接命中检查**\n\n```python\nif nums[mid] == target:\n    return mid\n```\n\n每次循环先检查 `mid` 位置是否就是目标，如果是则直接返回索引。\n\n**示例**\n\n```\nnums = [4,5,6,7,0,1,2], target = 7\n\n第1轮: left=0, right=6, mid=3\n       nums[3] = 7 == 7 ✓ → 返回 3\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 判断有序半边 + 左半边逻辑 ───────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "判断有序半边"
+titleEn = "Identify Ordered Half"
+code = """# 33. 搜索旋转排序数组
+# 在旋转过的升序数组中查找目标
+#
+# 问题特征:
+#   数组在某个点被旋转，例如 [0,1,2,4,5,6,7] → [4,5,6,7,0,1,2]
+#   旋转后，数组被分成两个有序的子数组
+#   要求 O(log n) 时间复杂度
+#
+# 示例:
+#   nums = [4,5,6,7,0,1,2], target = 0
+#   返回: 4（target 在索引 4 处）
+
+from typing import List
+
+def search(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引，不存在返回 -1\"\"\"
+    left, right = 0, len(nums) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if nums[mid] == target:
+            return mid
+        if nums[left] <= nums[mid]:
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1"""
+explanation = "**第 3 步：判断有序半边并处理左半边情况**\n\n**判断哪半边有序**\n\n```python\nif nums[left] <= nums[mid]:\n    # 左半边有序\n```\n\n当 `nums[left] ≤ nums[mid]` 时，说明左半边没有经过旋转点，是有序的。\n\n**目标在左半边有序区间**\n\n```python\nif nums[left] <= target < nums[mid]:\n    right = mid - 1  # 目标在左半边\nelse:\n    left = mid + 1   # 目标在右半边\n```\n\n| 条件 | 目标位置 | 操作 |\n|------|---------|------|\n| `nums[left] ≤ target < nums[mid]` | 左半边有序区间 | `right = mid - 1` |\n| 否则 | 右半边 | `left = mid + 1` |\n\n**示例**\n\n```\nnums = [4,5,6,7,0,1,2], target = 0\n\n第1轮: left=0, right=6, mid=3\n       nums[left]=4 ≤ nums[mid]=7 → 左半边 [4,5,6,7] 有序\n       target=0 不在 [4,7] 内 → left = mid + 1 = 4\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成（右半边逻辑 + 返回 -1）─────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 33. 搜索旋转排序数组
+# 在旋转过的升序数组中查找目标
+#
+# 问题特征:
+#   数组在某个点被旋转，例如 [0,1,2,4,5,6,7] → [4,5,6,7,0,1,2]
+#   旋转后，数组被分成两个有序的子数组
+#   要求 O(log n) 时间复杂度
+#
+# 示例:
+#   nums = [4,5,6,7,0,1,2], target = 0
+#   返回: 4（target 在索引 4 处）
+
+from typing import List
+
+def search(nums: List[int], target: int) -> int:
+    \"\"\"返回目标索引，不存在返回 -1\"\"\"
+    left, right = 0, len(nums) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if nums[mid] == target:
+            return mid
+        if nums[left] <= nums[mid]:
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1
+        else:
+            if nums[mid] < target <= nums[right]:
+                left = mid + 1
+            else:
+                right = mid - 1
+    return -1"""
+explanation = "**第 4 步：右半边有序情况 + 返回 -1**\n\n**右半边有序时的判断**\n\n```python\nelse:\n    # 右半边有序\n    if nums[mid] < target <= nums[right]:\n        left = mid + 1   # 目标在右半边\n    else:\n        right = mid - 1  # 目标在左半边\n```\n\n| 条件 | 目标位置 | 操作 |\n|------|---------|------|\n| `nums[mid] < target ≤ nums[right]` | 右半边有序区间 | `left = mid + 1` |\n| 否则 | 左半边 | `right = mid - 1` |\n\n**完整执行示例（target = 0）**\n\n```\n初始: nums=[4,5,6,7,0,1,2], left=0, right=6\n\n第1轮: mid=3, nums[mid]=7\n       nums[left]=4 ≤ nums[mid]=7 → 左半边有序\n       0 不在 [4,7] → left = 4\n\n第2轮: mid=5, nums[mid]=1\n       nums[left]=0 ≤ nums[mid]=1 → 左半边有序\n       0 在 [0,1] 内 → right = 4\n\n第3轮: mid=4, nums[mid]=0 == target → 返回 4 ✓\n```\n\n**终止条件**\n\n```python\nreturn -1  # 循环结束，未找到\n```\n\n当 `left > right` 时，搜索区间为空，目标不存在。\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(log n) — 每次区间减半 |\n| 空间复杂度 | O(1) — 只用三个指针 |\n\n**核心技巧**\n\n- 旋转数组虽然整体无序，但任意一半必有一半有序\n- 先判断哪半边有序，再判断目标是否在有序半边内\n- 每次都能缩小一半搜索范围，保证 O(log n) 复杂度"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[4, 5, 6, 7, 0, 1, 2]", result = "4", highlightedIndices = [4] }
+
+[algorithm.summary]
+timeComplexity = "O(log n)"
+spaceComplexity = "O(1)"
+approach = "二分查找（双轴）"
+keyInsight = "先判断哪半边有序（nums[left] ≤ nums[mid]），再判断目标是否在有序半边；每次缩小一半区间"

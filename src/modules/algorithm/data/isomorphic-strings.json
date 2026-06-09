@@ -1,0 +1,182 @@
+{
+  "id": "isomorphic-strings",
+  "title": "同构字符串",
+  "titleEn": "Isomorphic Strings",
+  "difficulty": "easy",
+  "tags": [
+    "hash-table",
+    "string"
+  ],
+  "testCase": "s = \"egg\", t = \"add\"",
+  "expectedOutput": "true",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 同构字符串\n# 给定两个字符串 s 和 t，判断它们是否同构\n#\n# 同构定义:\n# s 中的每个字符都可以唯一地映射到 t 中的一个字符\n# 同时 t 中的每个字符也必须唯一地映射回 s（双射）\n# 所有出现相同字符的位置必须映射到相同字符\n#\n# 示例:\n# s = \"egg\", t = \"add\" → true (e→a, g→d)\n# s = \"foo\", t = \"bar\" → false (o→a 又 o→r冲突)\n# s = \"paper\", t = \"title\" → true (p→t, a→i, e→l, r→e)",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 同构字符串</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t，判断它们是否同构</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 同构定义:</span>",
+        "<span class=\"tokenComment\"># s 中的每个字符都可以唯一地映射到 t 中的一个字符</span>",
+        "<span class=\"tokenComment\"># 同时 t 中的每个字符也必须唯一地映射回 s（双射）</span>",
+        "<span class=\"tokenComment\"># 所有出现相同字符的位置必须映射到相同字符</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\"># s = &quot;egg&quot;, t = &quot;add&quot; → true (e→a, g→d)</span>",
+        "<span class=\"tokenComment\"># s = &quot;foo&quot;, t = &quot;bar&quot; → false (o→a 又 o→r冲突)</span>",
+        "<span class=\"tokenComment\"># s = &quot;paper&quot;, t = &quot;title&quot; → true (p→t, a→i, e→l, r→e)</span>"
+      ],
+      "explanation": "**问题分析**\n\n判断两个字符串 `s` 和 `t` 是否**同构**——字符之间是否存在**一一对应**（即**双射**）。\n\n**关键约束（双射）**\n\n|方向 |含义 |\n|------|------|\n| `s → t` | `s` 中相同字符必须映射到 `t` 中相同字符 |\n| `t → s` | `t` 中相同字符必须只能由 `s` 中同一个字符映射而来 |\n\n> 仅检查单向 (`s → t`) 不够：例如 `s=\"ab\"`、`t=\"aa\"`表面上 `a→a, b→a`，但两个 `t`字符都来自不同的 `s`字符，**不是双射**。\n\n**示例对照**\n\n| s | t | 结果 |映射 |\n|---|---|------|------|\n| `\"egg\"` | `\"add\"` | `true` | `e→a, g→d` ✓ |\n| `\"foo\"` | `\"bar\"` | `false` | `o→a` 和 `o→r`冲突 |\n| `\"paper\"` | `\"title\"` | `true` | `p→t, a→i, e→l, r→e` ✓ |\n\n**思路**\n\n>维护两个哈希表 `s2t` 和 `t2s`，**同时**记录两个方向的映射，遇到冲突立刻返回 `false`。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 同构字符串\n# 给定两个字符串 s 和 t，判断它们是否同构\n#\n# 同构定义:\n# s 中的每个字符都可以唯一地映射到 t 中的一个字符\n# 同时 t 中的每个字符也必须唯一地映射回 s（双射）\n# 所有出现相同字符的位置必须映射到相同字符\n#\n# 示例:\n# s = \"egg\", t = \"add\" → true (e→a, g→d)\n# s = \"foo\", t = \"bar\" → false (o→a 又 o→r冲突)\n# s = \"paper\", t = \"title\" → true (p→t, a→i, e→l, r→e)\n\ndef isIsomorphic(s: str, t: str) -> bool:\n \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"\n pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 同构字符串</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t，判断它们是否同构</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 同构定义:</span>",
+        "<span class=\"tokenComment\"># s 中的每个字符都可以唯一地映射到 t 中的一个字符</span>",
+        "<span class=\"tokenComment\"># 同时 t 中的每个字符也必须唯一地映射回 s（双射）</span>",
+        "<span class=\"tokenComment\"># 所有出现相同字符的位置必须映射到相同字符</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\"># s = &quot;egg&quot;, t = &quot;add&quot; → true (e→a, g→d)</span>",
+        "<span class=\"tokenComment\"># s = &quot;foo&quot;, t = &quot;bar&quot; → false (o→a 又 o→r冲突)</span>",
+        "<span class=\"tokenComment\"># s = &quot;paper&quot;, t = &quot;title&quot; → true (p→t, a→i, e→l, r→e)</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isIsomorphic</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        " <span class=\"tokenString\">&quot;&quot;&quot;判断 s 和 t 是否同构（双射）。&quot;&quot;&quot;</span>",
+        " <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第1步：编写函数签名**\n\n- 入参：`s: str`、`t: str` 两个等长字符串\n- 返回：`bool` 同构返回 `true`，否则 `false`\n- 类型注解明确输入输出\n-文档字符串说明核心语义：**双射**",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "双映射表",
+      "titleEn": "Dual Maps",
+      "code": "# 同构字符串\n# 给定两个字符串 s 和 t，判断它们是否同构\n#\n# 同构定义:\n# s 中的每个字符都可以唯一地映射到 t 中的一个字符\n# 同时 t 中的每个字符也必须唯一地映射回 s（双射）\n# 所有出现相同字符的位置必须映射到相同字符\n#\n# 示例:\n# s = \"egg\", t = \"add\" → true (e→a, g→d)\n# s = \"foo\", t = \"bar\" → false (o→a 又 o→r冲突)\n# s = \"paper\", t = \"title\" → true (p→t, a→i, e→l, r→e)\n\ndef isIsomorphic(s: str, t: str) -> bool:\n \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"\n s2t, t2s = {}, {}\n pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 同构字符串</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t，判断它们是否同构</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 同构定义:</span>",
+        "<span class=\"tokenComment\"># s 中的每个字符都可以唯一地映射到 t 中的一个字符</span>",
+        "<span class=\"tokenComment\"># 同时 t 中的每个字符也必须唯一地映射回 s（双射）</span>",
+        "<span class=\"tokenComment\"># 所有出现相同字符的位置必须映射到相同字符</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\"># s = &quot;egg&quot;, t = &quot;add&quot; → true (e→a, g→d)</span>",
+        "<span class=\"tokenComment\"># s = &quot;foo&quot;, t = &quot;bar&quot; → false (o→a 又 o→r冲突)</span>",
+        "<span class=\"tokenComment\"># s = &quot;paper&quot;, t = &quot;title&quot; → true (p→t, a→i, e→l, r→e)</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isIsomorphic</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        " <span class=\"tokenString\">&quot;&quot;&quot;判断 s 和 t 是否同构（双射）。&quot;&quot;&quot;</span>",
+        " s2t, t2s = {}, {}",
+        " <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第2步：初始化两个映射表**\n\n```python\ns2t, t2s = {}, {}\n```\n\n|字典 |含义 |角色 |\n|------|------|------|\n| `s2t` | `s` 中字符 → `t` 中对应字符 | 检查一致性 |\n| `t2s` | `t` 中字符 → `s` 中对应字符 | 检查反向一致性 |\n\n> **为什么需要两张表？**\n> - 单 `s2t` 会漏掉「`s` 中两个不同字符都映射到 `t` 中同一个字符」的情形（破坏单射）。\n> - 例如 `s=\"ab\"`、`t=\"aa\"`：仅看 `s2t` 会得到 `{a:a, b:a}`，看起来\"一致\"，但 `t` 中两个 `a` 对应 `s` 中两个不同字符，**不是双射**。\n\n```\ns = \"egg\" t = \"add\"\n ↓\ns2t = {} t2s = {} ←初始空表\n```",
+      "visualizationType": "map-create",
+      "visualizationData": {
+        "mapContents": "{}",
+        "arrayState": "['e','g','g'] × ['a','d','d']",
+        "currentIndex": -1
+      }
+    },
+    {
+      "id": 3,
+      "title": "遍历检查",
+      "titleEn": "Iterate & Verify",
+      "code": "# 同构字符串\n# 给定两个字符串 s 和 t，判断它们是否同构\n#\n# 同构定义:\n# s 中的每个字符都可以唯一地映射到 t 中的一个字符\n# 同时 t 中的每个字符也必须唯一地映射回 s（双射）\n# 所有出现相同字符的位置必须映射到相同字符\n#\n# 示例:\n# s = \"egg\", t = \"add\" → true (e→a, g→d)\n# s = \"foo\", t = \"bar\" → false (o→a 又 o→r冲突)\n# s = \"paper\", t = \"title\" → true (p→t, a→i, e→l, r→e)\n\ndef isIsomorphic(s: str, t: str) -> bool:\n \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"\n s2t, t2s = {}, {}\n for a, b in zip(s, t):\n if (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):\n return False\n s2t[a] = b\n t2s[b] = a\n pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 同构字符串</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t，判断它们是否同构</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 同构定义:</span>",
+        "<span class=\"tokenComment\"># s 中的每个字符都可以唯一地映射到 t 中的一个字符</span>",
+        "<span class=\"tokenComment\"># 同时 t 中的每个字符也必须唯一地映射回 s（双射）</span>",
+        "<span class=\"tokenComment\"># 所有出现相同字符的位置必须映射到相同字符</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\"># s = &quot;egg&quot;, t = &quot;add&quot; → true (e→a, g→d)</span>",
+        "<span class=\"tokenComment\"># s = &quot;foo&quot;, t = &quot;bar&quot; → false (o→a 又 o→r冲突)</span>",
+        "<span class=\"tokenComment\"># s = &quot;paper&quot;, t = &quot;title&quot; → true (p→t, a→i, e→l, r→e)</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isIsomorphic</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        " <span class=\"tokenString\">&quot;&quot;&quot;判断 s 和 t 是否同构（双射）。&quot;&quot;&quot;</span>",
+        " s2t, t2s = {}, {}",
+        " <span class=\"tokenKeyword\">for</span> a, b in <span class=\"tokenBuiltin\">zip</span>(s, t):",
+        " <span class=\"tokenKeyword\">if</span> (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):",
+        " <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        " s2t[a] = b",
+        " t2s[b] = a",
+        " <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第3步：遍历并检查双向一致性**\n\n```python\nfor a, b in zip(s, t):\n if (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):\n return False\n s2t[a] = b\n t2s[b] = a\n```\n\n**冲突检测**\n\n|条件 |含义 | 结果 |\n|------|------|------|\n| `a in s2t and s2t[a] != b` | `s` 中同字符之前映射过另一字符 |破坏「一致性」→ `False` |\n| `b in t2s and t2s[b] != a` | `t` 中同字符之前被另一字符占用 |破坏「单射」→ `False` |\n\n**示例执行**（`s=\"egg\"`、`t=\"add\"`）：\n\n```\ni=0: a='e' b='a' → 无冲突 → s2t={e:a}, t2s={a:e}\ni=1: a='g' b='d' → 无冲突 → s2t={e:a, g:d}, t2s={a:e, d:g}\ni=2: a='g' b='d' → s2t[g]=d == b ✓ →继续\n循环结束 → 返回 True\n```\n\n**反例**（`s=\"foo\"`、`t=\"bar\"`）：\n\n```\ni=0: a='f' b='b' → 无冲突 → s2t={f:b}, t2s={b:f}\ni=1: a='o' b='a' → 无冲突 → s2t={f:b, o:a}, t2s={b:f, a:o}\ni=2: a='o' b='r' → s2t[o]=a ≠ r → 返回 False ✓\n```",
+      "visualizationType": "array-iteration",
+      "visualizationData": {
+        "mapContents": "{e→a, g→d}",
+        "arrayState": "['e','g','g'] × ['a','d','d']",
+        "currentIndex": 2,
+        "found": false
+      }
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 同构字符串\n# 给定两个字符串 s 和 t，判断它们是否同构\n#\n# 同构定义:\n# s 中的每个字符都可以唯一地映射到 t 中的一个字符\n# 同时 t 中的每个字符也必须唯一地映射回 s（双射）\n# 所有出现相同字符的位置必须映射到相同字符\n#\n# 示例:\n# s = \"egg\", t = \"add\" → true (e→a, g→d)\n# s = \"foo\", t = \"bar\" → false (o→a 又 o→r冲突)\n# s = \"paper\", t = \"title\" → true (p→t, a→i, e→l, r→e)\n\ndef isIsomorphic(s: str, t: str) -> bool:\n \"\"\"判断 s 和 t 是否同构（双射）。\"\"\"\n s2t, t2s = {}, {}\n for a, b in zip(s, t):\n if (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):\n return False\n s2t[a] = b\n t2s[b] = a\n return True",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 同构字符串</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t，判断它们是否同构</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 同构定义:</span>",
+        "<span class=\"tokenComment\"># s 中的每个字符都可以唯一地映射到 t 中的一个字符</span>",
+        "<span class=\"tokenComment\"># 同时 t 中的每个字符也必须唯一地映射回 s（双射）</span>",
+        "<span class=\"tokenComment\"># 所有出现相同字符的位置必须映射到相同字符</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\"># s = &quot;egg&quot;, t = &quot;add&quot; → true (e→a, g→d)</span>",
+        "<span class=\"tokenComment\"># s = &quot;foo&quot;, t = &quot;bar&quot; → false (o→a 又 o→r冲突)</span>",
+        "<span class=\"tokenComment\"># s = &quot;paper&quot;, t = &quot;title&quot; → true (p→t, a→i, e→l, r→e)</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isIsomorphic</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        " <span class=\"tokenString\">&quot;&quot;&quot;判断 s 和 t 是否同构（双射）。&quot;&quot;&quot;</span>",
+        " s2t, t2s = {}, {}",
+        " <span class=\"tokenKeyword\">for</span> a, b in <span class=\"tokenBuiltin\">zip</span>(s, t):",
+        " <span class=\"tokenKeyword\">if</span> (a in s2t and s2t[a] != b) or (b in t2s and t2s[b] != a):",
+        " <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        " s2t[a] = b",
+        " t2s[b] = a",
+        " <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">True</span>"
+      ],
+      "explanation": "**最终结果**\n\n✅ 双射检查完成\n\n**三个示例验证**\n\n| 输入 (s, t) |过程 | 返回值 |\n|-------------|------|--------|\n| `(\"egg\", \"add\")` | 无冲突 | `true` |\n| `(\"foo\", \"bar\")` | `o→a` 与 `o→r`冲突 | `false` |\n| `(\"paper\", \"title\")` | 无冲突 | `true` |\n\n**算法复杂度**\n\n|指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | **O(n)** |一次遍历，`dict`查找为 O(1) |\n|空间复杂度 | **O(n)** | 两张映射表最多保存 `n` 个字符对 |\n\n**关键技巧：双射 =双向一致性**\n\n- 仅维护 `s2t` 不够 → 可能漏掉「多对一」破坏单射的情形\n- 同时维护 `t2s` 才能保证**一一对应**\n- 也可以用 `set(zip(s, t)) == set(zip(t, s))` 的等价写法，但 `dict` 版本更直观\n\n> 这是「双射 / bijection」的典型应用：把\"一一对应\"翻译成两个方向都要查表。",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{e→a, g→d}",
+        "arrayState": "['e','g','g'] × ['a','d','d']",
+        "result": "true",
+        "highlightedIndices": [
+          0,
+          1,
+          2
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "approach": "双哈希表双向映射（双射检查）",
+    "keyInsight": "同构 = 双射：必须同时维护 s→t 和 t→s 两张映射表，单向检查会漏掉多对一的情形"
+  }
+}

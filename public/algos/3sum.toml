@@ -1,0 +1,185 @@
+[algorithm]
+id = "3sum"
+title = "三数之和"
+titleEn = "3Sum"
+difficulty = "medium"
+tags = ["array", "two-pointers", "sorting"]
+testCase = "nums = [-1,0,1,2,-1,-4]"
+expectedOutput = "[[-1,-1,2],[-1,0,1]]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 三数之和
+# 给定一个整数数组 nums，判断是否存在三元组 [nums[i], nums[j], nums[k]]
+# 满足 i != j != k 且 nums[i] + nums[j] + nums[k] == 0
+# 返回所有满足条件且不重复的三元组
+#
+# 关键约束:
+#   答案中三元组内数字可以乱序，但三元组之间不能重复
+#   例如 [-1,0,1] 和 [0,-1,1] 视为同一个三元组
+#
+# 示例:
+#   nums = [-1, 0, 1, 2, -1, -4]
+#   结果: [[-1,-1,2], [-1,0,1]]"""
+explanation = "**问题分析**\n\n给定整数数组，找出所有和为 0 的不重复三元组。\n\n**暴力枚举的局限**\n\n| 方法 | 时间 | 空间 | 评价 |\n|------|------|------|------|\n| 三重循环 + 去重 | O(n³) | O(n) | 太慢 |\n| 哈希表优化内层 | O(n²) | O(n) | 难以去重 |\n| **排序 + 双指针** | **O(n²)** | **O(1)** | 标准解法 |\n\n**核心思路：排序 + 固定一个 + 双指针**\n\n1. 先排序数组，让相同元素相邻，便于去重\n2. 外层固定 `i`，内层用左右指针向中间逼近\n3. 三个位置都要跳过与上一次相同的元素——这是去重的关键\n\n> 排序后，相同的 `nums[i]` 必然相邻，因此只需比较 `nums[i] == nums[i-1]` 即可判重。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 三数之和
+# 给定一个整数数组 nums，判断是否存在三元组 [nums[i], nums[j], nums[k]]
+# 满足 i != j != k 且 nums[i] + nums[j] + nums[k] == 0
+# 返回所有满足条件且不重复的三元组
+#
+# 关键约束:
+#   答案中三元组内数字可以乱序，但三元组之间不能重复
+#   例如 [-1,0,1] 和 [0,-1,1] 视为同一个三元组
+#
+# 示例:
+#   nums = [-1, 0, 1, 2, -1, -4]
+#   结果: [[-1,-1,2], [-1,0,1]]
+
+from typing import List
+
+def threeSum(nums: List[int]) -> List[List[int]]:
+    \"\"\"返回所有和为 0 的不重复三元组。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 入参 `nums: List[int]`：整数数组\n- 返回值 `List[List[int]]`：所有和为 0 的不重复三元组\n- 使用 `typing.List` 做类型注解\n- 文档字符串说明函数用途\n\n> **注意**：题目要求返回所有解而不是判断是否存在，所以返回类型是列表的列表。"
+visualizationType = "code-only"
+
+# ── Step 2: 排序 + 固定外层 i ─────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "排序与外层循环"
+titleEn = "Sort and Outer Loop"
+code = """# 三数之和
+# 给定一个整数数组 nums，判断是否存在三元组 [nums[i], nums[j], nums[k]]
+# 满足 i != j != k 且 nums[i] + nums[j] + nums[k] == 0
+# 返回所有满足条件且不重复的三元组
+#
+# 关键约束:
+#   答案中三元组内数字可以乱序，但三元组之间不能重复
+#   例如 [-1,0,1] 和 [0,-1,1] 视为同一个三元组
+#
+# 示例:
+#   nums = [-1, 0, 1, 2, -1, -4]
+#   结果: [[-1,-1,2], [-1,0,1]]
+
+from typing import List
+
+def threeSum(nums: List[int]) -> List[List[int]]:
+    \"\"\"返回所有和为 0 的不重复三元组。\"\"\"
+    nums.sort()          # 排序：相同元素相邻，便于去重与双指针
+    n = len(nums)
+    res = []
+    for i in range(n - 2):                    # 外层固定第一个数
+        if i > 0 and nums[i] == nums[i-1]:    # 去重 ①：跳过相同的 i
+            continue
+        if nums[i] > 0:                       # i 已为正，后面只会更大
+            break"""
+explanation = "**第 2 步：排序与外层循环**\n\n**排序的作用**\n\n- 让相同元素相邻，`nums[i] == nums[i-1]` 即可判重\n- 给双指针的单调推进提供前提\n\n**外层循环的三重含义**\n\n| 索引 | 作用 | 说明 |\n|------|------|------|\n| `i` | 固定三元组的第一个数 | 范围 `0 .. n-3` |\n| `l = i+1` | 第二个数，左指针 | 向右移动 |\n| `r = n-1` | 第三个数，右指针 | 向左移动 |\n\n**两个剪枝**\n\n- `nums[i] == nums[i-1]`：去重，避免 `[a,b,c]` 与 `[a',b,c]` 重复\n- `nums[i] > 0`：此时三元组之和必大于 0，可以提前 `break`\n\n> 这是三处去重中的**第一处**。"
+visualizationType = "code-only"
+
+# ── Step 3: 内层双指针与第二处去重 ─────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "双指针逼近"
+titleEn = "Two-Pointer Sweep"
+code = """# 三数之和
+# 给定一个整数数组 nums，判断是否存在三元组 [nums[i], nums[j], nums[k]]
+# 满足 i != j != k 且 nums[i] + nums[j] + nums[k] == 0
+# 返回所有满足条件且不重复的三元组
+#
+# 关键约束:
+#   答案中三元组内数字可以乱序，但三元组之间不能重复
+#   例如 [-1,0,1] 和 [0,-1,1] 视为同一个三元组
+#
+# 示例:
+#   nums = [-1, 0, 1, 2, -1, -4]
+#   结果: [[-1,-1,2], [-1,0,1]]
+
+from typing import List
+
+def threeSum(nums: List[int]) -> List[List[int]]:
+    \"\"\"返回所有和为 0 的不重复三元组。\"\"\"
+    nums.sort()          # 排序：相同元素相邻，便于去重与双指针
+    n = len(nums)
+    res = []
+    for i in range(n - 2):                    # 外层固定第一个数
+        if i > 0 and nums[i] == nums[i-1]:    # 去重 ①：跳过相同的 i
+            continue
+        if nums[i] > 0:                       # i 已为正，后面只会更大
+            break
+        l, r = i + 1, n - 1                   # 初始化左右指针
+        while l < r:
+            s = nums[i] + nums[l] + nums[r]
+            if s == 0:
+                res.append([nums[i], nums[l], nums[r]])
+                while l < r and nums[l] == nums[l+1]: l += 1   # 去重 ②：跳过相同的 l
+                while l < r and nums[r] == nums[r-1]: r -= 1   # 去重 ③：跳过相同的 r
+                l += 1; r -= 1
+            elif s < 0:
+                l += 1
+            else:
+                r -= 1"""
+explanation = "**第 3 步：内层双指针与三处去重**\n\n**双指针推进规则**\n\n```\n排序后: [-4, -1, -1, 0, 1, 2]\n            i   l         r\n```\n\n| 三数和 `s` | 操作 | 原因 |\n|------|------|------|\n| `s == 0` | 记录结果，两指针都收缩 | 找到一个解 |\n| `s < 0`  | `l += 1` | 和太小，需要更大的数 |\n| `s > 0`  | `r -= 1` | 和太大，需要更小的数 |\n\n**第二处与第三处去重（关键）**\n\n找到一组 `[i, l, r]` 后，左右两侧都要跳过与刚加入的元素相等的值：\n\n```python\nwhile l < r and nums[l] == nums[l+1]: l += 1   # 去重 ②\nwhile l < r and nums[r] == nums[r-1]: r -= 1   # 去重 ③\nl += 1; r -= 1\n```\n\n> **为什么不能只跳过其中一侧？** 若只跳 `l`，下次 `r` 会再次和上一个重复的 `r` 配对，产生重复三元组。两侧都跳才能保证唯一。\n\n**示例追踪** `nums = [-1,0,1,2,-1,-4]` → 排序 `[-4,-1,-1,0,1,2]`\n\n- `i=0(-4)`, `l=1(-1)`, `r=2(-1)`: 和=-6 < 0，`l=2`\n- `i=0(-4)`, `l=2(-1)`, `r=5(2)`: 和=-3 < 0，`l=3`\n- ...以此类推，最终得到 `[[-1,-1,2], [-1,0,1]]`"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 三数之和
+# 给定一个整数数组 nums，判断是否存在三元组 [nums[i], nums[j], nums[k]]
+# 满足 i != j != k 且 nums[i] + nums[j] + nums[k] == 0
+# 返回所有满足条件且不重复的三元组
+#
+# 关键约束:
+#   答案中三元组内数字可以乱序，但三元组之间不能重复
+#   例如 [-1,0,1] 和 [0,-1,1] 视为同一个三元组
+#
+# 示例:
+#   nums = [-1, 0, 1, 2, -1, -4]
+#   结果: [[-1,-1,2], [-1,0,1]]
+
+from typing import List
+
+def threeSum(nums: List[int]) -> List[List[int]]:
+    \"\"\"返回所有和为 0 的不重复三元组。\"\"\"
+    nums.sort()          # 排序：相同元素相邻，便于去重与双指针
+    n = len(nums)
+    res = []
+    for i in range(n - 2):                    # 外层固定第一个数
+        if i > 0 and nums[i] == nums[i-1]:    # 去重 ①：跳过相同的 i
+            continue
+        if nums[i] > 0:                       # i 已为正，后面只会更大
+            break
+        l, r = i + 1, n - 1                   # 初始化左右指针
+        while l < r:
+            s = nums[i] + nums[l] + nums[r]
+            if s == 0:
+                res.append([nums[i], nums[l], nums[r]])
+                while l < r and nums[l] == nums[l+1]: l += 1   # 去重 ②：跳过相同的 l
+                while l < r and nums[r] == nums[r-1]: r -= 1   # 去重 ③：跳过相同的 r
+                l += 1; r -= 1
+            elif s < 0:
+                l += 1
+            else:
+                r -= 1
+    return res"""
+explanation = "**最终结果**\n\n✅ 三处去重完成三数之和查找\n\n```\n输入: nums = [-1, 0, 1, 2, -1, -4]\n排序: [-4, -1, -1, 0, 1, 2]\n输出: [[-1,-1,2], [-1,0,1]]\n```\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | O(n²) | 排序 O(n log n) + 双指针扫描 O(n²) |\n| 空间复杂度 | O(1) | 不计输出数组（排序原地） |\n\n**三处去重汇总**\n\n| 位置 | 触发时机 | 代码 |\n|------|----------|------|\n| 外层 `i` | 每个 `i` 进入循环前 | `nums[i] == nums[i-1]` → `continue` |\n| 左指针 `l` | 找到一个解后 | `nums[l] == nums[l+1]` → `l += 1` |\n| 右指针 `r` | 找到一个解后 | `nums[r] == nums[r-1]` → `r -= 1` |\n\n> **关键洞察**：排序是基础，三处去重是灵魂。少了任何一处，结果集都会出现重复三元组。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[-4, -1, -1, 0, 1, 2]", result = "[[-1,-1,2],[-1,0,1]]", highlightedIndices = [1, 2, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(n²)"
+spaceComplexity = "O(1)"
+approach = "排序 + 外层固定 + 双指针逼近"
+keyInsight = "排序后用三处去重保证结果不重复：外层 i 跳过相同、内层 l/r 找到解后两侧都跳过相同"

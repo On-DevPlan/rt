@@ -1,0 +1,153 @@
+[algorithm]
+id = "bitwise-and-of-numbers-range"
+title = "数字范围按位与"
+titleEn = "Bitwise AND of Numbers Range"
+difficulty = "medium"
+tags = ["bit-manipulation"]
+testCase = "left = 5, right = 7"
+expectedOutput = "4"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 201. 数字范围按位与
+# 计算区间 [left, right] 所有数字的按位与
+#
+# 示例:
+#   left = 5, right = 7
+#   计算: 5 & 6 & 7
+#   5  = 101 (二进制)
+#   6  = 110
+#   7  = 111
+#   结果: 101 & 110 & 111 = 100 = 4
+#
+# 关键观察: 当 left != right 时，范围内至少有两个数字
+# 某些位既有 0 也有 1，按位与后这些位变成 0
+# 只保留 left 和 right 的公共前缀"""
+explanation = "**问题分析**\\n\\n给定区间 `[left, right]`，计算所有数字的按位与。\\n\\n**暴力解法的问题**\\n\\n| 方法 | 时间 | 空间 |\\n|------|------|------|\\n| 遍历区间逐个与运算 | O(right-left) | O(1) |\\n\\n当区间很大时（如 `[1, 2147483647]`），会超时。\\n\\n**关键观察：找公共前缀**\\n\\n```\\nleft  = 5  = 101\\nright = 7  = 111\\n              ^^^\\n              公共前缀 = 1\\n\\n不断右移直到相等:\\n101 → 10 → 1\\n111 → 11 → 1\\n\\nshift = 2，最后左移 2 位: 1 << 2 = 100 = 4\\n```\\n\\n> 当 `left != right` 时，最低位一定有差异（既有 0 也有 1），该位最终结果是 0。不断右移消除最低位差异，直到 `left == right`，剩下的就是公共前缀。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 201. 数字范围按位与
+# 计算区间 [left, right] 所有数字的按位与
+#
+# 示例:
+#   left = 5, right = 7
+#   计算: 5 & 6 & 7
+#   5  = 101 (二进制)
+#   6  = 110
+#   7  = 111
+#   结果: 101 & 110 & 111 = 100 = 4
+#
+# 关键观察: 当 left != right 时，范围内至少有两个数字
+# 某些位既有 0 也有 1，按位与后这些位变成 0
+# 只保留 left 和 right 的公共前缀
+
+def rangeBitwiseAnd(left: int, right: int) -> int:
+    \"\"\"返回区间 [left, right] 所有数字的按位与结果。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\\n\\n- 接收两个参数：`left` 和 `right`，表示区间边界\\n- 返回 `int` 类型，表示按位与结果\\n- 使用类型注解明确参数和返回值类型\\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化 shift ────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化计数器"
+titleEn = "Initialize Counter"
+code = """# 201. 数字范围按位与
+# 计算区间 [left, right] 所有数字的按位与
+#
+# 示例:
+#   left = 5, right = 7
+#   计算: 5 & 6 & 7
+#   5  = 101 (二进制)
+#   6  = 110
+#   7  = 111
+#   结果: 101 & 110 & 111 = 100 = 4
+#
+# 关键观察: 当 left != right 时，范围内至少有两个数字
+# 某些位既有 0 也有 1，按位与后这些位变成 0
+# 只保留 left 和 right 的公共前缀
+
+def rangeBitwiseAnd(left: int, right: int) -> int:
+    \"\"\"返回区间 [left, right] 所有数字的按位与结果。\"\"\"
+    shift = 0"""
+explanation = "**第 2 步：初始化右移计数器**\\n\\n- `shift` 变量记录总共右移了多少位\\n- 初始值为 0\\n- 之后每次 `left` 和 `right` 右移一位，`shift` 加 1\\n- 最后根据 `shift` 将公共前缀左移恢复"
+visualizationType = "code-only"
+
+# ── Step 3: 核心循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "右移找公共前缀"
+titleEn = "Find Common Prefix"
+code = """# 201. 数字范围按位与
+# 计算区间 [left, right] 所有数字的按位与
+#
+# 示例:
+#   left = 5, right = 7
+#   计算: 5 & 6 & 7
+#   5  = 101 (二进制)
+#   6  = 110
+#   7  = 111
+#   结果: 101 & 110 & 111 = 100 = 4
+#
+# 关键观察: 当 left != right 时，范围内至少有两个数字
+# 某些位既有 0 也有 1，按位与后这些位变成 0
+# 只保留 left 和 right 的公共前缀
+
+def rangeBitwiseAnd(left: int, right: int) -> int:
+    \"\"\"返回区间 [left, right] 所有数字的按位与结果。\"\"\"
+    shift = 0
+
+    while left < right:
+        left >>= 1
+        right >>= 1
+        shift += 1"""
+explanation = "**第 3 步：不断右移直到相等**\\n\\n循环条件 `while left < right`：\\n\\n- 只要 `left` 和 `right` 不相等，说明最低位有差异\\n- 每次循环两者都右移一位，`shift` 加 1\\n- 右移相当于「去掉最低位」，消除差异\\n\\n**示例执行：**\\n\\n```\\nleft = 5 (101), right = 7 (111)\\n\\n第 1 次: left=101→10, right=111→11, shift=1\\n第 2 次: left=10→1,  right=11→1,  shift=2\\nleft == right，循环结束\\n```\\n\\n| 变量 | 初始 | 第 1 次后 | 第 2 次后 |\\n|------|------|----------|----------|\\n| left | 101 | 10 | 1 |\\n| right | 111 | 11 | 1 |\\n| shift | 0 | 1 | 2 |"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 201. 数字范围按位与
+# 计算区间 [left, right] 所有数字的按位与
+#
+# 示例:
+#   left = 5, right = 7
+#   计算: 5 & 6 & 7
+#   5  = 101 (二进制)
+#   6  = 110
+#   7  = 111
+#   结果: 101 & 110 & 111 = 100 = 4
+#
+# 关键观察: 当 left != right 时，范围内至少有两个数字
+# 某些位既有 0 也有 1，按位与后这些位变成 0
+# 只保留 left 和 right 的公共前缀
+
+def rangeBitwiseAnd(left: int, right: int) -> int:
+    \"\"\"返回区间 [left, right] 所有数字的按位与结果。\"\"\"
+    shift = 0
+
+    while left < right:
+        left >>= 1
+        right >>= 1
+        shift += 1
+
+    return left << shift"""
+explanation = "**最终结果**\\n\\n✅ 找到公共前缀并恢复\\n\\n```\\n输入: left = 5, right = 7\\n循环结束时: left = 1, right = 1, shift = 2\\n返回: left << shift = 1 << 2 = 4\\n```\\n\\n**算法复杂度**\\n\\n| 指标 | 值 |\\n|------|------|\\n| 时间复杂度 | O(log right) — 每次右移，位数减半 |\\n| 空间复杂度 | O(1) — 只用了 shift 变量 |\\n\\n**核心思想**\\n\\n- 当 `left != right` 时，最低位必然既有 0 也有 1\\n- 按位与的结果中，这些位全部是 0\\n- 不断右移消除最低位差异，直到 `left == right`\\n- 最后左移恢复公共前缀，低位自动补 0"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[5, 6, 7]", result = "4", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(log right)"
+spaceComplexity = "O(1)"
+approach = "找公共前缀"
+keyInsight = "不断右移直到 left == right（消除最低位差异）；最后左移恢复公共前缀"

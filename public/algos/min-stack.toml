@@ -1,0 +1,232 @@
+[algorithm]
+id = "min-stack"
+title = "最小栈"
+titleEn = "Min Stack"
+difficulty = "medium"
+tags = ["stack", "design"]
+testCase = "MinStack()\npush(-2)\npush(0)\npush(-3)\ngetMin() -> -3\npop()\ntop() ->0\ngetMin() -> -2"
+expectedOutput = "所有操作 O(1)，getMin 返回 -3, -2"
+
+# ── Step0:理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """#最小栈
+# 设计一个支持以下操作的栈，且所有操作的时间复杂度均为 O(1):
+#1. push(val): 将元素压入栈
+#2. pop():弹出栈顶元素
+#3. top(): 获取栈顶元素
+#4. getMin(): 获取栈中当前的最小元素
+#
+#关键挑战:
+# - 普通栈只能 O(1)访问栈顶，找最小值需要遍历 O(n)
+# - 必须让 getMin 也是 O(1)
+#
+# 示例:
+# push(-2), push(0), push(-3)
+# getMin() -> -3
+# pop(), top() ->0
+# getMin() -> -2"""
+explanation = "**问题分析**\n\n设计一个栈数据结构，除了常规 `push`/`pop`/`top`，还要支持 **O(1) 的 `getMin`**。\n\n**核心难点**\n\n- 普通栈只能 O(1)访问栈顶\n-每次扫描栈找最小值是 O(n)，不满足要求\n\n**思路：辅助栈**\n\n| 方法 | getMin复杂度 | 说明 |\n|------|---------------|------|\n|每次扫描主栈 | O(n) | 太慢 |\n| **辅助栈同步最小值** | **O(1)** | 主栈每压入一个 x，辅助栈压入 `min(x,辅助栈顶)` |\n\n>关键技巧：让辅助栈的栈顶永远等于主栈当前所有元素的最小值。"
+visualizationType = "intro"
+
+# ── Step1: 类签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id =1
+title = "类签名"
+titleEn = "Class Signature"
+code = """#最小栈
+# 设计一个支持以下操作的栈，且所有操作的时间复杂度均为 O(1):
+#1. push(val): 将元素压入栈
+#2. pop():弹出栈顶元素
+#3. top(): 获取栈顶元素
+#4. getMin(): 获取栈中当前的最小元素
+#
+#关键挑战:
+# - 普通栈只能 O(1)访问栈顶，找最小值需要遍历 O(n)
+# - 必须让 getMin 也是 O(1)
+#
+# 示例:
+# push(-2), push(0), push(-3)
+# getMin() -> -3
+# pop(), top() ->0
+# getMin() -> -2
+
+class MinStack:
+ \"\"\"支持 O(1) 获取最小值的栈。\"\"\"
+ def __init__(self):
+ pass
+
+ def push(self, val: int) -> None:
+ \"\"\"将元素压入栈。\"\"\"
+ pass
+
+ def pop(self) -> None:
+ \"\"\"弹出栈顶元素。\"\"\"
+ pass
+
+ def top(self) -> int:
+ \"\"\"获取栈顶元素。\"\"\"
+ pass
+
+ def getMin(self) -> int:
+ \"\"\"获取当前栈中的最小元素。\"\"\"
+ pass"""
+explanation = "**第1步：编写类签名**\n\n- 定义 `MinStack` 类，包含5 个方法：\n - `__init__()`:初始化\n - `push(val) -> None`:压栈\n - `pop() -> None`:弹栈\n - `top() -> int`:栈顶\n - `getMin() -> int`: 当前最小值\n-文档字符串说明每个方法的作用\n\n> 这一步只搭框架，所有方法体都是 `pass`。"
+visualizationType = "code-only"
+
+# ── Step2:初始化双栈 ──────────────────────────────────────
+[[algorithm.steps]]
+id =2
+title = "初始化双栈"
+titleEn = "Initialize Two Stacks"
+code = """#最小栈
+# 设计一个支持以下操作的栈，且所有操作的时间复杂度均为 O(1):
+#1. push(val): 将元素压入栈
+#2. pop():弹出栈顶元素
+#3. top(): 获取栈顶元素
+#4. getMin(): 获取栈中当前的最小元素
+#
+#关键挑战:
+# - 普通栈只能 O(1)访问栈顶，找最小值需要遍历 O(n)
+# - 必须让 getMin 也是 O(1)
+#
+# 示例:
+# push(-2), push(0), push(-3)
+# getMin() -> -3
+# pop(), top() ->0
+# getMin() -> -2
+
+class MinStack:
+ \"\"\"支持 O(1) 获取最小值的栈。\"\"\"
+ def __init__(self):
+ self.stk = []      # 主栈：存储所有元素
+ self.minstk = []   #辅助栈：栈顶永远是主栈当前的最小值
+
+ def push(self, val: int) -> None:
+ \"\"\"将元素压入栈。\"\"\"
+ pass
+
+ def pop(self) -> None:
+ \"\"\"弹出栈顶元素。\"\"\"
+ pass
+
+ def top(self) -> int:
+ \"\"\"获取栈顶元素。\"\"\"
+ pass
+
+ def getMin(self) -> int:
+ \"\"\"获取当前栈中的最小元素。\"\"\"
+ pass"""
+explanation = "**第2步：初始化双栈**\n\n```python\nself.stk = []      # 主栈\nself.minstk = []   #辅助栈\n```\n\n**两个栈各司其职**\n\n|字段 |作用 |\n|------|------|\n| `stk` |存储所有入栈元素，供 `top()`/`pop()` 使用 |\n| `minstk` |栈顶永远是 `stk` 中所有元素的最小值，供 `getMin()` 使用 |\n\n**关键不变量**\n\n> `minstk[-1] == min(stk)`始终成立。"
+visualizationType = "code-only"
+
+# ── Step3: 实现 push 与 pop ─────────────────────────────────
+[[algorithm.steps]]
+id =3
+title = "压栈与弹栈"
+titleEn = "Push & Pop"
+code = """#最小栈
+# 设计一个支持以下操作的栈，且所有操作的时间复杂度均为 O(1):
+#1. push(val): 将元素压入栈
+#2. pop():弹出栈顶元素
+#3. top(): 获取栈顶元素
+#4. getMin(): 获取栈中当前的最小元素
+#
+#关键挑战:
+# - 普通栈只能 O(1)访问栈顶，找最小值需要遍历 O(n)
+# - 必须让 getMin 也是 O(1)
+#
+# 示例:
+# push(-2), push(0), push(-3)
+# getMin() -> -3
+# pop(), top() ->0
+# getMin() -> -2
+
+class MinStack:
+ \"\"\"支持 O(1) 获取最小值的栈。\"\"\"
+ def __init__(self):
+ self.stk = []      # 主栈：存储所有元素
+ self.minstk = []   #辅助栈：栈顶永远是主栈当前的最小值
+
+ def push(self, val: int) -> None:
+ \"\"\"将元素压入栈。\"\"\"
+ self.stk.append(val)
+ # 只有 val 更小或辅助栈为空时才压入
+ if not self.minstk or val <= self.minstk[-1]:
+ self.minstk.append(val)
+
+ def pop(self) -> None:
+ \"\"\"弹出栈顶元素。\"\"\"
+ # 如果弹出的恰好是当前最小值，辅助栈也要同步弹出
+ if self.stk.pop() == self.minstk[-1]:
+ self.minstk.pop()
+
+ def top(self) -> int:
+ \"\"\"获取栈顶元素。\"\"\"
+ pass
+
+ def getMin(self) -> int:
+ \"\"\"获取当前栈中的最小元素。\"\"\"
+ pass"""
+explanation = "**第3步：实现 `push` 与 `pop`**\n\n**push 的同步逻辑**\n\n```python\nself.stk.append(val)\nif not self.minstk or val <= self.minstk[-1]:\n self.minstk.append(val)\n```\n\n只有当 `val` **小于等于**当前最小值时才同步压入辅助栈。这样保证：\n\n- `minstk`元素个数 ≤ `stk`元素个数（空间更省）\n- `minstk`元素严格非递减\n\n**pop 的同步逻辑**\n\n```python\nif self.stk.pop() == self.minstk[-1]:\n self.minstk.pop()\n```\n\n只有当弹出的元素**恰好等于**辅助栈栈顶时才同步弹出。\n\n**示例执行**\n\n| 操作 | stk | minstk | getMin |\n|------|-----|--------|--------|\n| push(-2) | `[-2]` | `[-2]` | -2 |\n| push(0) | `[-2,0]` | `[-2]` | -2 |\n| push(-3) | `[-2,0, -3]` | `[-2, -3]` | -3 |\n| pop() | `[-2,0]` | `[-2]` | -2 |\n\n>弹出的 -3正好等于 minstk栈顶 -3，所以辅助栈也弹出。"
+visualizationType = "code-only"
+
+# ── Step4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id =4
+title = "完成"
+titleEn = "Complete"
+code = """#最小栈
+# 设计一个支持以下操作的栈，且所有操作的时间复杂度均为 O(1):
+#1. push(val): 将元素压入栈
+#2. pop():弹出栈顶元素
+#3. top(): 获取栈顶元素
+#4. getMin(): 获取栈中当前的最小元素
+#
+#关键挑战:
+# - 普通栈只能 O(1)访问栈顶，找最小值需要遍历 O(n)
+# - 必须让 getMin 也是 O(1)
+#
+# 示例:
+# push(-2), push(0), push(-3)
+# getMin() -> -3
+# pop(), top() ->0
+# getMin() -> -2
+
+class MinStack:
+ \"\"\"支持 O(1) 获取最小值的栈。\"\"\"
+ def __init__(self):
+ self.stk = []      # 主栈：存储所有元素
+ self.minstk = []   #辅助栈：栈顶永远是主栈当前的最小值
+
+ def push(self, val: int) -> None:
+ \"\"\"将元素压入栈。\"\"\"
+ self.stk.append(val)
+ # 只有 val 更小或辅助栈为空时才压入
+ if not self.minstk or val <= self.minstk[-1]:
+ self.minstk.append(val)
+
+ def pop(self) -> None:
+ \"\"\"弹出栈顶元素。\"\"\"
+ # 如果弹出的恰好是当前最小值，辅助栈也要同步弹出
+ if self.stk.pop() == self.minstk[-1]:
+ self.minstk.pop()
+
+ def top(self) -> int:
+ \"\"\"获取栈顶元素。\"\"\"
+ return self.stk[-1]
+
+ def getMin(self) -> int:
+ \"\"\"获取当前栈中的最小元素。\"\"\"
+ return self.minstk[-1]"""
+explanation = "**最终结果**\n\n`top()` 和 `getMin()` 都只需读取栈顶元素，一行搞定：\n\n```python\ndef top(self) -> int:\n return self.stk[-1]\n\ndef getMin(self) -> int:\n return self.minstk[-1]\n```\n\n**算法复杂度**\n\n| 操作 | 时间 | 说明 |\n|------|------|------|\n| `push` | **O(1)** | 主栈 append +辅助栈可能 append |\n| `pop` | **O(1)** | 主栈 pop +辅助栈可能 pop |\n| `top` | **O(1)** | 直接读 `stk[-1]` |\n| `getMin` | **O(1)** | 直接读 `minstk[-1]` |\n|空间 | **O(n)** | 两个栈最多各存 n 个元素 |\n\n**关键技巧回顾**\n\n- **辅助栈同步**：每压入一个 x，辅助栈压入 `min(x,辅助栈顶)`\n- **懒更新**：只有当新元素打破最小值记录时，才更新辅助栈，节省空间\n- **同步弹出**：弹出时若命中最小值，辅助栈也要弹，保持不变量\n\n> 这种\"辅助栈同步最小值\"的思路是处理**带约束的栈**问题的经典模式。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[-2,0]", result = "top() ->0, getMin() -> -2", highlightedIndices = [0,1] }
+
+[algorithm.summary]
+timeComplexity = "O(1) 所有操作"
+spaceComplexity = "O(n)"
+approach = "辅助栈同步最小值"
+keyInsight = "主栈每压入 x，辅助栈压入 min(x,辅助栈顶)，让 getMin 直接读辅助栈栈顶"

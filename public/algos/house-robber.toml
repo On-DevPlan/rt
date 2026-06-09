@@ -1,0 +1,149 @@
+[algorithm]
+id = "house-robber"
+title = "打家劫舍"
+titleEn = "House Robber"
+difficulty = "medium"
+tags = ["dynamic-programming"]
+testCase = "nums = [2, 7, 9, 3, 1]"
+expectedOutput = "12"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 打家劫舍
+# 给定一个代表每个房屋存放金额的非负整数数组
+# 不能抢两个相邻的房屋（否则会触发警报）
+# 求能抢到的最大金额
+#
+# 示例:
+#   nums = [2, 7, 9, 3, 1]
+#   最大金额 = 2 + 9 + 1 = 12"""
+explanation = "**问题分析**\n\n有 `n` 个房子排成一列，每个房子有一定金额。不能抢相邻的房子。\n\n**示例分析**：`nums = [2, 7, 9, 3, 1]`\n\n| 选择 | 抢的房子 | 金额 |\n|------|----------|------|\n| 方案 1 | 房子 0, 2, 4 | 2 + 9 + 1 = **12** |\n| 方案 2 | 房子 0, 3 | 2 + 3 = 5 |\n| 方案 3 | 房子 1, 3 | 7 + 3 = 10 |\n\n**最优解**：12（抢第 0、2、4 号房子）\n\n> 核心思想：对每个房子，只有「抢」或「不抢」两种选择。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 边界处理 ────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 打家劫舍
+# 给定一个代表每个房屋存放金额的非负整数数组
+# 不能抢两个相邻的房屋（否则会触发警报）
+# 求能抢到的最大金额
+#
+# 示例:
+#   nums = [2, 7, 9, 3, 1]
+#   最大金额 = 2 + 9 + 1 = 12
+
+from typing import List
+
+def rob(nums: List[int]) -> int:
+    \"\"\"返回能抢到的最大金额。\"\"\"
+    if not nums:
+        return 0
+    if len(nums) <= 2:
+        return max(nums)
+    pass"""
+explanation = "**第 1 步：函数签名与边界处理**\n\n**边界条件**\n\n| 情况 | 返回值 |\n|------|--------|\n| 空数组 | 0 |\n| 只有 1 个房子 | `nums[0]` |\n| 只有 2 个房子 | `max(nums[0], nums[1])` |\n\n这些情况无需递推，直接返回即可。"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化 DP 状态 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化状态"
+titleEn = "Initialize State"
+code = """# 打家劫舍
+# 给定一个代表每个房屋存放金额的非负整数数组
+# 不能抢两个相邻的房屋（否则会触发警报）
+# 求能抢到的最大金额
+#
+# 示例:
+#   nums = [2, 7, 9, 3, 1]
+#   最大金额 = 2 + 9 + 1 = 12
+
+from typing import List
+
+def rob(nums: List[int]) -> int:
+    \"\"\"返回能抢到的最大金额。\"\"\"
+    if not nums:
+        return 0
+    if len(nums) <= 2:
+        return max(nums)
+    prev2 = nums[0]           # dp[i-2]: 前前个房子的最大收益
+    prev1 = max(nums[0], nums[1])  # dp[i-1]: 前一个房子的最大收益
+    pass"""
+explanation = "**第 2 步：初始化 DP 状态**\n\n**状态定义**\n\n- `prev2`：`dp[i-2]`，抢前 `i-2` 个房子的最大收益\n- `prev1`：`dp[i-1]`，抢前 `i-1` 个房子的最大收益\n\n**初始值**（以 `nums = [2, 7, 9, 3, 1]` 为例）\n\n```\nprev2 = nums[0] = 2           # 只抢第 0 号房子\nprev1 = max(2, 7) = 7         # 第 0、1 号房子中选金额大的\n```\n\n> 空间优化：无需完整 `dp` 数组，只需保留前两个状态。"
+visualizationType = "code-only"
+
+# ── Step 3: 核心循环 ────────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "递推计算"
+titleEn = "DP Iteration"
+code = """# 打家劫舍
+# 给定一个代表每个房屋存放金额的非负整数数组
+# 不能抢两个相邻的房屋（否则会触发警报）
+# 求能抢到的最大金额
+#
+# 示例:
+#   nums = [2, 7, 9, 3, 1]
+#   最大金额 = 2 + 9 + 1 = 12
+
+from typing import List
+
+def rob(nums: List[int]) -> int:
+    \"\"\"返回能抢到的最大金额。\"\"\"
+    if not nums:
+        return 0
+    if len(nums) <= 2:
+        return max(nums)
+    prev2 = nums[0]           # dp[i-2]: 前前个房子的最大收益
+    prev1 = max(nums[0], nums[1])  # dp[i-1]: 前一个房子的最大收益
+
+    for i in range(2, len(nums)):
+        curr = max(prev1, prev2 + nums[i])  # 不抢 i 或抢 i
+        prev2, prev1 = prev1, curr           # 滚动更新状态
+    pass"""
+explanation = "**第 3 步：递推计算**\n\n**状态转移方程**\n\n```\ndp[i] = max(dp[i-1], dp[i-2] + nums[i])\n```\n\n对第 `i` 号房子，有两种选择：\n\n| 选择 | 收益 |\n|------|------|\n| **不抢** 第 `i` 号 | `dp[i-1]`（继承上一个状态） |\n| **抢** 第 `i` 号 | `dp[i-2] + nums[i]`（累加当前金额） |\n\n**执行示例**：`nums = [2, 7, 9, 3, 1]`\n\n```\n初始: prev2 = 2, prev1 = 7\n\ni = 2: curr = max(7, 2 + 9) = 11  → prev2 = 7, prev1 = 11\ni = 3: curr = max(11, 7 + 3) = 11 → prev2 = 11, prev1 = 11\ni = 4: curr = max(11, 11 + 1) = 12 → prev2 = 11, prev1 = 12\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ────────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 打家劫舍
+# 给定一个代表每个房屋存放金额的非负整数数组
+# 不能抢两个相邻的房屋（否则会触发警报）
+# 求能抢到的最大金额
+#
+# 示例:
+#   nums = [2, 7, 9, 3, 1]
+#   最大金额 = 2 + 9 + 1 = 12
+
+from typing import List
+
+def rob(nums: List[int]) -> int:
+    \"\"\"返回能抢到的最大金额。\"\"\"
+    if not nums:
+        return 0
+    if len(nums) <= 2:
+        return max(nums)
+    prev2 = nums[0]           # dp[i-2]: 前前个房子的最大收益
+    prev1 = max(nums[0], nums[1])  # dp[i-1]: 前一个房子的最大收益
+
+    for i in range(2, len(nums)):
+        curr = max(prev1, prev2 + nums[i])  # 不抢 i 或抢 i
+        prev2, prev1 = prev1, curr           # 滚动更新状态
+    return prev1"""
+explanation = "**最终结果**\n\n✅ 最大金额 = 12（抢第 0、2、4 号房子）\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 遍历一次数组 |\n| 空间复杂度 | O(1) — 只用了两个变量 |\n\n**核心技巧**\n\n- **状态转移**：`dp[i] = max(dp[i-1], dp[i-2] + nums[i])`\n- **空间优化**：用 `prev2` 和 `prev1` 两个变量代替完整数组\n- **滚动更新**：每次迭代后 `prev2, prev1 = prev1, curr`"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 7, 9, 3, 1]", result = "12", highlightedIndices = [0, 2, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "动态规划"
+keyInsight = "dp[i] = max(dp[i-1], dp[i-2] + nums[i])；不抢相邻房子；空间优化只需前两个值"

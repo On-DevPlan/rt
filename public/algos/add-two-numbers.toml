@@ -1,0 +1,178 @@
+[algorithm]
+id = "add-two-numbers"
+title = "两数相加"
+titleEn = "Add Two Numbers"
+difficulty = "medium"
+tags = ["linked-list", "math"]
+testCase = "l1 = [2,4,3], l2 = [5,6,4]"
+expectedOutput = "[7,0,8]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 两数相加 (LeetCode 2)
+# 给定两个非空链表 l1 和 l2，表示两个非负整数
+# 每一位数字都是按 逆序 存储的：个位在链表头部
+# 节点数：每个链表 1 ~ 100
+# 节点值：0 ~ 9
+#
+# 示例:
+#   l1 = [2, 4, 3]   -> 表示数字 342
+#   l2 = [5, 6, 4]   -> 表示数字 465
+#   相加: 342 + 465 = 807
+#   结果: [7, 0, 8]   (逆序存储，所以个位 7 在头部)"""
+explanation = "**问题分析**\n\n两个链表节点按 **逆序** 存储数字的每一位：\n\n```\n342  ->  l1: 2 -> 4 -> 3 -> None\n465  ->  l2: 5 -> 6 -> 4 -> None\n807  ->  res: 7 -> 0 -> 8 -> None\n```\n\n**关键约束**\n\n- 数字顺序与链表顺序相反，所以**头节点就是个位**\n- 需要处理**进位** `carry`，最高位可能产生新的节点（如 `5 + 5 = 10`）\n- 两链表长度可能不同，需要处理剩余部分\n\n> 逆序存储的好处：从链表头开始处理正好是数学加法的个位到高位顺序。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 两数相加 (LeetCode 2)
+# 给定两个非空链表 l1 和 l2，表示两个非负整数
+# 每一位数字都是按 逆序 存储的：个位在链表头部
+# 节点数：每个链表 1 ~ 100
+# 节点值：0 ~ 9
+#
+# 示例:
+#   l1 = [2, 4, 3]   -> 表示数字 342
+#   l2 = [5, 6, 4]   -> 表示数字 465
+#   相加: 342 + 465 = 807
+#   结果: [7, 0, 8]   (逆序存储，所以个位 7 在头部)
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def addTwoNumbers(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"返回两数相加后的链表头节点。\"\"\"
+    pass"""
+explanation = "**第 1 步：定义链表节点和函数签名**\n\n- `ListNode` 是题目中隐含的数据结构，需要先定义\n- `addTwoNumbers` 接收两个链表头，返回新链表头\n- 使用 `Optional[ListNode]` 表示节点可能为 `None`\n- 文档字符串说明函数用途\n\n> LeetCode 平台运行时已内置 `ListNode`，但本地测试需要显式定义。"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化哑节点与指针 ──────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化指针"
+titleEn = "Initialize Pointers"
+code = """# 两数相加 (LeetCode 2)
+# 给定两个非空链表 l1 和 l2，表示两个非负整数
+# 每一位数字都是按 逆序 存储的：个位在链表头部
+# 节点数：每个链表 1 ~ 100
+# 节点值：0 ~ 9
+#
+# 示例:
+#   l1 = [2, 4, 3]   -> 表示数字 342
+#   l2 = [5, 6, 4]   -> 表示数字 465
+#   相加: 342 + 465 = 807
+#   结果: [7, 0, 8]   (逆序存储，所以个位 7 在头部)
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def addTwoNumbers(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"返回两数相加后的链表头节点。\"\"\"
+    dummy = ListNode(0)   # 哑节点，简化头节点处理
+    cur = dummy           # 当前结果链表末尾指针
+    carry = 0             # 进位"""
+explanation = "**第 2 步：准备三个变量**\n\n| 变量 | 作用 | 初值 |\n|------|------|------|\n| `dummy` | 哑节点，简化头节点插入逻辑 | `ListNode(0)` |\n| `cur` | 当前结果链表末尾指针 | 指向 `dummy` |\n| `carry` | 进位（0 或 1） | `0` |\n\n**为什么用哑节点？**\n\n- 第一个结果节点也需要同样的插入逻辑\n- 没有哑节点就要单独处理头节点，代码会复杂\n- 最终返回 `dummy.next` 即可"
+visualizationType = "code-only"
+
+# ── Step 3: 核心循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历与进位"
+titleEn = "Traverse with Carry"
+code = """# 两数相加 (LeetCode 2)
+# 给定两个非空链表 l1 和 l2，表示两个非负整数
+# 每一位数字都是按 逆序 存储的：个位在链表头部
+# 节点数：每个链表 1 ~ 100
+# 节点值：0 ~ 9
+#
+# 示例:
+#   l1 = [2, 4, 3]   -> 表示数字 342
+#   l2 = [5, 6, 4]   -> 表示数字 465
+#   相加: 342 + 465 = 807
+#   结果: [7, 0, 8]   (逆序存储，所以个位 7 在头部)
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def addTwoNumbers(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"返回两数相加后的链表头节点。\"\"\"
+    dummy = ListNode(0)   # 哑节点，简化头节点处理
+    cur = dummy           # 当前结果链表末尾指针
+    carry = 0             # 进位
+
+    while l1 or l2 or carry:
+        s = carry
+        if l1: s += l1.val; l1 = l1.next
+        if l2: s += l2.val; l2 = l2.next
+        carry, val = divmod(s, 10)
+        cur.next = ListNode(val)
+        cur = cur.next
+    return dummy.next"""
+explanation = "**第 3 步：核心循环 — 同时遍历 + 维护进位**\n\n**循环条件**：`l1 or l2 or carry`\n\n- 任一链表未走完，或还有进位就继续\n\n**每轮三步**\n\n1. **累加**：`s = carry + (l1.val if l1 else 0) + (l2.val if l2 else 0)`\n2. **拆分**：`(carry, val) = divmod(s, 10)` — 进位与当前位\n3. **追加**：`cur.next = ListNode(val); cur = cur.next`\n\n**示例追踪** `l1=[2,4,3], l2=[5,6,4]`\n\n| 轮 | l1 | l2 | carry | s | val | 结果 |\n|----|----|----|-------|---|-----|------|\n| 1 | 2 | 5 | 0 | 7 | 7 | [7] |\n| 2 | 4 | 6 | 0 | 10 | 0 | [7,0] |\n| 3 | 3 | 4 | 1 | 8 | 8 | [7,0,8] |\n| 4 | None | None | 0 | 0 | — | 结束 |\n\n> `divmod(s, 10)` 一次返回 `(carry, val)`，比手写 `carry = s // 10; val = s % 10` 更简洁。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 两数相加 (LeetCode 2)
+# 给定两个非空链表 l1 和 l2，表示两个非负整数
+# 每一位数字都是按 逆序 存储的：个位在链表头部
+# 节点数：每个链表 1 ~ 100
+# 节点值：0 ~ 9
+#
+# 示例:
+#   l1 = [2, 4, 3]   -> 表示数字 342
+#   l2 = [5, 6, 4]   -> 表示数字 465
+#   相加: 342 + 465 = 807
+#   结果: [7, 0, 8]   (逆序存储，所以个位 7 在头部)
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def addTwoNumbers(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"返回两数相加后的链表头节点。\"\"\"
+    dummy = ListNode(0)   # 哑节点，简化头节点处理
+    cur = dummy           # 当前结果链表末尾指针
+    carry = 0             # 进位
+
+    while l1 or l2 or carry:
+        s = carry
+        if l1: s += l1.val; l1 = l1.next
+        if l2: s += l2.val; l2 = l2.next
+        carry, val = divmod(s, 10)
+        cur.next = ListNode(val)
+        cur = cur.next
+    return dummy.next"""
+explanation = "**最终结果**\n\n```\n输入: l1 = [2,4,3], l2 = [5,6,4]\n      (表示 342 + 465)\n输出: [7,0,8]\n      (表示 807)\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(max(m, n)) — 遍历两链表各一次 |\n| 空间复杂度 | O(max(m, n)) — 结果链表 |\n\n**关键技巧**\n\n- **哑节点**：统一处理头节点插入\n- **三或条件循环**：避免处理「最后进位」边界\n- **divmod**：一步得到进位与当前位\n\n> 即使 `l1` 和 `l2` 都已经遍历完，只要 `carry = 1` 就要再生成一个新节点（如 `5 + 5 = 10`）。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 4, 3] + [5, 6, 4]", result = "[7, 0, 8]", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(max(m, n))"
+spaceComplexity = "O(max(m, n))"
+approach = "同步遍历 + 进位累加"
+keyInsight = "逆序链表正好对齐数学加法的个位到高位方向，单次遍历即可完成"

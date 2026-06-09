@@ -1,0 +1,158 @@
+{
+  "id": "is-subsequence",
+  "title": "判断子序列",
+  "titleEn": "Is Subsequence",
+  "difficulty": "easy",
+  "tags": [
+    "string",
+    "two-pointers",
+    "dp"
+  ],
+  "testCase": "s = \"abc\", t = \"ahbgdc\"",
+  "expectedOutput": "true",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 判断子序列\n# 给定字符串 s 和 t，判断 s 是否为 t 的子序列\n#\n# 子序列定义:\n#   可以从 t 中删除若干字符（也可以不删除）得到 s\n#   要求保持字符相对顺序，但不需要连续\n#\n# 示例:\n#   s = \"abc\", t = \"ahbgdc\" → true\n#   s = \"axc\", t = \"ahbgdc\" → false",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 判断子序列</span>",
+        "<span class=\"tokenComment\"># 给定字符串 s 和 t，判断 s 是否为 t 的子序列</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 子序列定义:</span>",
+        "<span class=\"tokenComment\">#   可以从 t 中删除若干字符（也可以不删除）得到 s</span>",
+        "<span class=\"tokenComment\">#   要求保持字符相对顺序，但不需要连续</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;abc&quot;, t = &quot;ahbgdc&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;axc&quot;, t = &quot;ahbgdc&quot; → false</span>"
+      ],
+      "explanation": "**问题分析**\n\n给定两个字符串 `s` 和 `t`，判断 `s` 是否为 `t` 的**子序列**：\n\n- 可以从 `t` 中删除若干字符得到 `s`\n- 要求保持字符相对顺序，但不需要连续\n\n**示例对照**\n\n| s | t | 结果 | 说明 |\n|---|---|------|------|\n| `\"abc\"` | `\"ahbgdc\"` | `true` | `a → b → c` 都能按顺序在 `t` 中找到 |\n| `\"axc\"` | `\"ahbgdc\"` | `false` | `x` 在 `t` 中不存在 |\n\n**思路**\n\n> 双指针遍历：`i` 指向 `s`，`j` 指向 `t`。\n> - 字符相等则 `i` 前进一步\n> - 无论是否相等，`j` 始终前进\n> - 最后判断 `i` 是否走完了 `s`",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 判断子序列\n# 给定字符串 s 和 t，判断 s 是否为 t 的子序列\n#\n# 子序列定义:\n#   可以从 t 中删除若干字符（也可以不删除）得到 s\n#   要求保持字符相对顺序，但不需要连续\n#\n# 示例:\n#   s = \"abc\", t = \"ahbgdc\" → true\n#   s = \"axc\", t = \"ahbgdc\" → false\n\ndef isSubsequence(s: str, t: str) -> bool:\n    \"\"\"判断 s 是否为 t 的子序列。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 判断子序列</span>",
+        "<span class=\"tokenComment\"># 给定字符串 s 和 t，判断 s 是否为 t 的子序列</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 子序列定义:</span>",
+        "<span class=\"tokenComment\">#   可以从 t 中删除若干字符（也可以不删除）得到 s</span>",
+        "<span class=\"tokenComment\">#   要求保持字符相对顺序，但不需要连续</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;abc&quot;, t = &quot;ahbgdc&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;axc&quot;, t = &quot;ahbgdc&quot; → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isSubsequence</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 s 是否为 t 的子序列。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 接收两个字符串 `s` 和 `t`\n- 返回 `bool`：是子序列返回 `true`，否则 `false`\n- 使用类型注解明确参数和返回值类型\n- 文档字符串描述函数用途",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "初始化指针",
+      "titleEn": "Initialize Pointers",
+      "code": "# 判断子序列\n# 给定字符串 s 和 t，判断 s 是否为 t 的子序列\n#\n# 子序列定义:\n#   可以从 t 中删除若干字符（也可以不删除）得到 s\n#   要求保持字符相对顺序，但不需要连续\n#\n# 示例:\n#   s = \"abc\", t = \"ahbgdc\" → true\n#   s = \"axc\", t = \"ahbgdc\" → false\n\ndef isSubsequence(s: str, t: str) -> bool:\n    \"\"\"判断 s 是否为 t 的子序列。\"\"\"\n    i = j = 0",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 判断子序列</span>",
+        "<span class=\"tokenComment\"># 给定字符串 s 和 t，判断 s 是否为 t 的子序列</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 子序列定义:</span>",
+        "<span class=\"tokenComment\">#   可以从 t 中删除若干字符（也可以不删除）得到 s</span>",
+        "<span class=\"tokenComment\">#   要求保持字符相对顺序，但不需要连续</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;abc&quot;, t = &quot;ahbgdc&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;axc&quot;, t = &quot;ahbgdc&quot; → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isSubsequence</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 s 是否为 t 的子序列。&quot;&quot;&quot;</span>",
+        "    i = j = <span class=\"tokenNumber\">0</span>"
+      ],
+      "explanation": "**第 2 步：初始化双指针**\n\n```\ns = \"abc\"\n     ↑\n     i\n\nt = \"ahbgdc\"\n     ↑\n     j\n```\n\n| 指针 | 指向 | 含义 |\n|------|------|------|\n| `i` | 字符串 `s` | 当前需要在 `t` 中匹配的字符位置 |\n| `j` | 字符串 `t` | 当前扫描到的位置 |\n\n> `i` 决定\"目标进度\"，`j` 决定\"扫描进度\"。",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 3,
+      "title": "双指针扫描",
+      "titleEn": "Two-Pointer Scan",
+      "code": "# 判断子序列\n# 给定字符串 s 和 t，判断 s 是否为 t 的子序列\n#\n# 子序列定义:\n#   可以从 t 中删除若干字符（也可以不删除）得到 s\n#   要求保持字符相对顺序，但不需要连续\n#\n# 示例:\n#   s = \"abc\", t = \"ahbgdc\" → true\n#   s = \"axc\", t = \"ahbgdc\" → false\n\ndef isSubsequence(s: str, t: str) -> bool:\n    \"\"\"判断 s 是否为 t 的子序列。\"\"\"\n    i = j = 0\n    while i < len(s) and j < len(t):\n        if s[i] == t[j]: i += 1\n        j += 1",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 判断子序列</span>",
+        "<span class=\"tokenComment\"># 给定字符串 s 和 t，判断 s 是否为 t 的子序列</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 子序列定义:</span>",
+        "<span class=\"tokenComment\">#   可以从 t 中删除若干字符（也可以不删除）得到 s</span>",
+        "<span class=\"tokenComment\">#   要求保持字符相对顺序，但不需要连续</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;abc&quot;, t = &quot;ahbgdc&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;axc&quot;, t = &quot;ahbgdc&quot; → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isSubsequence</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 s 是否为 t 的子序列。&quot;&quot;&quot;</span>",
+        "    i = j = <span class=\"tokenNumber\">0</span>",
+        "    <span class=\"tokenKeyword\">while</span> i &lt; <span class=\"tokenBuiltin\">len</span>(s) and j &lt; <span class=\"tokenBuiltin\">len</span>(t):",
+        "        <span class=\"tokenKeyword\">if</span> s[i] == t[j]: i += <span class=\"tokenNumber\">1</span>",
+        "        j += <span class=\"tokenNumber\">1</span>"
+      ],
+      "explanation": "**第 3 步：双指针扫描核心逻辑**\n\n循环条件：`i < len(s) and j < len(t)`\n\n- `i` 未走完 `s`：还没找到所有目标字符\n- `j` 未走完 `t`：还有字符可以尝试匹配\n\n**分支处理**\n\n| 条件 | 操作 |\n|------|------|\n| `s[i] == t[j]` | `i += 1` — 匹配成功，推进 `s` 的进度 |\n| 否则 | `i` 不动，`j += 1` — 在 `t` 中继续往后找 |\n\n**示例执行：**\n\n```\ns = \"abc\", t = \"ahbgdc\"\n\nj=0, i=0: s[0]='a' == t[0]='a' → i=1\nj=1, i=1: s[1]='b' == t[1]='h'? 否 → i=1\nj=2, i=1: s[1]='b' == t[2]='b' → i=2\nj=3, i=2: s[2]='c' == t[3]='g'? 否 → i=2\nj=4, i=2: s[2]='c' == t[4]='d'? 否 → i=2\nj=5, i=2: s[2]='c' == t[5]='c' → i=3\nj=6, 循环结束 → i=3 == len(s)=3 → 返回 true ✓\n```",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 判断子序列\n# 给定字符串 s 和 t，判断 s 是否为 t 的子序列\n#\n# 子序列定义:\n#   可以从 t 中删除若干字符（也可以不删除）得到 s\n#   要求保持字符相对顺序，但不需要连续\n#\n# 示例:\n#   s = \"abc\", t = \"ahbgdc\" → true\n#   s = \"axc\", t = \"ahbgdc\" → false\n\ndef isSubsequence(s: str, t: str) -> bool:\n    \"\"\"判断 s 是否为 t 的子序列。\"\"\"\n    i = j = 0\n    while i < len(s) and j < len(t):\n        if s[i] == t[j]: i += 1\n        j += 1\n    return i == len(s)",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 判断子序列</span>",
+        "<span class=\"tokenComment\"># 给定字符串 s 和 t，判断 s 是否为 t 的子序列</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 子序列定义:</span>",
+        "<span class=\"tokenComment\">#   可以从 t 中删除若干字符（也可以不删除）得到 s</span>",
+        "<span class=\"tokenComment\">#   要求保持字符相对顺序，但不需要连续</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;abc&quot;, t = &quot;ahbgdc&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;axc&quot;, t = &quot;ahbgdc&quot; → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isSubsequence</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 s 是否为 t 的子序列。&quot;&quot;&quot;</span>",
+        "    i = j = <span class=\"tokenNumber\">0</span>",
+        "    <span class=\"tokenKeyword\">while</span> i &lt; <span class=\"tokenBuiltin\">len</span>(s) and j &lt; <span class=\"tokenBuiltin\">len</span>(t):",
+        "        <span class=\"tokenKeyword\">if</span> s[i] == t[j]: i += <span class=\"tokenNumber\">1</span>",
+        "        j += <span class=\"tokenNumber\">1</span>",
+        "    <span class=\"tokenKeyword\">return</span> i == <span class=\"tokenBuiltin\">len</span>(s)"
+      ],
+      "explanation": "**最终结果**\n\n✅ 双指针扫描完成\n\n```\n输入: s = \"abc\", t = \"ahbgdc\"\n输出: true\n\n输入: s = \"axc\", t = \"ahbgdc\"\n输出: false\n```\n\n**返回值解读**\n\n- `i == len(s)`：成功为 `s` 的每个字符都在 `t` 中找到匹配 → `true`\n- `i < len(s)`：`t` 已扫描完但 `s` 还有字符未匹配 → `false`\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | **O(\\|t\\|)** — `t` 的每个字符最多访问一次 |\n| 空间复杂度 | **O(1)** — 仅使用两个指针 |\n\n**关键技巧：双指针同向扫描**\n\n- `i` 只在匹配成功时前进，确保了顺序性\n- `j` 始终前进，保证整体线性扫描\n- 当 `t` 提前耗尽时循环自然结束，无需额外判断",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{}",
+        "arrayState": "['a', 'h', 'b', 'g', 'd', 'c']",
+        "result": "true",
+        "highlightedIndices": [
+          0,
+          2,
+          5
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(|t|)",
+    "spaceComplexity": "O(1)",
+    "approach": "双指针同向扫描",
+    "keyInsight": "i 仅在字符匹配时前进，保证 s 字符的顺序性；j 始终前进确保 t 线性扫描"
+  }
+}

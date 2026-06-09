@@ -1,0 +1,167 @@
+{
+  "id": "reverse-bits",
+  "title": "颠倒二进制位",
+  "titleEn": "Reverse Bits",
+  "difficulty": "easy",
+  "tags": [
+    "bit-manipulation"
+  ],
+  "testCase": "n = 0b00000010100101000001111010011100",
+  "expectedOutput": "964176192",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 190. 颠倒二进制位\n# 颠倒给定的 32 位无符号整数的二进制位\n#\n# 示例:\n#   输入: n = 0b00000010100101000001111010011100 (43261596)\n#   输出: 0b00111001011110000010100101000000 (964176192)\n#\n# 二进制表示:\n#   输入: 00000010100101000001111010011100\n#   输出: 00111001011110000010100101000000\n#           ↑                        ↑\n#        第 31 位                  第 0 位",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 190. 颠倒二进制位</span>",
+        "<span class=\"tokenComment\"># 颠倒给定的 32 位无符号整数的二进制位</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: n = 0b00000010100101000001111010011100 (43261596)</span>",
+        "<span class=\"tokenComment\">#   输出: 0b00111001011110000010100101000000 (964176192)</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 二进制表示:</span>",
+        "<span class=\"tokenComment\">#   输入: 00000010100101000001111010011100</span>",
+        "<span class=\"tokenComment\">#   输出: 00111001011110000010100101000000</span>",
+        "<span class=\"tokenComment\">#           ↑                        ↑</span>",
+        "<span class=\"tokenComment\">#        第 31 位                  第 0 位</span>"
+      ],
+      "explanation": "**问题分析**\n\n给定一个 32 位无符号整数，将其二进制位**完全颠倒**。\n\n**示例理解**：\n\n```\n输入:  00000010100101000001111010011100\n                    ↓ 颠倒 ↓\n输出:  00111001011110000010100101000000\n```\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 逐位颠倒 | O(1) | O(1) |\n| 分治颠倒 | O(1) | O(1) |\n\n> 本题采用**逐位颠倒**法，每次取 n 的最低位，放入 result 的最高位。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 190. 颠倒二进制位\n# 颠倒给定的 32 位无符号整数的二进制位\n#\n# 示例:\n#   输入: n = 0b00000010100101000001111010011100 (43261596)\n#   输出: 0b00111001011110000010100101000000 (964176192)\n#\n# 二进制表示:\n#   输入: 00000010100101000001111010011100\n#   输出: 00111001011110000010100101000000\n#           ↑                        ↑\n#        第 31 位                  第 0 位\n\ndef reverseBits(n: int) -> int:\n    \"\"\"返回颠倒后的整数。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 190. 颠倒二进制位</span>",
+        "<span class=\"tokenComment\"># 颠倒给定的 32 位无符号整数的二进制位</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: n = 0b00000010100101000001111010011100 (43261596)</span>",
+        "<span class=\"tokenComment\">#   输出: 0b00111001011110000010100101000000 (964176192)</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 二进制表示:</span>",
+        "<span class=\"tokenComment\">#   输入: 00000010100101000001111010011100</span>",
+        "<span class=\"tokenComment\">#   输出: 00111001011110000010100101000000</span>",
+        "<span class=\"tokenComment\">#           ↑                        ↑</span>",
+        "<span class=\"tokenComment\">#        第 31 位                  第 0 位</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">reverseBits</span>(n: <span class=\"tokenBuiltin\">int</span>) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回颠倒后的整数。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 参数 `n`：32 位无符号整数\n- 返回值类型：`int`\n- 文档字符串描述函数用途",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "初始化结果",
+      "titleEn": "Initialize Result",
+      "code": "# 190. 颠倒二进制位\n# 颠倒给定的 32 位无符号整数的二进制位\n#\n# 示例:\n#   输入: n = 0b00000010100101000001111010011100 (43261596)\n#   输出: 0b00111001011110000010100101000000 (964176192)\n#\n# 二进制表示:\n#   输入: 00000010100101000001111010011100\n#   输出: 00111001011110000010100101000000\n#           ↑                        ↑\n#        第 31 位                  第 0 位\n\ndef reverseBits(n: int) -> int:\n    \"\"\"返回颠倒后的整数。\"\"\"\n    pass\n    result = 0",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 190. 颠倒二进制位</span>",
+        "<span class=\"tokenComment\"># 颠倒给定的 32 位无符号整数的二进制位</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: n = 0b00000010100101000001111010011100 (43261596)</span>",
+        "<span class=\"tokenComment\">#   输出: 0b00111001011110000010100101000000 (964176192)</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 二进制表示:</span>",
+        "<span class=\"tokenComment\">#   输入: 00000010100101000001111010011100</span>",
+        "<span class=\"tokenComment\">#   输出: 00111001011110000010100101000000</span>",
+        "<span class=\"tokenComment\">#           ↑                        ↑</span>",
+        "<span class=\"tokenComment\">#        第 31 位                  第 0 位</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">reverseBits</span>(n: <span class=\"tokenBuiltin\">int</span>) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回颠倒后的整数。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>",
+        "    result = <span class=\"tokenNumber\">0</span>"
+      ],
+      "explanation": "**第 2 步：初始化结果变量**\n\n- `result = 0`：用于存储颠倒后的结果\n- 将从最低位开始逐步构建结果",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 3,
+      "title": "逐位颠倒",
+      "titleEn": "Reverse Bit by Bit",
+      "code": "# 190. 颠倒二进制位\n# 颠倒给定的 32 位无符号整数的二进制位\n#\n# 示例:\n#   输入: n = 0b00000010100101000001111010011100 (43261596)\n#   输出: 0b00111001011110000010100101000000 (964176192)\n#\n# 二进制表示:\n#   输入: 00000010100101000001111010011100\n#   输出: 00111001011110000010100101000000\n#           ↑                        ↑\n#        第 31 位                  第 0 位\n\ndef reverseBits(n: int) -> int:\n    \"\"\"返回颠倒后的整数。\"\"\"\n    pass\n    result = 0\n    for _ in range(32):\n        result = (result << 1) | (n & 1)\n        n >>= 1",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 190. 颠倒二进制位</span>",
+        "<span class=\"tokenComment\"># 颠倒给定的 32 位无符号整数的二进制位</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: n = 0b00000010100101000001111010011100 (43261596)</span>",
+        "<span class=\"tokenComment\">#   输出: 0b00111001011110000010100101000000 (964176192)</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 二进制表示:</span>",
+        "<span class=\"tokenComment\">#   输入: 00000010100101000001111010011100</span>",
+        "<span class=\"tokenComment\">#   输出: 00111001011110000010100101000000</span>",
+        "<span class=\"tokenComment\">#           ↑                        ↑</span>",
+        "<span class=\"tokenComment\">#        第 31 位                  第 0 位</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">reverseBits</span>(n: <span class=\"tokenBuiltin\">int</span>) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回颠倒后的整数。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>",
+        "    result = <span class=\"tokenNumber\">0</span>",
+        "    <span class=\"tokenKeyword\">for</span> _ in <span class=\"tokenBuiltin\">range</span>(<span class=\"tokenNumber\">32</span>):",
+        "        result = (result &lt;&lt; <span class=\"tokenNumber\">1</span>) | (n &amp; <span class=\"tokenNumber\">1</span>)",
+        "        n &gt;&gt;= <span class=\"tokenNumber\">1</span>"
+      ],
+      "explanation": "**第 3 步：逐位颠倒**\n\n循环 32 次，每次处理一个二进制位：\n\n| 操作 | 作用 |\n|------|------|\n| `result << 1` | result 左移一位，腾出最低位空间 |\n| `n & 1` | 取 n 的最低位（0 或 1） |\n| `\\|` | 将取出的位放入 result 的最低位 |\n| `n >>= 1` | n 右移一位，准备处理下一位 |\n\n**示例执行（前 3 次）：**\n\n```\n初始: n = ...10011100, result = 0\n\n第 1 次: result = (0 << 1) | 0 = 0, n = ...01001110\n第 2 次: result = (0 << 1) | 0 = 0, n = ...00100111\n第 3 次: result = (0 << 1) | 1 = 1, n = ...00010011\n```\n\n每次迭代：\n1. `result` 左移腾出空间\n2. 取 `n` 的最低位\n3. 用 OR 操作放入 `result`\n4. `n` 右移准备下一位",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 190. 颠倒二进制位\n# 颠倒给定的 32 位无符号整数的二进制位\n#\n# 示例:\n#   输入: n = 0b00000010100101000001111010011100 (43261596)\n#   输出: 0b00111001011110000010100101000000 (964176192)\n#\n# 二进制表示:\n#   输入: 00000010100101000001111010011100\n#   输出: 00111001011110000010100101000000\n#           ↑                        ↑\n#        第 31 位                  第 0 位\n\ndef reverseBits(n: int) -> int:\n    \"\"\"返回颠倒后的整数。\"\"\"\n    pass\n    result = 0\n    for _ in range(32):\n        result = (result << 1) | (n & 1)\n        n >>= 1\n    return result",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 190. 颠倒二进制位</span>",
+        "<span class=\"tokenComment\"># 颠倒给定的 32 位无符号整数的二进制位</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   输入: n = 0b00000010100101000001111010011100 (43261596)</span>",
+        "<span class=\"tokenComment\">#   输出: 0b00111001011110000010100101000000 (964176192)</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 二进制表示:</span>",
+        "<span class=\"tokenComment\">#   输入: 00000010100101000001111010011100</span>",
+        "<span class=\"tokenComment\">#   输出: 00111001011110000010100101000000</span>",
+        "<span class=\"tokenComment\">#           ↑                        ↑</span>",
+        "<span class=\"tokenComment\">#        第 31 位                  第 0 位</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">reverseBits</span>(n: <span class=\"tokenBuiltin\">int</span>) -&gt; <span class=\"tokenBuiltin\">int</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;返回颠倒后的整数。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>",
+        "    result = <span class=\"tokenNumber\">0</span>",
+        "    <span class=\"tokenKeyword\">for</span> _ in <span class=\"tokenBuiltin\">range</span>(<span class=\"tokenNumber\">32</span>):",
+        "        result = (result &lt;&lt; <span class=\"tokenNumber\">1</span>) | (n &amp; <span class=\"tokenNumber\">1</span>)",
+        "        n &gt;&gt;= <span class=\"tokenNumber\">1</span>",
+        "    <span class=\"tokenKeyword\">return</span> result"
+      ],
+      "explanation": "**最终结果**\n\n✅ 逐位颠倒完成\n\n```\n输入:  43261596 = 0b00000010100101000001111010011100\n输出:  964176192 = 0b00111001011110000010100101000000\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(1) — 固定 32 次循环 |\n| 空间复杂度 | O(1) — 只用了一个变量 |\n\n**核心思想**\n\n- 每次取 `n` 的最低位（`n & 1`）\n- `result` 左移腾出空间后 OR 当前位\n- 循环 32 次，从最低位到最高位逐个处理",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{}",
+        "arrayState": "[0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]",
+        "result": "964176192",
+        "highlightedIndices": [
+          31
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(1)  # 固定 32 次循环",
+    "spaceComplexity": "O(1)",
+    "approach": "逐位颠倒",
+    "keyInsight": "每次取 n 的最低位（n & 1）；result 左移腾出空间后 OR 当前位；循环 32 次"
+  }
+}

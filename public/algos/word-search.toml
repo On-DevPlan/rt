@@ -1,0 +1,209 @@
+[algorithm]
+id = "word-search"
+title = "单词搜索"
+titleEn = "Word Search"
+difficulty = "medium"
+tags = ["backtracking", "array", "matrix"]
+testCase = "board = [[\"A\",\"B\",\"C\",\"E\"],[\"S\",\"F\",\"C\",\"S\"],[\"A\",\"D\",\"E\",\"E\"]], word = \"ABCCED\""
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 单词搜索
+# 给定一个 m x n 的二维字符网格 board 和一个字符串 word
+# 判断 word 是否存在于网格中
+#
+# 约束条件:
+#   - 单词必须按字母顺序，通过相邻的单元格构成
+#   - 相邻 = 上下左右四个方向（不能斜向）
+#   - 同一个单元格在同一个单词中只能使用一次
+#
+# 示例:
+#   board = [
+#     ["A","B","C","E"],
+#     ["S","F","C","S"],
+#     ["A","D","E","E"]
+#   ]
+#   word = "ABCCED"
+#   结果: true
+#     A(0,0) → B(0,1) → C(0,2) → C(1,2) → E(2,2) → D(2,1)"""
+explanation = "**问题分析**\n\n在二维网格中寻找一条**蛇形路径**，拼出目标单词：\n- 相邻单元格：上下左右四个方向\n- 每个格子在同一条路径中**只能访问一次**\n\n**核心思路：回溯 + 标记/恢复**\n\n| 步骤 | 操作 |\n|------|------|\n| 1. 选起点 | 遍历每个格子 `(i, j)` 作为匹配起点 |\n| 2. 边界检查 | 越界或字符不等 → 返回 `False` |\n| 3. 标记访问 | 把 `board[i][j]` 临时改为 `'#'` |\n| 4. 四方向 DFS | 上 / 下 / 左 / 右，匹配 `word[k+1]` |\n| 5. 恢复字符 | 回溯时还原 `board[i][j] = word[k]` |\n\n> 关键：原地修改数组做标记，省去额外的 `visited` 集合开销。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 内部 dfs + 边界条件 ──────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 单词搜索
+# 给定一个 m x n 的二维字符网格 board 和一个字符串 word
+# 判断 word 是否存在于网格中
+#
+# 约束条件:
+#   - 单词必须按字母顺序，通过相邻的单元格构成
+#   - 相邻 = 上下左右四个方向（不能斜向）
+#   - 同一个单元格在同一个单词中只能使用一次
+#
+# 示例:
+#   board = [
+#     ["A","B","C","E"],
+#     ["S","F","C","S"],
+#     ["A","D","E","E"]
+#   ]
+#   word = "ABCCED"
+#   结果: true
+#     A(0,0) → B(0,1) → C(0,2) → C(1,2) → E(2,2) → D(2,1)
+
+from typing import List
+
+def exist(board: List[List[str]], word: str) -> bool:
+    \"\"\"判断 word 是否在 board 中\"\"\"
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int, k: int) -> bool:
+        if k == len(word):
+            return True
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != word[k]:
+            return False
+        pass"""
+explanation = "**第 1 步：函数签名 + 内部 dfs**\n\n- 参数：`board`（网格）和 `word`（目标词）\n- 返回值：是否找到，类型为 `bool`\n- 提前缓存 `m`、`n` 避免在递归中重复计算 `len()`\n\n**内部函数 `dfs(i, j, k)`**\n\n| 参数 | 含义 |\n|------|------|\n| `i, j` | 当前要匹配的格子坐标 |\n| `k` | 当前要匹配的字符在 word 中的下标 |\n\n**两个终止条件**\n\n- `k == len(word)`：所有字符都匹配成功 → `True`\n- 越界 / `board[i][j] != word[k]`：当前路径不通 → `False`"
+visualizationType = "code-only"
+
+# ── Step 2: 标记 + 四方向递归 ──────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "标记与递归"
+titleEn = "Mark and Recurse"
+code = """# 单词搜索
+# 给定一个 m x n 的二维字符网格 board 和一个字符串 word
+# 判断 word 是否存在于网格中
+#
+# 约束条件:
+#   - 单词必须按字母顺序，通过相邻的单元格构成
+#   - 相邻 = 上下左右四个方向（不能斜向）
+#   - 同一个单元格在同一个单词中只能使用一次
+#
+# 示例:
+#   board = [
+#     ["A","B","C","E"],
+#     ["S","F","C","S"],
+#     ["A","D","E","E"]
+#   ]
+#   word = "ABCCED"
+#   结果: true
+#     A(0,0) → B(0,1) → C(0,2) → C(1,2) → E(2,2) → D(2,1)
+
+from typing import List
+
+def exist(board: List[List[str]], word: str) -> bool:
+    \"\"\"判断 word 是否在 board 中\"\"\"
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int, k: int) -> bool:
+        if k == len(word):
+            return True
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != word[k]:
+            return False
+        board[i][j] = '#'  # 标记
+        res = (dfs(i + 1, j, k + 1) or dfs(i - 1, j, k + 1) or
+               dfs(i, j + 1, k + 1) or dfs(i, j - 1, k + 1))
+        pass"""
+explanation = "**第 2 步：原地标记 + 四方向 DFS**\n\n**标记当前格子**\n\n```python\nboard[i][j] = '#'  # 用一个不会在原数组出现的字符占位\n```\n\n**四个方向递归**\n\n```python\nres = (dfs(i+1, j, k+1) or  # 下\n       dfs(i-1, j, k+1) or  # 上\n       dfs(i, j+1, k+1) or  # 右\n       dfs(i, j-1, k+1))    # 左\n```\n\n- 用 `or` 短路：只要任一方向找到，立刻返回 `True`\n- 下一层 `k+1` 表示尝试匹配 `word` 的下一个字符\n- 边界检查交给 `dfs` 自己处理，所以这里不用再加"
+visualizationType = "code-only"
+
+# ── Step 3: 回溯恢复 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "回溯恢复"
+titleEn = "Backtrack and Restore"
+code = """# 单词搜索
+# 给定一个 m x n 的二维字符网格 board 和一个字符串 word
+# 判断 word 是否存在于网格中
+#
+# 约束条件:
+#   - 单词必须按字母顺序，通过相邻的单元格构成
+#   - 相邻 = 上下左右四个方向（不能斜向）
+#   - 同一个单元格在同一个单词中只能使用一次
+#
+# 示例:
+#   board = [
+#     ["A","B","C","E"],
+#     ["S","F","C","S"],
+#     ["A","D","E","E"]
+#   ]
+#   word = "ABCCED"
+#   结果: true
+#     A(0,0) → B(0,1) → C(0,2) → C(1,2) → E(2,2) → D(2,1)
+
+from typing import List
+
+def exist(board: List[List[str]], word: str) -> bool:
+    \"\"\"判断 word 是否在 board 中\"\"\"
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int, k: int) -> bool:
+        if k == len(word):
+            return True
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != word[k]:
+            return False
+        board[i][j] = '#'  # 标记
+        res = (dfs(i + 1, j, k + 1) or dfs(i - 1, j, k + 1) or
+               dfs(i, j + 1, k + 1) or dfs(i, j - 1, k + 1))
+        board[i][j] = word[k]  # 恢复
+        return res"""
+explanation = "**第 3 步：回溯 + 恢复**\n\n```python\nboard[i][j] = word[k]  # 恢复原字符\nreturn res\n```\n\n**为什么要恢复？**\n\n- 这一步是**回溯算法**的灵魂\n- 当前格子被改为 `'#'` 是为了防止同一条路径重复访问\n- 但当递归返回时，意味着**放弃当前路径**，需要把格子还原\n- 还原后，**其他路径**还可以再次访问这个格子\n\n> 例：路径 `A(0,0) → B(0,1) → X(死路)` 需要回退到 `B`，并把 `(0,1)` 恢复为 `'B'`，这样从其它方向走来的路径才能再使用 `B`。"
+visualizationType = "code-only"
+
+# ── Step 4: 双层循环 + 完整代码 ───────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 单词搜索
+# 给定一个 m x n 的二维字符网格 board 和一个字符串 word
+# 判断 word 是否存在于网格中
+#
+# 约束条件:
+#   - 单词必须按字母顺序，通过相邻的单元格构成
+#   - 相邻 = 上下左右四个方向（不能斜向）
+#   - 同一个单元格在同一个单词中只能使用一次
+#
+# 示例:
+#   board = [
+#     ["A","B","C","E"],
+#     ["S","F","C","S"],
+#     ["A","D","E","E"]
+#   ]
+#   word = "ABCCED"
+#   结果: true
+#     A(0,0) → B(0,1) → C(0,2) → C(1,2) → E(2,2) → D(2,1)
+
+from typing import List
+
+def exist(board: List[List[str]], word: str) -> bool:
+    \"\"\"判断 word 是否在 board 中\"\"\"
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int, k: int) -> bool:
+        if k == len(word):
+            return True
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != word[k]:
+            return False
+        board[i][j] = '#'  # 标记
+        res = (dfs(i + 1, j, k + 1) or dfs(i - 1, j, k + 1) or
+               dfs(i, j + 1, k + 1) or dfs(i, j - 1, k + 1))
+        board[i][j] = word[k]  # 恢复
+        return res
+    for i in range(m):
+        for j in range(n):
+            if dfs(i, j, 0):
+                return True
+    return False"""
+explanation = "**最终结果**\n\n✅ 遍历每个格子作为起点，DFS 搜索 `word`\n\n**执行路径示例**（`word = \"ABCCED\"`）\n\n```\n(0,0)A → (0,1)B → (0,2)C → (1,2)C → (2,2)E → (2,1)D\n```\n\n| 步骤 | 位置 | 字符 |\n|------|------|------|\n| 0 | (0,0) | A |\n| 1 | (0,1) | B |\n| 2 | (0,2) | C |\n| 3 | (1,2) | C |\n| 4 | (2,2) | E |\n| 5 | (2,1) | D |\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m·n·4^L)，L = `len(word)` |\n| 空间复杂度 | O(L) — 递归栈深度 |\n\n**关键技巧**\n\n- **原地标记**：`'#'` 占位，不需要额外的 `visited` 集合\n- **四方向 `or` 短路**：找到一条路径就立刻返回\n- **回溯恢复**：让同一个格子可以被不同路径重复使用"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"A\", \"B\", \"C\", \"E\", \"S\", \"F\", \"C\", \"S\", \"A\", \"D\", \"E\", \"E\"]", result = "true", highlightedIndices = [0, 1, 6, 10, 11] }
+
+[algorithm.summary]
+timeComplexity = "O(m*n*4^L)  # L = len(word)"
+spaceComplexity = "O(L)  # 递归栈"
+approach = "回溯 + 原地标记/恢复"
+keyInsight = "board[i][j] 原地改为 '#' 标记已访问；递归返回时恢复原字符允许其他路径重用该格"

@@ -1,0 +1,284 @@
+[algorithm]
+id = "longest-substring-without-repeating-characters"
+title = "无重复字符的最长子串"
+titleEn = "Longest Substring Without Repeating Characters"
+difficulty = "medium"
+tags = ["hash-table", "string", "sliding-window"]
+testCase = "s = \"abcabcbb\""
+expectedOutput = "3"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 无重复字符的最长子串
+# 给定一个字符串 s，请找出其中不含有重复字符的 最长子串 的长度
+#
+# 关键点:
+#   子串是连续的（与子序列不同）
+#   字符可能重复，必须保证子串内每个字符只出现一次
+#
+# 示例 1:
+#   s = "abcabcbb" → 3
+#   最长子串: "abc"
+#
+# 示例 2:
+#   s = "bbbbb" → 1
+#   最长子串: "b"
+#
+# 示例 3:
+#   s = "pwwkew" → 3
+#   最长子串: "wke\""""
+explanation = """**问题分析**
+
+- 输入：字符串 `s`
+- 输出：不含重复字符的**最长子串**的长度
+- 关键性质：子串必须**连续**，且内部字符**互不重复**
+
+**为什么是滑动窗口？**
+
+| 暴力枚举所有子串 | O(n³) — 太多 |
+|------|------|
+| 滑动窗口 + 哈希集合 | **O(n)** — 一次扫描 |
+
+> 滑动窗口的核心：**右指针扩张，左指针在遇到重复时收缩**，保证窗口内始终是无重复字符。每次扩张都更新最大值。
+
+**示例执行**（`s = "abcabcbb"`）：
+
+```
+right=0 'a'  seen={a}         window="a"      ans=1
+right=1 'b'  seen={a,b}      window="ab"     ans=2
+right=2 'c'  seen={a,b,c}    window="abc"    ans=3
+right=3 'a'  重复! left→1    seen={b,c,a}    window="bca"   ans=3
+right=4 'b'  重复! left→2    seen={c,a,b}    window="cab"   ans=3
+...
+最终 ans = 3
+```"""
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 无重复字符的最长子串
+# 给定一个字符串 s，请找出其中不含有重复字符的 最长子串 的长度
+#
+# 关键点:
+#   子串是连续的（与子序列不同）
+#   字符可能重复，必须保证子串内每个字符只出现一次
+#
+# 示例 1:
+#   s = "abcabcbb" → 3
+#   最长子串: "abc"
+#
+# 示例 2:
+#   s = "bbbbb" → 1
+#   最长子串: "b"
+#
+# 示例 3:
+#   s = "pwwkew" → 3
+#   最长子串: "wke"
+
+def lengthOfLongestSubstring(s: str) -> int:
+    \"\"\"返回不含重复字符的最长子串长度。\"\"\"
+    pass"""
+explanation = """**第 1 步：编写函数签名**
+
+- 入参：`s: str` 待处理的字符串
+- 返回：`int` 最长无重复子串的长度
+- 文档字符串说明函数用途
+
+> 本题用 **Python set** 维护窗口内的字符集合，O(1) 查询重复。"""
+visualizationType = "code-only"
+
+# ── Step 2: 初始化窗口状态 ────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化窗口"
+titleEn = "Initialize Window"
+code = """# 无重复字符的最长子串
+# 给定一个字符串 s，请找出其中不含有重复字符的 最长子串 的长度
+#
+# 关键点:
+#   子串是连续的（与子序列不同）
+#   字符可能重复，必须保证子串内每个字符只出现一次
+#
+# 示例 1:
+#   s = "abcabcbb" → 3
+#   最长子串: "abc"
+#
+# 示例 2:
+#   s = "bbbbb" → 1
+#   最长子串: "b"
+#
+# 示例 3:
+#   s = "pwwkew" → 3
+#   最长子串: "wke"
+
+def lengthOfLongestSubstring(s: str) -> int:
+    \"\"\"返回不含重复字符的最长子串长度。\"\"\"
+    seen = set()  # 窗口内已出现的字符集合
+    left = 0      # 窗口左边界
+    ans = 0       # 当前找到的最长长度"""
+explanation = """**第 2 步：初始化滑动窗口**
+
+| 变量 | 含义 | 初值 |
+|------|------|------|
+| `seen` | 窗口内已出现的字符集合 | `set()` |
+| `left` | 窗口左边界（含） | `0` |
+| `ans`  | 历史最长长度 | `0` |
+
+**窗口不变量**：遍历过程中，**`s[left..right]` 内的字符两两不同**，即全部都在 `seen` 中，且 `seen` 只反映当前窗口内容。
+
+```
+s = "abcabcbb"
+       ↑  ↑
+   left=0 right=?
+   seen = set()
+   ans  = 0
+```"""
+visualizationType = "code-only"
+
+# ── Step 3: 右扩 + 左缩 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "右扩左缩"
+titleEn = "Expand and Shrink"
+code = """# 无重复字符的最长子串
+# 给定一个字符串 s，请找出其中不含有重复字符的 最长子串 的长度
+#
+# 关键点:
+#   子串是连续的（与子序列不同）
+#   字符可能重复，必须保证子串内每个字符只出现一次
+#
+# 示例 1:
+#   s = "abcabcbb" → 3
+#   最长子串: "abc"
+#
+# 示例 2:
+#   s = "bbbbb" → 1
+#   最长子串: "b"
+#
+# 示例 3:
+#   s = "pwwkew" → 3
+#   最长子串: "wke"
+
+def lengthOfLongestSubstring(s: str) -> int:
+    \"\"\"返回不含重复字符的最长子串长度。\"\"\"
+    seen = set()  # 窗口内已出现的字符集合
+    left = 0      # 窗口左边界
+    ans = 0       # 当前找到的最长长度
+
+    for right, c in enumerate(s):
+        while c in seen:
+            seen.remove(s[left])
+            left += 1
+        seen.add(c)
+        ans = max(ans, right - left + 1)"""
+explanation = """**第 3 步：右扩 + 左缩**
+
+```python
+for right, c in enumerate(s):
+    while c in seen:            # 新字符已在窗口内 → 必须左缩
+        seen.remove(s[left])
+        left += 1
+    seen.add(c)                 # 加入新字符
+    ans = max(ans, right - left + 1)
+```
+
+**两步策略**
+
+| 阶段 | 动作 | 不变量 |
+|------|------|------|
+| 右扩 | `seen.add(c)` | 试图扩大窗口 |
+| 左缩 | `while c in seen` 循环 | 收缩到 `c` 不再冲突为止 |
+
+**复杂度关键**：每个字符**至多入集合一次、出集合一次**，所以是 O(n)。
+
+**执行示例**（`s = "abcabcbb"`）：
+
+```
+right=0 'a'  不在 seen → add   seen={a}       ans=1
+right=1 'b'  不在 seen → add   seen={a,b}     ans=2
+right=2 'c'  不在 seen → add   seen={a,b,c}   ans=3
+right=3 'a'  在 seen! 移除'b'  seen={a,c}     (left=1)
+                          'a'仍存在,移除'a'  seen={c}     (left=2)
+                          add 'a'           seen={a,c}   ans=3
+right=4 'b'  不在 seen → add   seen={a,c,b}   ans=3
+...
+```"""
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 无重复字符的最长子串
+# 给定一个字符串 s，请找出其中不含有重复字符的 最长子串 的长度
+#
+# 关键点:
+#   子串是连续的（与子序列不同）
+#   字符可能重复，必须保证子串内每个字符只出现一次
+#
+# 示例 1:
+#   s = "abcabcbb" → 3
+#   最长子串: "abc"
+#
+# 示例 2:
+#   s = "bbbbb" → 1
+#   最长子串: "b"
+#
+# 示例 3:
+#   s = "pwwkew" → 3
+#   最长子串: "wke"
+
+def lengthOfLongestSubstring(s: str) -> int:
+    \"\"\"返回不含重复字符的最长子串长度。\"\"\"
+    seen = set()  # 窗口内已出现的字符集合
+    left = 0      # 窗口左边界
+    ans = 0       # 当前找到的最长长度
+
+    for right, c in enumerate(s):
+        while c in seen:
+            seen.remove(s[left])
+            left += 1
+        seen.add(c)
+        ans = max(ans, right - left + 1)
+    return ans"""
+explanation = """**最终结果**
+
+✅ 完整的滑动窗口 + Set 解法
+
+**三个示例验证**
+
+| 输入 | 最长子串 | 返回值 |
+|------|----------|--------|
+| `"abcabcbb"` | `"abc"` | `3` |
+| `"bbbbb"` | `"b"` | `1` |
+| `"pwwkew"` | `"wke"` | `3` |
+
+**算法复杂度**
+
+| 指标 | 值 | 说明 |
+|------|------|------|
+| 时间复杂度 | **O(n)** | 每个字符最多入 set / 出 set 各一次 |
+| 空间复杂度 | **O(1)** | set 内字符种类有限（ASCII 128 / Unicode 实际场景更小） |
+
+**关键技巧**
+
+- **滑动窗口不变量**：循环结束时 `s[left..right]` 内无重复字符
+- **左指针只会前进，不会回退** → 总操作数 O(n)
+- 也可以用 `last_index` 哈希表把 `while` 改成 `left = max(left, last_index[c] + 1)`，等价但更简洁
+
+> 如果字符集扩大到 Unicode（如中文），逻辑完全不变，时间复杂度仍是 O(n)。"""
+visualizationType = "result"
+visualizationData = { mapContents = "{a, b, c}", arrayState = "['a', 'b', 'c', 'a', 'b', 'c', 'b', 'b']", result = "3", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "滑动窗口 + 哈希集合"
+keyInsight = "右扩遇重复则左缩到不重复；每个字符最多入/出 set 一次，故整体 O(n)"

@@ -1,0 +1,162 @@
+[algorithm]
+id = "two-sum-ii-input-array-is-sorted"
+title = "两数之和 II - 输入有序数组"
+titleEn = "Two Sum II - Input Array Is Sorted"
+difficulty = "medium"
+tags = ["array", "two-pointers", "binary-search"]
+testCase = "numbers = [2, 7, 11, 15], target = 9"
+expectedOutput = "[1, 2]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 两数之和 II - 输入有序数组
+# 给定一个下标从 1 开始、按非递减顺序排列的整数数组 numbers
+# 找出两个数，使它们之和等于 target，返回它们的 1-indexed 下标
+#
+# 关键条件:
+#   - numbers 已按非递减排序
+#   - 每种输入恰好有且仅有一个解
+#   - 不能使用同一个元素两次（下标不同即可）
+#   - 返回的下标必须是从 1 开始的（即 1-indexed）
+#
+# 示例:
+#   numbers = [2, 7, 11, 15], target = 9
+#   2 + 7 = 9，所以返回 [1, 2]"""
+explanation = "**问题分析**\n\n给定一个**已排序**的数组 `numbers` 和目标值 `target`，需要找两个数之和等于 `target`，并返回它们 **1-indexed** 的下标。\n\n**与「两数之和 I」的关键区别**\n\n| 维度 | Two Sum I | Two Sum II |\n|------|-----------|------------|\n| 数组顺序 | 无序 | **非递减**（已排序） |\n| 返回下标 | 0-indexed | **1-indexed** |\n| 最优思路 | 哈希表 O(n) | **双指针 O(n)** |\n| 额外空间 | O(n) | O(1) |\n\n> 因为数组**已排序**，双指针可以充分利用「有序性」，比哈希表更省空间。\n\n**为什么双指针能奏效？**\n\n设 `l=0, r=n-1`，`sum = numbers[l] + numbers[r]`：\n\n- `sum > target` → 太大了，r 应该左移让 `numbers[r]` 变小\n- `sum < target` → 太小了，l 应该右移让 `numbers[l]` 变大\n- `sum == target` → 命中，l 和 r 的值就是要找的"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 两数之和 II - 输入有序数组
+# 给定一个下标从 1 开始、按非递减顺序排列的整数数组 numbers
+# 找出两个数，使它们之和等于 target，返回它们的 1-indexed 下标
+#
+# 关键条件:
+#   - numbers 已按非递减排序
+#   - 每种输入恰好有且仅有一个解
+#   - 不能使用同一个元素两次（下标不同即可）
+#   - 返回的下标必须是从 1 开始的（即 1-indexed）
+#
+# 示例:
+#   numbers = [2, 7, 11, 15], target = 9
+#   2 + 7 = 9，所以返回 [1, 2]
+
+from typing import List
+
+def twoSum(numbers: List[int], target: int) -> List[int]:
+    \"\"\"在已排序数组中找出两数之和等于 target 的 1-indexed 下标。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 入参 `numbers: List[int]` — 已按非递减排序的整数数组\n- 入参 `target: int` — 目标值\n- 返回 `List[int]` — 长度为 2 的下标列表，**1-indexed**\n- 使用类型注解明确参数和返回类型\n- 文档字符串说明函数用途（强调 1-indexed）\n- 函数体先用 `pass` 占位"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化双指针 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化双指针"
+titleEn = "Initialize Two Pointers"
+code = """# 两数之和 II - 输入有序数组
+# 给定一个下标从 1 开始、按非递减顺序排列的整数数组 numbers
+# 找出两个数，使它们之和等于 target，返回它们的 1-indexed 下标
+#
+# 关键条件:
+#   - numbers 已按非递减排序
+#   - 每种输入恰好有且仅有一个解
+#   - 不能使用同一个元素两次（下标不同即可）
+#   - 返回的下标必须是从 1 开始的（即 1-indexed）
+#
+# 示例:
+#   numbers = [2, 7, 11, 15], target = 9
+#   2 + 7 = 9，所以返回 [1, 2]
+
+from typing import List
+
+def twoSum(numbers: List[int], target: int) -> List[int]:
+    \"\"\"在已排序数组中找出两数之和等于 target 的 1-indexed 下标。\"\"\"
+    l, r = 0, len(numbers) - 1  # 头尾两个指针"""
+explanation = "**第 2 步：初始化头尾双指针**\n\n```python\nl, r = 0, len(numbers) - 1\n```\n\n| 指针 | 初始位置 | 含义 |\n|------|----------|------|\n| `l` | `0` | 指向**最小**的数（数组头部） |\n| `r` | `len(numbers) - 1` | 指向**最大**的数（数组尾部） |\n\n**为什么这样初始化？**\n\n- 头尾相加能得到「当前能取到的最大和」\n- 通过移动两端指针，可以在 **O(n)** 步内扫遍所有可能的二元组合\n- 不需要任何额外空间（哈希表需要 O(n)）\n\n**示例初始状态**\n\n```\nnumbers = [2, 7, 11, 15]\nindex    0  1   2   3\n          ↑           ↑\n          l           r\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 核心循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "比较并移动指针"
+titleEn = "Compare and Move Pointers"
+code = """# 两数之和 II - 输入有序数组
+# 给定一个下标从 1 开始、按非递减顺序排列的整数数组 numbers
+# 找出两个数，使它们之和等于 target，返回它们的 1-indexed 下标
+#
+# 关键条件:
+#   - numbers 已按非递减排序
+#   - 每种输入恰好有且仅有一个解
+#   - 不能使用同一个元素两次（下标不同即可）
+#   - 返回的下标必须是从 1 开始的（即 1-indexed）
+#
+# 示例:
+#   numbers = [2, 7, 11, 15], target = 9
+#   2 + 7 = 9，所以返回 [1, 2]
+
+from typing import List
+
+def twoSum(numbers: List[int], target: int) -> List[int]:
+    \"\"\"在已排序数组中找出两数之和等于 target 的 1-indexed 下标。\"\"\"
+    l, r = 0, len(numbers) - 1  # 头尾两个指针
+    while l < r:
+        s = numbers[l] + numbers[r]
+        if s == target:
+            return [l + 1, r + 1]  # 1-indexed
+        elif s < target:
+            l += 1
+        else:
+            r -= 1
+    return []"""
+explanation = "**第 3 步：核心循环**\n\n循环条件 `l < r`：保证 `l` 和 `r` 不指向同一个元素。\n\n**比较逻辑**\n\n设 `s = numbers[l] + numbers[r]`：\n\n| 条件 | 操作 | 原因 |\n|------|------|------|\n| `s == target` | 返回 `[l+1, r+1]` | 命中，1-indexed 下标 |\n| `s < target` | `l += 1` | 和太小，让 `numbers[l]` 变大 |\n| `s > target` | `r -= 1` | 和太大，让 `numbers[r]` 变小 |\n\n**示例执行（numbers = [2, 7, 11, 15], target = 9）**\n\n| 步 | l | r | numbers[l] | numbers[r] | s | 比较 | 操作 |\n|---|----|----|------------|------------|----|------|------|\n| 1 | 0 | 3 | 2 | 15 | 17 | s > 9 | r -= 1 → r=2 |\n| 2 | 0 | 2 | 2 | 11 | 13 | s > 9 | r -= 1 → r=1 |\n| 3 | 0 | 1 | 2 | 7 | **9** | s == 9 | **返回 [1, 2]** |\n\n> 注意：返回的是 `l+1` 和 `r+1`（**1-indexed**），不是 `l` 和 `r`。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 两数之和 II - 输入有序数组
+# 给定一个下标从 1 开始、按非递减顺序排列的整数数组 numbers
+# 找出两个数，使它们之和等于 target，返回它们的 1-indexed 下标
+#
+# 关键条件:
+#   - numbers 已按非递减排序
+#   - 每种输入恰好有且仅有一个解
+#   - 不能使用同一个元素两次（下标不同即可）
+#   - 返回的下标必须是从 1 开始的（即 1-indexed）
+#
+# 示例:
+#   numbers = [2, 7, 11, 15], target = 9
+#   2 + 7 = 9，所以返回 [1, 2]
+
+from typing import List
+
+def twoSum(numbers: List[int], target: int) -> List[int]:
+    \"\"\"在已排序数组中找出两数之和等于 target 的 1-indexed 下标。\"\"\"
+    l, r = 0, len(numbers) - 1  # 头尾两个指针
+    while l < r:
+        s = numbers[l] + numbers[r]
+        if s == target:
+            return [l + 1, r + 1]  # 1-indexed
+        elif s < target:
+            l += 1
+        else:
+            r -= 1
+    return []"""
+explanation = "**最终结果**\n\n✅ 双指针法找到两数之和\n\n```\n输入: numbers = [2, 7, 11, 15], target = 9\n输出: [1, 2]\n含义: numbers[0] + numbers[1] = 2 + 7 = 9\n```\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | O(n) | 每个指针最多移动 n 次 |\n| 空间复杂度 | O(1) | 只用两个指针变量 |\n\n**与「Two Sum I」对比**\n\n| 方法 | 时间 | 空间 | 适用场景 |\n|------|------|------|----------|\n| 哈希表（Two Sum I） | O(n) | O(n) | 任意数组 |\n| **双指针（本题）** | **O(n)** | **O(1)** | **已排序数组** |\n\n> **关键洞察**：数组**有序性**是双指针法的核心前提——只有排好序才能保证「和太大时一定可以让 r 左移、和太小时一定可以让 l 右移」单调收敛。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 7, 11, 15]", result = "[1, 2]", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "双指针（头尾相向）"
+keyInsight = "利用数组有序性：sum 太大则 r 左移，sum 太小则 l 右移，单调收敛"

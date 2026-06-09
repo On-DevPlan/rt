@@ -1,0 +1,188 @@
+[algorithm]
+id = "valid-palindrome"
+title = "验证回文串"
+titleEn = "Valid Palindrome"
+difficulty = "easy"
+tags = ["string", "two-pointers"]
+testCase = 's = "A man, a plan, a canal: Panama"'
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 验证回文串
+# 给定一个字符串 s，验证它是否是回文串
+# 只考虑字母和数字字符，忽略大小写
+#
+# 示例 1:
+#   s = "A man, a plan, a canal: Panama"
+#   结果: true（处理后为 "amanaplanacanalpanama"）
+#
+# 示例 2:
+#   s = "race a car"
+#   结果: false（处理后为 "raceacar"）
+#
+# 关键点:
+#   - 忽略非字母数字字符（空格、逗号、冒号等）
+#   - 字母不区分大小写"""
+explanation = "**问题分析**\n\n判断字符串是否为回文，但有两个过滤条件：\n\n- 只保留**字母和数字**字符\n- 比较时**忽略大小写**（`A` 和 `a` 视为相同）\n\n**示例 1**\n\n```\n输入: \"A man, a plan, a canal: Panama\"\n清洗: \"amanaplanacanalpanama\"\n判断: 倒序仍是它自己 → true\n```\n\n**示例 2**\n\n```\n输入: \"race a car\"\n清洗: \"raceacar\"\n倒序: \"racaecar\"\n判断: 不相等 → false\n```\n\n> 关键洞察：**双指针从两端向中间**收敛，逐对比较清洗后的字符。无需预处理整串。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 验证回文串
+# 给定一个字符串 s，验证它是否是回文串
+# 只考虑字母和数字字符，忽略大小写
+#
+# 示例 1:
+#   s = "A man, a plan, a canal: Panama"
+#   结果: true（处理后为 "amanaplanacanalpanama"）
+#
+# 示例 2:
+#   s = "race a car"
+#   结果: false（处理后为 "raceacar"）
+#
+# 关键点:
+#   - 忽略非字母数字字符（空格、逗号、冒号等）
+#   - 字母不区分大小写
+
+def isPalindrome(s: str) -> bool:
+    \"\"\"判断 s 是否为回文串（仅字母数字，忽略大小写）。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 输入：一个字符串 `s`\n- 输出：`bool` — 是否为回文串\n- 文档字符串说明过滤规则\n\n```python\ndef isPalindrome(s: str) -> bool:\n    pass\n```"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化双指针 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化指针"
+titleEn = "Initialize Pointers"
+code = """# 验证回文串
+# 给定一个字符串 s，验证它是否是回文串
+# 只考虑字母和数字字符，忽略大小写
+#
+# 示例 1:
+#   s = "A man, a plan, a canal: Panama"
+#   结果: true（处理后为 "amanaplanacanalpanama"）
+#
+# 示例 2:
+#   s = "race a car"
+#   结果: false（处理后为 "raceacar"）
+#
+# 关键点:
+#   - 忽略非字母数字字符（空格、逗号、冒号等）
+#   - 字母不区分大小写
+
+def isPalindrome(s: str) -> bool:
+    \"\"\"判断 s 是否为回文串（仅字母数字，忽略大小写）。\"\"\"
+    l, r = 0, len(s) - 1"""
+explanation = "**第 2 步：设置左右指针**\n\n```\ns = \"A man, a plan, a canal: Panama\"\n       ↑                       ↑\n       l                       r\n       0                       29\n```\n\n| 指针 | 含义 | 初始值 |\n|------|------|--------|\n| `l` | 左指针，从头向尾 | `0` |\n| `r` | 右指针，从尾向头 | `len(s) - 1` |\n\n> 指针相遇前持续推进；遇非字母数字字符时跳过。"
+visualizationType = "code-only"
+
+# ── Step 3: 跳过无效字符 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "跳过非字母数字"
+titleEn = "Skip Non-Alphanumeric"
+code = """# 验证回文串
+# 给定一个字符串 s，验证它是否是回文串
+# 只考虑字母和数字字符，忽略大小写
+#
+# 示例 1:
+#   s = "A man, a plan, a canal: Panama"
+#   结果: true（处理后为 "amanaplanacanalpanama"）
+#
+# 示例 2:
+#   s = "race a car"
+#   结果: false（处理后为 "raceacar"）
+#
+# 关键点:
+#   - 忽略非字母数字字符（空格、逗号、冒号等）
+#   - 字母不区分大小写
+
+def isPalindrome(s: str) -> bool:
+    \"\"\"判断 s 是否为回文串（仅字母数字，忽略大小写）。\"\"\"
+    l, r = 0, len(s) - 1
+    while l < r:
+        while l < r and not s[l].isalnum(): l += 1
+        while l < r and not s[r].isalnum(): r -= 1"""
+explanation = "**第 3 步：跳过无效字符**\n\n外层循环 `while l < r`：左右指针未相遇时继续。\n\n两个内层 `while` 分别让 `l`/`r` 跳过非字母数字字符：\n\n| 操作 | 条件 | 动作 |\n|------|------|------|\n| 跳过左侧 | `l < r and not s[l].isalnum()` | `l += 1` |\n| 跳过右侧 | `l < r and not s[r].isalnum()` | `r -= 1` |\n\n> `str.isalnum()` 内置方法一步判断字母或数字。\n> 条件中加 `l < r` 是为了避免单字符场景下越界。"
+visualizationType = "code-only"
+
+# ── Step 4: 比较并返回 ───────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "比较与返回"
+titleEn = "Compare and Return"
+code = """# 验证回文串
+# 给定一个字符串 s，验证它是否是回文串
+# 只考虑字母和数字字符，忽略大小写
+#
+# 示例 1:
+#   s = "A man, a plan, a canal: Panama"
+#   结果: true（处理后为 "amanaplanacanalpanama"）
+#
+# 示例 2:
+#   s = "race a car"
+#   结果: false（处理后为 "raceacar"）
+#
+# 关键点:
+#   - 忽略非字母数字字符（空格、逗号、冒号等）
+#   - 字母不区分大小写
+
+def isPalindrome(s: str) -> bool:
+    \"\"\"判断 s 是否为回文串（仅字母数字，忽略大小写）。\"\"\"
+    l, r = 0, len(s) - 1
+    while l < r:
+        while l < r and not s[l].isalnum(): l += 1
+        while l < r and not s[r].isalnum(): r -= 1
+        if s[l].lower() != s[r].lower(): return False
+        l += 1; r -= 1
+    return True"""
+explanation = "**第 4 步：比较小写后字符并推进**\n\n```\ns[l].lower() != s[r].lower()  →  return False\n```\n\n| 步骤 | 含义 |\n|------|------|\n| `s[l].lower() != s[r].lower()` | 小写化后不等 → 不是回文 |\n| `l += 1; r -= 1` | 比较通过，向中间推进 |\n| 循环结束未失败 | `return True` |\n\n**执行示例**（s = \"A man, a plan, a canal: Panama\"）\n\n```\nl=0(A)  r=29(a)  →  a == a ✓  l=1, r=28\nl=1(' ')        →  跳过\nl=2(m)  r=28(m)  →  m == m ✓  l=3, r=27\n...（跳过标点和空格）\nl=7(a)  r=23(a)  →  a == a ✓  l=8, r=22\n... 相遇，return True ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 5: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 5
+title = "完成"
+titleEn = "Complete"
+code = """# 验证回文串
+# 给定一个字符串 s，验证它是否是回文串
+# 只考虑字母和数字字符，忽略大小写
+#
+# 示例 1:
+#   s = "A man, a plan, a canal: Panama"
+#   结果: true（处理后为 "amanaplanacanalpanama"）
+#
+# 示例 2:
+#   s = "race a car"
+#   结果: false（处理后为 "raceacar"）
+#
+# 关键点:
+#   - 忽略非字母数字字符（空格、逗号、冒号等）
+#   - 字母不区分大小写
+
+def isPalindrome(s: str) -> bool:
+    \"\"\"判断 s 是否为回文串（仅字母数字，忽略大小写）。\"\"\"
+    l, r = 0, len(s) - 1
+    while l < r:
+        while l < r and not s[l].isalnum(): l += 1
+        while l < r and not s[r].isalnum(): r -= 1
+        if s[l].lower() != s[r].lower(): return False
+        l += 1; r -= 1
+    return True"""
+explanation = "**最终结果**\n\n```\n输入: \"A man, a plan, a canal: Panama\"\n输出: true\n\n输入: \"race a car\"\n输出: false\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个字符最多访问两次 |\n| 空间复杂度 | O(1) — 仅用两个指针 |\n\n**关键技巧**\n\n- **双指针**从两端向中间收敛，无需预处理字符串\n- 利用 `isalnum()` 内置方法一步过滤\n- 用 `lower()` 而不是 `upper()`，保持小写风格统一"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "\"A man, a plan, a canal: Panama\"", result = "true", highlightedIndices = [] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "双指针从两端向中间比较"
+keyInsight = "左右指针跳过非字母数字字符，小写化后逐对比较"

@@ -1,0 +1,241 @@
+[algorithm]
+id = "average-of-levels-in-binary-tree"
+title = "二叉树的层平均值"
+titleEn = "Average of Levels in Binary Tree"
+difficulty = "easy"
+tags = ["tree", "bfs"]
+testCase = "root = [3,9,20,15,7]"
+expectedOutput = "[3.0, 14.5, 11.0]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 637. 二叉树的层平均值
+# 给定一个非空二叉树的根节点 root，返回其每层节点值的平均值
+#
+# 关键要求:
+#   - 同一层所有节点的 val 求平均
+#   - 答案以浮点数数组形式返回（与输入层数一一对应）
+#
+# 示例:
+#   root = [3, 9, 20, 15, 7]
+#
+#   树形结构:
+#         3
+#        / \\
+#       9   20
+#          /  \\
+#         15   7
+#
+#   第 1 层: [3]           -> 平均 3.0
+#   第 2 层: [9, 20]       -> 平均 (9+20)/2 = 14.5
+#   第 3 层: [15, 7]       -> 平均 (15+7)/2 = 11.0
+#   结果: [3.0, 14.5, 11.0]"""
+explanation = "**问题分析**\n\n给定二叉树的根节点 `root`，需要**逐层**计算节点 `val` 的算术平均值，并以 `List[float]` 形式返回。\n\n**层序遍历的天然解法：BFS**\n\n| 思路 | 时间 | 空间 |\n|------|------|------|\n| DFS 收集每层再求和 | O(n) | O(h) + O(n) |\n| **BFS 层序 + 每层累加** | **O(n)** | **O(w)** |\n\n> 其中 `w` 是二叉树的最大层宽，队列中始终只保存当前层的所有节点。\n\n**示例**\n\n```\nroot = [3, 9, 20, 15, 7]\n\n        3         <- 层 1: 3.0\n       / \\\n      9   20      <- 层 2: 14.5\n         /  \\\n        15   7    <- 层 3: 11.0\n```"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + TreeNode + 初始化 ─────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与初始化"
+titleEn = "Function Signature and Init"
+code = """# 637. 二叉树的层平均值
+# 给定一个非空二叉树的根节点 root，返回其每层节点值的平均值
+#
+# 关键要求:
+#   - 同一层所有节点的 val 求平均
+#   - 答案以浮点数数组形式返回（与输入层数一一对应）
+#
+# 示例:
+#   root = [3, 9, 20, 15, 7]
+#
+#   树形结构:
+#         3
+#        / \\
+#       9   20
+#          /  \\
+#         15   7
+#
+#   第 1 层: [3]           -> 平均 3.0
+#   第 2 层: [9, 20]       -> 平均 (9+20)/2 = 14.5
+#   第 3 层: [15, 7]       -> 平均 (15+7)/2 = 11.0
+#   结果: [3.0, 14.5, 11.0]
+
+from typing import Optional, List
+from collections import deque
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def averageOfLevels(root: Optional[TreeNode]) -> List[float]:
+    \"\"\"返回二叉树每层节点值的平均值\"\"\"
+    res = []
+    q = deque([root])"""
+explanation = "**第 1 步：搭建签名与数据结构**\n\n- **导入**：`deque`（双端队列）用于 BFS\n- **`TreeNode`**：标准二叉树节点（val + left + right）\n- **`averageOfLevels`**：返回 `List[float]`\n- **初始化**：\n  - `res = []` — 收集每层平均值\n  - `q = deque([root])` — 队列初始仅含根节点\n\n> 使用 `Optional[TreeNode]` 明确 `root` 可为空（虽然题意说非空，但鲁棒性更好）。"
+visualizationType = "code-only"
+
+# ── Step 2: while 循环 + size 控制层边界 ────────────────────
+[[algorithm.steps]]
+id = 2
+title = "层序遍历"
+titleEn = "Level Order Loop"
+code = """# 637. 二叉树的层平均值
+# 给定一个非空二叉树的根节点 root，返回其每层节点值的平均值
+#
+# 关键要求:
+#   - 同一层所有节点的 val 求平均
+#   - 答案以浮点数数组形式返回（与输入层数一一对应）
+#
+# 示例:
+#   root = [3, 9, 20, 15, 7]
+#
+#   树形结构:
+#         3
+#        / \\
+#       9   20
+#          /  \\
+#         15   7
+#
+#   第 1 层: [3]           -> 平均 3.0
+#   第 2 层: [9, 20]       -> 平均 (9+20)/2 = 14.5
+#   第 3 层: [15, 7]       -> 平均 (15+7)/2 = 11.0
+#   结果: [3.0, 14.5, 11.0]
+
+from typing import Optional, List
+from collections import deque
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def averageOfLevels(root: Optional[TreeNode]) -> List[float]:
+    \"\"\"返回二叉树每层节点值的平均值\"\"\"
+    res = []
+    q = deque([root])
+    while q:
+        size = len(q)
+        level_sum = 0"""
+explanation = "**第 2 步：层序主循环**\n\n```python\nwhile q:\n    size = len(q)      # 关键：记录当前层节点数\n    level_sum = 0      # 当前层 val 累加器\n```\n\n**`size` 的作用**\n\n进入内层 `for` 之前，**先快照**当前队列长度。这样在 `for` 循环中入队的子节点（下一层）**不会影响本次 `size` 边界**，从而把每层严格隔开。\n\n| 变量 | 含义 |\n|------|------|\n| `size` | 当前层节点数 |\n| `level_sum` | 当前层 `val` 总和（之后 `level_sum / size` 即平均值） |\n\n> 如果不先快照 `size`，等 `for` 跑完可能已经把下一层节点也遍历了。"
+visualizationType = "code-only"
+
+# ── Step 3: 内层 for 循环 + 入队子节点 ────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历本层节点"
+titleEn = "Process Current Level"
+code = """# 637. 二叉树的层平均值
+# 给定一个非空二叉树的根节点 root，返回其每层节点值的平均值
+#
+# 关键要求:
+#   - 同一层所有节点的 val 求平均
+#   - 答案以浮点数数组形式返回（与输入层数一一对应）
+#
+# 示例:
+#   root = [3, 9, 20, 15, 7]
+#
+#   树形结构:
+#         3
+#        / \\
+#       9   20
+#          /  \\
+#         15   7
+#
+#   第 1 层: [3]           -> 平均 3.0
+#   第 2 层: [9, 20]       -> 平均 (9+20)/2 = 14.5
+#   第 3 层: [15, 7]       -> 平均 (15+7)/2 = 11.0
+#   结果: [3.0, 14.5, 11.0]
+
+from typing import Optional, List
+from collections import deque
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def averageOfLevels(root: Optional[TreeNode]) -> List[float]:
+    \"\"\"返回二叉树每层节点值的平均值\"\"\"
+    res = []
+    q = deque([root])
+    while q:
+        size = len(q)
+        level_sum = 0
+        for _ in range(size):
+            node = q.popleft()
+            level_sum += node.val
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)"""
+explanation = "**第 3 步：处理本层节点**\n\n```python\nfor _ in range(size):\n    node = q.popleft()           # 出队当前层节点\n    level_sum += node.val        # 累加 val\n    if node.left:                # 左子入队（下一层）\n        q.append(node.left)\n    if node.right:               # 右子入队（下一层）\n        q.append(node.right)\n```\n\n**执行追踪**（以 `[3, 9, 20, 15, 7]` 为例）\n\n| 轮次 | q 初始 | size | level_sum 出循环 |\n|------|--------|------|------------------|\n| 1 | `[3]` | 1 | `3` |\n| 2 | `[9, 20]` | 2 | `9 + 20 = 29` |\n| 3 | `[15, 7]` | 2 | `15 + 7 = 22` |\n\n> 子节点入队后**不会**影响本次 `for` 范围，因为 `size` 是循环开始前的快照。"
+visualizationType = "code-only"
+
+# ── Step 4: 收尾：求平均并存入 res ───────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 637. 二叉树的层平均值
+# 给定一个非空二叉树的根节点 root，返回其每层节点值的平均值
+#
+# 关键要求:
+#   - 同一层所有节点的 val 求平均
+#   - 答案以浮点数数组形式返回（与输入层数一一对应）
+#
+# 示例:
+#   root = [3, 9, 20, 15, 7]
+#
+#   树形结构:
+#         3
+#        / \\
+#       9   20
+#          /  \\
+#         15   7
+#
+#   第 1 层: [3]           -> 平均 3.0
+#   第 2 层: [9, 20]       -> 平均 (9+20)/2 = 14.5
+#   第 3 层: [15, 7]       -> 平均 (15+7)/2 = 11.0
+#   结果: [3.0, 14.5, 11.0]
+
+from typing import Optional, List
+from collections import deque
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def averageOfLevels(root: Optional[TreeNode]) -> List[float]:
+    \"\"\"返回二叉树每层节点值的平均值\"\"\"
+    res = []
+    q = deque([root])
+    while q:
+        size = len(q)
+        level_sum = 0
+        for _ in range(size):
+            node = q.popleft()
+            level_sum += node.val
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)
+        res.append(level_sum / size)
+    return res"""
+explanation = "**第 4 步：求平均并返回**\n\n```python\nres.append(level_sum / size)\n...\nreturn res\n```\n\n**`level_sum / size`** 自动得到浮点结果（Python 3 `/` 永远返回 float）。\n\n**最终输出**\n\n```\nroot = [3, 9, 20, 15, 7]\nres  = [3.0, 14.5, 11.0]\n```\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | **O(n)** | 每个节点入队/出队各一次 |\n| 空间复杂度 | **O(w)** | `w` = 最大层宽（队列峰值长度） |\n\n**关键技巧**\n\n- `size = len(q)` **快照**层节点数，是 BFS 分层的标准做法\n- `level_sum` 在 `for` 内累加，循环外再求平均，避免每步都做除法\n- 用 `deque.popleft()` 是 O(1)，比 `list.pop(0)` 快很多"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[3.0, 14.5, 11.0]", result = "[3.0, 14.5, 11.0]", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(w)  # w = 最大层宽"
+approach = "BFS 层序 + 每层求平均"
+keyInsight = "BFS 层序遍历累加每层值，遍历完一层后算 sum/size 即得平均"

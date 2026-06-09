@@ -13,6 +13,7 @@ function mdToHtml(text) {
 // ─── Algorithm Data ──────────────────────────────────────────────────────────
 
 import algoIndex from '../data/index.json'
+import groupedIndex from '../data/grouped-index.json'
 
 // Lazy-load all algorithm JSON files — add files to data/ and they auto-register
 const algoLoaders = import.meta.glob('../data/*.json', { eager: false })
@@ -433,7 +434,8 @@ function AlgorithmVisualization({ step }) {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function AlgoVisualizerPage() {
-  const [currentAlgoId, setCurrentAlgoId] = useState(algoIndex[0]?.id || '')
+  const [selectedCategory, setSelectedCategory] = useState(groupedIndex[0]?.id || '')
+  const [currentAlgoId, setCurrentAlgoId] = useState(groupedIndex[0]?.algorithms[0]?.id || '')
   const [currentAlgo, setCurrentAlgo] = useState(null)
   const [algoLoading, setAlgoLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
@@ -444,6 +446,14 @@ export default function AlgoVisualizerPage() {
   const playRef = useRef(null)
   const stepRef = useRef(currentStep)
   stepRef.current = currentStep
+
+  // When category changes, auto-select first algorithm in that category
+  useEffect(() => {
+    const cat = groupedIndex.find(g => g.id === selectedCategory)
+    if (cat && cat.algorithms.length > 0) {
+      setCurrentAlgoId(cat.algorithms[0].id)
+    }
+  }, [selectedCategory])
 
   // Load algorithm data when selection changes
   useEffect(() => {
@@ -559,12 +569,25 @@ export default function AlgoVisualizerPage() {
         <div className={styles.topLeft}>
           <h1 className={styles.topTitle}>Algorithm Lab</h1>
           <div className={styles.algoSelector}>
+            {/* Category select */}
+            <select
+              className={styles.categorySelect}
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+            >
+              {groupedIndex.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+            {/* Algorithm list for selected category */}
             <select
               className={styles.algoSelect}
               value={currentAlgoId}
               onChange={e => setCurrentAlgoId(e.target.value)}
             >
-              {algoIndex.map(a => (
+              {(groupedIndex.find(g => g.id === selectedCategory)?.algorithms || []).map(a => (
                 <option key={a.id} value={a.id}>
                   {a.title} ({a.titleEn})
                 </option>
@@ -575,7 +598,6 @@ export default function AlgoVisualizerPage() {
                 <span className={`${styles.diffBadge} ${styles[currentAlgo.difficulty]}`}>
                   {currentAlgo.difficulty}
                 </span>
-                <span className={styles.testCase}>{currentAlgo.testCase}</span>
               </div>
             )}
           </div>

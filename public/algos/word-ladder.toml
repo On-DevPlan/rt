@@ -1,0 +1,179 @@
+[algorithm]
+id = "word-ladder"
+title = "单词接龙"
+titleEn = "Word Ladder"
+difficulty = "hard"
+category = "graph-bfs"
+tags = ["breadth-first-search", "hash-table", "string"]
+testCase = "beginWord = \"hit\", endWord = \"cog\", wordList = [\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"]"
+expectedOutput = "5"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 127. 单词接龙
+# 给定 beginWord、endWord 和一个字典 wordList
+# 每次只能改变一个字符，且变换后的单词必须在 wordList 中
+# 返回从 beginWord 到 endWord 的最短变换序列长度
+#
+# 示例:
+#   beginWord = "hit", endWord = "cog"
+#   wordList = ["hot","dot","dog","lot","log","cog"]
+#   最短链: hit -> hot -> dot -> dog -> cog
+#   返回长度: 5"""
+explanation = "**问题分析**\n\n- 起始词：`beginWord = \"hit\"`\n- 目标词：`endWord = \"cog\"`\n- 每次变换 **1 个字符**，且新词必须在 `wordList` 中\n\n**最短链示例**\n\n```\nhit -> hot -> dot -> dog -> cog\n```\n\n| 步骤 | 单词 |\n|------|------|\n| 0 | hit |\n| 1 | hot |\n| 2 | dot |\n| 3 | dog |\n| 4 | cog |\n\n> BFS 的**层数**就是单词链的长度。BFS 从 `beginWord` 出发，每层扩展所有可行的下一站。\n\n**核心思想：BFS + 单字符替换**\n\n- 把每个单词看作图的一个节点\n- 两个单词相差 1 个字符就连一条边\n- BFS 找最短路径，层数即答案"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 数据准备 ──────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "签名与初始化"
+titleEn = "Signature and Initialization"
+code = """# 127. 单词接龙
+# 给定 beginWord、endWord 和一个字典 wordList
+# 每次只能改变一个字符，且变换后的单词必须在 wordList 中
+# 返回从 beginWord 到 endWord 的最短变换序列长度
+#
+# 示例:
+#   beginWord = "hit", endWord = "cog"
+#   wordList = ["hot","dot","dog","lot","log","cog"]
+#   最短链: hit -> hot -> dot -> dog -> cog
+#   返回长度: 5
+
+from typing import List
+from collections import deque
+from string import ascii_lowercase
+
+def ladderLength(beginWord: str, endWord: str, wordList: List[str]) -> int:
+    \"\"\"返回从 beginWord 到 endWord 的最短变换序列长度\"\"\"
+    word_set = set(wordList)
+    if endWord not in word_set:
+        return 0
+    q = deque([(beginWord, 1)])
+    visited = {beginWord}"""
+explanation = "**第 1 步：函数签名 + 数据准备**\n\n```python\ndef ladderLength(beginWord, endWord, wordList) -> int\n```\n\n**关键变量**\n\n| 变量 | 作用 |\n|------|------|\n| `word_set` | 把 `wordList` 转成集合，O(1) 查询 |\n| `if endWord not in word_set` | 提前判断：目标词不在字典里直接返回 0 |\n| `q = deque([(beginWord, 1)])` | BFS 队列，每个元素是 `(当前词, 当前深度)` |\n| `visited = {beginWord}` | 记录已访问的词，防止回环 |\n\n> 入队时把深度一起带上，命中时直接返回，避免维护额外的距离数组。"
+visualizationType = "code-only"
+
+# ── Step 2: BFS 主循环 + 命中判断 ────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "BFS 主循环"
+titleEn = "BFS Main Loop"
+code = """# 127. 单词接龙
+# 给定 beginWord、endWord 和一个字典 wordList
+# 每次只能改变一个字符，且变换后的单词必须在 wordList 中
+# 返回从 beginWord 到 endWord 的最短变换序列长度
+#
+# 示例:
+#   beginWord = "hit", endWord = "cog"
+#   wordList = ["hot","dot","dog","lot","log","cog"]
+#   最短链: hit -> hot -> dot -> dog -> cog
+#   返回长度: 5
+
+from typing import List
+from collections import deque
+from string import ascii_lowercase
+
+def ladderLength(beginWord: str, endWord: str, wordList: List[str]) -> int:
+    \"\"\"返回从 beginWord 到 endWord 的最短变换序列长度\"\"\"
+    word_set = set(wordList)
+    if endWord not in word_set:
+        return 0
+    q = deque([(beginWord, 1)])
+    visited = {beginWord}
+    while q:
+        cur, depth = q.popleft()
+        if cur == endWord:
+            return depth"""
+explanation = "**第 2 步：BFS 主循环 + 命中判断**\n\n**循环结构**\n\n```python\nwhile q:\n    cur, depth = q.popleft()\n    if cur == endWord:\n        return depth\n```\n\n**关键点**\n\n- `while q:` — 队列空了就退出（说明找不到 `endWord`）\n- `q.popleft()` — 取出最早入队的元素，保证按层扩展\n- **BFS 第一次遇到 `endWord` 时 `depth` 就是最短长度**，直接返回\n\n> 不需要额外记录层数：因为入队时已经把 `depth` 一起塞进了元组。"
+visualizationType = "code-only"
+
+# ── Step 3: 单字符替换生成邻居 ────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "生成下一层"
+titleEn = "Generate Next Layer"
+code = """# 127. 单词接龙
+# 给定 beginWord、endWord 和一个字典 wordList
+# 每次只能改变一个字符，且变换后的单词必须在 wordList 中
+# 返回从 beginWord 到 endWord 的最短变换序列长度
+#
+# 示例:
+#   beginWord = "hit", endWord = "cog"
+#   wordList = ["hot","dot","dog","lot","log","cog"]
+#   最短链: hit -> hot -> dot -> dog -> cog
+#   返回长度: 5
+
+from typing import List
+from collections import deque
+from string import ascii_lowercase
+
+def ladderLength(beginWord: str, endWord: str, wordList: List[str]) -> int:
+    \"\"\"返回从 beginWord 到 endWord 的最短变换序列长度\"\"\"
+    word_set = set(wordList)
+    if endWord not in word_set:
+        return 0
+    q = deque([(beginWord, 1)])
+    visited = {beginWord}
+    while q:
+        cur, depth = q.popleft()
+        if cur == endWord:
+            return depth
+        for i in range(len(cur)):
+            for ch in ascii_lowercase:
+                nxt = cur[:i] + ch + cur[i+1:]
+                if nxt in word_set and nxt not in visited:
+                    visited.add(nxt)
+                    q.append((nxt, depth + 1))"""
+explanation = "**第 3 步：生成下一层**\n\n**双层循环**：外层遍历字符位置 `i`，内层遍历 26 个字母。\n\n```python\nfor i in range(len(cur)):\n    for ch in ascii_lowercase:\n        nxt = cur[:i] + ch + cur[i+1:]\n```\n\n以 `cur = \"hot\"` 为例：\n\n| 位置 `i` | 生成的部分词 |\n|----------|-------------|\n| 0 | `*ot`：`aot`, `bot`, ..., `dot`, ..., `lot` |\n| 1 | `h*t`：`hat`, `hbt`, ..., `hot`（已在 visited） |\n| 2 | `ho*`：`hoa`, `hob`, ..., `hot`（已在 visited） |\n\n**入队条件**\n\n- `nxt in word_set`：新词必须在字典里\n- `nxt not in visited`：未被访问过\n\n满足则 `visited.add(nxt)` + `q.append((nxt, depth + 1))`。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 127. 单词接龙
+# 给定 beginWord、endWord 和一个字典 wordList
+# 每次只能改变一个字符，且变换后的单词必须在 wordList 中
+# 返回从 beginWord 到 endWord 的最短变换序列长度
+#
+# 示例:
+#   beginWord = "hit", endWord = "cog"
+#   wordList = ["hot","dot","dog","lot","log","cog"]
+#   最短链: hit -> hot -> dot -> dog -> cog
+#   返回长度: 5
+
+from typing import List
+from collections import deque
+from string import ascii_lowercase
+
+def ladderLength(beginWord: str, endWord: str, wordList: List[str]) -> int:
+    \"\"\"返回从 beginWord 到 endWord 的最短变换序列长度\"\"\"
+    word_set = set(wordList)
+    if endWord not in word_set:
+        return 0
+    q = deque([(beginWord, 1)])
+    visited = {beginWord}
+    while q:
+        cur, depth = q.popleft()
+        if cur == endWord:
+            return depth
+        for i in range(len(cur)):
+            for ch in ascii_lowercase:
+                nxt = cur[:i] + ch + cur[i+1:]
+                if nxt in word_set and nxt not in visited:
+                    visited.add(nxt)
+                    q.append((nxt, depth + 1))
+    return 0"""
+explanation = "**最终结果**\n\n✅ BFS 完成后若队列空仍没找到 `endWord`，返回 0（说明无法变换）。\n\n**示例执行轨迹**\n\n```\nbeginWord = \"hit\", endWord = \"cog\"\n\n第 1 层: hit                  -> 扩展出 hot\n第 2 层: hot                  -> 扩展出 dot, lot\n第 3 层: dot, lot             -> dot 扩展出 dog，lot 扩展出 log\n第 4 层: dog, log             -> dog 扩展出 cog ✓ 命中，返回 5\n```\n\n> BFS 的层数 1（hit）+ 1（hot）+ 1（dot）+ 1（dog）+ 1（cog）= **5**。\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | O(n × L × 26) | n 个词，每个长度 L，每个位置 26 字母 |\n| 空间复杂度 | O(n × L) | word_set + 队列 + visited |\n\n**关键技巧**\n\n- **BFS 层数 = 单词链长度**，这是图最短路径的核心直觉\n- 每个位置 × 26 字母 = 一个候选邻居，O(L × 26) 个候选\n- `visited` 避免重复入队，否则会爆栈"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"hit\", \"hot\", \"dot\", \"dog\", \"cog\"]", result = "5", highlightedIndices = [0, 1, 2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n * L * 26)  # n 单词数, L 单词长"
+spaceComplexity = "O(n)  # word_set + 队列"
+approach = "BFS + 单字符替换"
+keyInsight = "BFS 层次 = 单词链长度；每个位置 × 26 字母 = 一个邻居；visited 避免回环"

@@ -1,0 +1,185 @@
+[algorithm]
+id = "merge-two-sorted-lists"
+title = "合并两个有序链表"
+titleEn = "Merge Two Sorted Lists"
+difficulty = "easy"
+tags = ["linked-list", "recursion"]
+testCase = "l1 = [1,2,4], l2 = [1,3,4]"
+expectedOutput = "[1,1,2,3,4,4]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 合并两个有序链表
+# 将两个升序链表合并为一个升序链表，返回新链表的头节点。
+#
+# 链表节点定义:
+#   class ListNode:
+#       def __init__(self, x):
+#           self.val = x
+#           self.next = None
+#
+# 示例:
+#   l1 = [1, 2, 4]
+#   l2 = [1, 3, 4]
+#   结果: [1, 1, 2, 3, 4, 4]"""
+explanation = "**问题分析**\n\n输入是两个**已按升序排列**的链表，需要把它们合并成一条仍然升序的链表。\n\n**直观思路**\n\n- 像拉拉链一样，两个指针 `l1` / `l2` 分别指向当前待比较的节点\n- 每次把较小（或相等）的节点接到结果链表尾部，对应指针前进一步\n- 直到某一条链表耗尽，再把另一条剩余的整段接上\n\n**为什么用 dummy 节点？**\n\n| 方式 | 代码 | 体验 |\n|------|------|------|\n| 不带 dummy | 需特判第一个节点 | 边界繁琐 |\n| **带 dummy** | `dummy = ListNode(0)`，最后返回 `dummy.next` | 统一处理，代码更简洁 |\n\n> **关键洞察**：dummy 充当哨兵，让结果链表的头节点处理与其他节点完全一致。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + ListNode ──────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 合并两个有序链表
+# 将两个升序链表合并为一个升序链表，返回新链表的头节点。
+#
+# 链表节点定义:
+#   class ListNode:
+#       def __init__(self, x):
+#           self.val = x
+#           self.next = None
+#
+# 示例:
+#   l1 = [1, 2, 4]
+#   l2 = [1, 3, 4]
+#   结果: [1, 1, 2, 3, 4, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def mergeTwoLists(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"合并两个升序链表，返回合并后的链表头节点。\"\"\"
+    pass"""
+explanation = "**第 1 步：定义节点与函数签名**\n\n- `ListNode`：标准的链表节点，包含 `val` 和 `next`\n- `mergeTwoLists` 接收两个 `Optional[ListNode]`，返回合并后的链表头\n- 类型注解明确输入输出，方便静态检查\n- 文档字符串说明用途"
+visualizationType = "code-only"
+
+# ── Step 2: dummy + cur 初始化 ──────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化哨兵"
+titleEn = "Initialize Dummy"
+code = """# 合并两个有序链表
+# 将两个升序链表合并为一个升序链表，返回新链表的头节点。
+#
+# 链表节点定义:
+#   class ListNode:
+#       def __init__(self, x):
+#           self.val = x
+#           self.next = None
+#
+# 示例:
+#   l1 = [1, 2, 4]
+#   l2 = [1, 3, 4]
+#   结果: [1, 1, 2, 3, 4, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def mergeTwoLists(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"合并两个升序链表，返回合并后的链表头节点。\"\"\"
+    dummy = ListNode(0)  # 哨兵节点，简化头节点处理
+    cur = dummy           # cur 始终指向结果链表的尾节点"""
+explanation = "**第 2 步：建立哨兵与游标**\n\n```\n    dummy\n   ┌─────┐\n   │  0  │ next → None\n   └─────┘\n     ▲\n     cur\n```\n\n| 变量 | 含义 |\n|------|------|\n| `dummy` | 哨兵节点（值无意义），最终结果从 `dummy.next` 取 |\n| `cur` | 始终指向结果链表**当前最后一个节点**，用来接下一个更小的节点 |\n\n> 这样无论第一个接上的节点是 `l1` 还是 `l2`，逻辑都一样。"
+visualizationType = "code-only"
+
+# ── Step 3: 核心 while 循环 ─────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "核心比较"
+titleEn = "Compare and Append"
+code = """# 合并两个有序链表
+# 将两个升序链表合并为一个升序链表，返回新链表的头节点。
+#
+# 链表节点定义:
+#   class ListNode:
+#       def __init__(self, x):
+#           self.val = x
+#           self.next = None
+#
+# 示例:
+#   l1 = [1, 2, 4]
+#   l2 = [1, 3, 4]
+#   结果: [1, 1, 2, 3, 4, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def mergeTwoLists(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"合并两个升序链表，返回合并后的链表头节点。\"\"\"
+    dummy = ListNode(0)  # 哨兵节点，简化头节点处理
+    cur = dummy           # cur 始终指向结果链表的尾节点
+    while l1 and l2:
+        if l1.val <= l2.val:
+            cur.next = l1
+            l1 = l1.next
+        else:
+            cur.next = l2
+            l2 = l2.next
+        cur = cur.next"""
+explanation = "**第 3 步：双指针比较并接尾**\n\n循环条件 `while l1 and l2`：两条链表都还有节点时持续比较。\n\n**比较逻辑**\n\n| 条件 | 操作 |\n|------|------|\n| `l1.val <= l2.val` | `cur.next = l1`，`l1` 前移 |\n| 否则 | `cur.next = l2`，`l2` 前移 |\n| 无论哪种 | `cur = cur.next`，尾指针后移 |\n\n**示例执行（追踪 cur 的变化）：**\n\n```\nl1 = 1 → 2 → 4\nl2 = 1 → 3 → 4\n\n1. l1.val=1 <= l2.val=1 → 接 l1(1)，l1→2;       cur→1\n2. l1.val=2 >  l2.val=1 → 接 l2(1)，l2→3;       cur→1\n3. l1.val=2 <= l2.val=3 → 接 l1(2)，l1→4;       cur→2\n4. l1.val=4 >  l2.val=3 → 接 l2(3)，l2→4;       cur→3\n5. l1.val=4 <= l2.val=4 → 接 l1(4)，l1→None;    cur→4\n   l1 为空，循环结束\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 + 返回 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 合并两个有序链表
+# 将两个升序链表合并为一个升序链表，返回新链表的头节点。
+#
+# 链表节点定义:
+#   class ListNode:
+#       def __init__(self, x):
+#           self.val = x
+#           self.next = None
+#
+# 示例:
+#   l1 = [1, 2, 4]
+#   l2 = [1, 3, 4]
+#   结果: [1, 1, 2, 3, 4, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+def mergeTwoLists(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"合并两个升序链表，返回合并后的链表头节点。\"\"\"
+    dummy = ListNode(0)  # 哨兵节点，简化头节点处理
+    cur = dummy           # cur 始终指向结果链表的尾节点
+    while l1 and l2:
+        if l1.val <= l2.val:
+            cur.next = l1
+            l1 = l1.next
+        else:
+            cur.next = l2
+            l2 = l2.next
+        cur = cur.next
+    cur.next = l1 or l2  # 把剩余未耗尽的那条直接接上
+    return dummy.next"""
+explanation = "**最终结果**\n\n✅ 合并完成\n\n```\n输入: l1 = [1, 2, 4],  l2 = [1, 3, 4]\n输出: [1, 1, 2, 3, 4, 4]\n```\n\n**最后两行做了什么？**\n\n- `while l1 and l2` 退出时，至少有一条链表已耗尽\n- `cur.next = l1 or l2`：利用 Python 的短路求值，把**非空的那一条**直接接上\n  - 若 `l1` 非空 → 接 `l1`\n  - 若 `l1` 为空（即 `l2` 非空） → 接 `l2`\n- `return dummy.next`：跳过哨兵，返回真正的头节点\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m + n) — 每节点最多访问一次 |\n| 空间复杂度 | O(1) — 只用 dummy / cur 两个指针，不计返回的新链表 |\n\n**关键技巧**\n\n- **哨兵节点**：消除头节点特判，让循环逻辑统一\n- **`l1 or l2`**：一行替代 `if l1: cur.next = l1 else: cur.next = l2`，Pythonic 且简洁"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 1, 2, 3, 4, 4]", result = "[1,1,2,3,4,4]", highlightedIndices = [0, 1, 2, 3, 4, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(m + n)"
+spaceComplexity = "O(1)"
+approach = "迭代 + 哨兵节点（dummy）"
+keyInsight = "dummy 哨兵消除头节点特判；while + 比较后接尾，最后用 cur.next = l1 or l2 一行收尾"

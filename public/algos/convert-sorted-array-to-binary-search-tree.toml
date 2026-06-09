@@ -1,0 +1,186 @@
+[algorithm]
+id = "convert-sorted-array-to-binary-search-tree"
+title = "将有序数组转换为二叉搜索树"
+titleEn = "Convert Sorted Array to Binary Search Tree"
+difficulty = "easy"
+tags = ["tree", "array", "divide-and-conquer", "binary-search-tree"]
+testCase = "nums = [-10,-3,0,5,9]"
+expectedOutput = "[0,-3,9,-10,null,5]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 108. 将有序数组转换为二叉搜索树
+# 给定一个升序排列的整数数组 nums
+# 将其转换为一棵高度平衡的二叉搜索树（BST）
+#
+# 关键定义:
+#   - BST: 左子树 < 根 < 右子树
+#   - 高度平衡: 每个节点的左右子树高度差不超过 1
+#
+# 示例:
+#   nums = [-10, -3, 0, 5, 9]
+#   可能的 BST 根节点: 0（左半 [-10,-3]，右半 [5,9]）
+#   结果: [0, -3, 9, -10, null, 5]"""
+explanation = "**问题分析**\n\n给定升序数组 `nums = [-10, -3, 0, 5, 9]`，要求构造一棵高度平衡的 BST。\n\n**关键观察**\n\n- 数组升序 = BST 中序遍历\n- 高度平衡 = 左右子树节点数尽量相等\n- 两者结合 → **数组中点作根**\n\n**目标输出**\n\n```\n        0\n       / \\\n     -3   9\n     /   /\n   -10  5\n```\n\n> 中点 `nums[2] = 0` 作为根，左半 `[-10, -3]` 递归构左子树，右半 `[5, 9]` 递归构右子树。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + TreeNode + build 框架 ─────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 108. 将有序数组转换为二叉搜索树
+# 给定一个升序排列的整数数组 nums
+# 将其转换为一棵高度平衡的二叉搜索树（BST）
+#
+# 关键定义:
+#   - BST: 左子树 < 根 < 右子树
+#   - 高度平衡: 每个节点的左右子树高度差不超过 1
+#
+# 示例:
+#   nums = [-10, -3, 0, 5, 9]
+#   可能的 BST 根节点: 0（左半 [-10,-3]，右半 [5,9]）
+#   结果: [0, -3, 9, -10, null, 5]
+
+from typing import Optional, List
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def sortedArrayToBST(nums: List[int]) -> Optional[TreeNode]:
+    \"\"\"将升序数组转换为高度平衡的 BST\"\"\"
+    def build(l: int, r: int) -> Optional[TreeNode]:
+        pass
+    return None"""
+explanation = "**第 1 步：定义结构与签名**\n\n```python\nclass TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n```\n\n- `TreeNode`: 标准二叉树节点定义\n- `sortedArrayToBST`: 主函数入口，返回 `Optional[TreeNode]`\n- 内部辅助函数 `build(l, r)`: 递归处理子数组 `nums[l..r]`\n- 当前 `build` 内部为 `pass` 占位，下一步填充 base case 与中点逻辑"
+visualizationType = "code-only"
+
+# ── Step 2: base case + 中点为根 ──────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "中点为根"
+titleEn = "Mid as Root"
+code = """# 108. 将有序数组转换为二叉搜索树
+# 给定一个升序排列的整数数组 nums
+# 将其转换为一棵高度平衡的二叉搜索树（BST）
+#
+# 关键定义:
+#   - BST: 左子树 < 根 < 右子树
+#   - 高度平衡: 每个节点的左右子树高度差不超过 1
+#
+# 示例:
+#   nums = [-10, -3, 0, 5, 9]
+#   可能的 BST 根节点: 0（左半 [-10,-3]，右半 [5,9]）
+#   结果: [0, -3, 9, -10, null, 5]
+
+from typing import Optional, List
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def sortedArrayToBST(nums: List[int]) -> Optional[TreeNode]:
+    \"\"\"将升序数组转换为高度平衡的 BST\"\"\"
+    def build(l: int, r: int) -> Optional[TreeNode]:
+        if l > r:
+            return None
+        mid = (l + r) // 2  # ← 中点（左中点）
+        root = TreeNode(nums[mid])
+    return None"""
+explanation = "**第 2 步：base case + 中点为根**\n\n```python\nif l > r:\n    return None\nmid = (l + r) // 2\nroot = TreeNode(nums[mid])\n```\n\n| 关键行 | 作用 |\n|--------|------|\n| `if l > r: return None` | 递归终止：空区间返回 `None` |\n| `mid = (l + r) // 2` | 选左中点作为根索引 |\n| `root = TreeNode(nums[mid])` | 用 `nums[mid]` 创建根节点 |\n\n**为什么中点能保证平衡？**\n\n- 中点把数组分成两个子数组，长度差 ≤ 1\n- 递归到叶子时，左右子树高度差最多 1 → 整树高度平衡"
+visualizationType = "code-only"
+
+# ── Step 3: 递归构建左右子树 + 返回根 ───────────────────────
+[[algorithm.steps]]
+id = 3
+title = "递归子树"
+titleEn = "Recurse Subtrees"
+code = """# 108. 将有序数组转换为二叉搜索树
+# 给定一个升序排列的整数数组 nums
+# 将其转换为一棵高度平衡的二叉搜索树（BST）
+#
+# 关键定义:
+#   - BST: 左子树 < 根 < 右子树
+#   - 高度平衡: 每个节点的左右子树高度差不超过 1
+#
+# 示例:
+#   nums = [-10, -3, 0, 5, 9]
+#   可能的 BST 根节点: 0（左半 [-10,-3]，右半 [5,9]）
+#   结果: [0, -3, 9, -10, null, 5]
+
+from typing import Optional, List
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def sortedArrayToBST(nums: List[int]) -> Optional[TreeNode]:
+    \"\"\"将升序数组转换为高度平衡的 BST\"\"\"
+    def build(l: int, r: int) -> Optional[TreeNode]:
+        if l > r:
+            return None
+        mid = (l + r) // 2  # ← 中点（左中点）
+        root = TreeNode(nums[mid])
+        root.left = build(l, mid - 1)
+        root.right = build(mid + 1, r)
+        return root
+    return None"""
+explanation = "**第 3 步：递归构建左右子树**\n\n```python\nroot.left = build(l, mid - 1)\nroot.right = build(mid + 1, r)\nreturn root\n```\n\n**递归范围划分**\n\n| 子树 | 数组范围 | 含义 |\n|------|---------|------|\n| `root.left` | `nums[l..mid-1]` | 严格小于 `nums[mid]` |\n| `root.right` | `nums[mid+1..r]` | 严格大于 `nums[mid]` |\n\n**示例追踪** (`nums = [-10, -3, 0, 5, 9]`)\n\n```\nbuild(0, 4): mid=2, root=0\n  ├─ build(0, 1): mid=0, root=-10\n  │   └─ build(1, 1): mid=1, root=-3\n  └─ build(3, 4): mid=3, root=5\n      └─ build(4, 4): mid=4, root=9\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完整代码 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 108. 将有序数组转换为二叉搜索树
+# 给定一个升序排列的整数数组 nums
+# 将其转换为一棵高度平衡的二叉搜索树（BST）
+#
+# 关键定义:
+#   - BST: 左子树 < 根 < 右子树
+#   - 高度平衡: 每个节点的左右子树高度差不超过 1
+#
+# 示例:
+#   nums = [-10, -3, 0, 5, 9]
+#   可能的 BST 根节点: 0（左半 [-10,-3]，右半 [5,9]）
+#   结果: [0, -3, 9, -10, null, 5]
+
+from typing import Optional, List
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def sortedArrayToBST(nums: List[int]) -> Optional[TreeNode]:
+    \"\"\"将升序数组转换为高度平衡的 BST\"\"\"
+    def build(l: int, r: int) -> Optional[TreeNode]:
+        if l > r:
+            return None
+        mid = (l + r) // 2  # ← 中点（左中点）
+        root = TreeNode(nums[mid])
+        root.left = build(l, mid - 1)
+        root.right = build(mid + 1, r)
+        return root
+    return build(0, len(nums) - 1)"""
+explanation = "**最终结果**\n\n✅ 分治 + 中点为根 构造完成\n\n```\n输入: nums = [-10, -3, 0, 5, 9]\n输出树:\n        0\n       / \\\n     -3   9\n     /   /\n   -10  5\n\n层序遍历: [0, -3, 9, -10, null, 5]\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个节点访问一次 |\n| 空间复杂度 | O(log n) — 递归栈深度等于树高 |\n\n**关键洞察**\n\n- 升序数组 + 中点为根 = 同时满足 BST 性质与高度平衡\n- 分治天然把问题拆为两个子问题，递归基为 `l > r`（空子树）\n- 整棵树的中序遍历恰好等于原数组"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[-10, -3, 0, 5, 9]", result = "[0, -3, 9, -10, 5]", highlightedIndices = [0, 1, 2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(log n)  # 递归栈"
+approach = "分治 + 中点为根"
+keyInsight = "中点作根保证左右子数组长度差 ≤1 → 高度平衡；BST 性质 = 升序数组分治天然满足"

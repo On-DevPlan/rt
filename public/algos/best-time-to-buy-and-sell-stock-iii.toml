@@ -1,0 +1,163 @@
+[algorithm]
+id = "best-time-to-buy-and-sell-stock-iii"
+title = "买卖股票的最佳时机 III"
+titleEn = "Best Time to Buy and Sell Stock III"
+difficulty = "hard"
+tags = ["array", "dynamic-programming"]
+testCase = "prices = [3, 3, 5, 0, 0, 3, 1, 4]"
+expectedOutput = "6"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 123. 买卖股票的最佳时机 III
+# 最多完成 2 笔交易，求最大利润
+#
+# 关键约束:
+#   - 每天可以买入或卖出（但不能同一天同时买卖）
+#   - 最多 2 笔完整交易（买入+卖出=1笔）
+#   - 必须先买入才能卖出
+#   - 卖出后才能开始下一笔交易
+#
+# 示例:
+#   prices = [3, 3, 5, 0, 0, 3, 1, 4]
+#   第1笔: 第4天买入(0), 第6天卖出(3) → 利润 3
+#   第2笔: 第7天买入(1), 第8天卖出(4) → 利润 3
+#   总利润: 6"""
+explanation = "**问题分析**\n\n给定股票价格数组，最多完成 **2 笔交易**（每笔=买入+卖出），求最大利润。\n\n**状态定义**（关键洞察）\n\n用 4 个状态跟踪全程最优值：\n\n| 状态 | 含义 |\n|------|------|\n| `hold1` | 第1次持有股票时的最大收益（负数=支出） |\n| `released1` | 第1次卖出后的最大收益（正数=利润） |\n| `hold2` | 第2次持有股票时的最大收益 |\n| `released2` | 第2次卖出后的最大收益（最终答案） |\n\n> **核心思想**：每个状态都取「保持原状态」和「转换到新状态」的最大值，确保全程最优。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 123. 买卖股票的最佳时机 III
+# 最多完成 2 笔交易，求最大利润
+#
+# 关键约束:
+#   - 每天可以买入或卖出（但不能同一天同时买卖）
+#   - 最多 2 笔完整交易（买入+卖出=1笔）
+#   - 必须先买入才能卖出
+#   - 卖出后才能开始下一笔交易
+#
+# 示例:
+#   prices = [3, 3, 5, 0, 0, 3, 1, 4]
+#   第1笔: 第4天买入(0), 第6天卖出(3) → 利润 3
+#   第2笔: 第7天买入(1), 第8天卖出(4) → 利润 3
+#   总利润: 6
+
+from typing import List
+
+def maxProfit(prices: List[int]) -> int:
+    \"\"\"返回最多 2 笔交易的最大利润。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 接收参数：`prices` — 每日股价数组\n- 返回值：`int` — 最大利润\n- 使用类型注解明确参数类型\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化状态 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化状态"
+titleEn = "Initialize State"
+code = """# 123. 买卖股票的最佳时机 III
+# 最多完成 2 笔交易，求最大利润
+#
+# 关键约束:
+#   - 每天可以买入或卖出（但不能同一天同时买卖）
+#   - 最多 2 笔完整交易（买入+卖出=1笔）
+#   - 必须先买入才能卖出
+#   - 卖出后才能开始下一笔交易
+#
+# 示例:
+#   prices = [3, 3, 5, 0, 0, 3, 1, 4]
+#   第1笔: 第4天买入(0), 第6天卖出(3) → 利润 3
+#   第2笔: 第7天买入(1), 第8天卖出(4) → 利润 3
+#   总利润: 6
+
+from typing import List
+
+def maxProfit(prices: List[int]) -> int:
+    \"\"\"返回最多 2 笔交易的最大利润。\"\"\"
+    hold1, hold2 = -float('inf'), -float('inf')
+    released1, released2 = 0, 0"""
+explanation = "**第 2 步：初始化 4 个状态**\n\n```\n初始状态:\n  hold1 = -∞     (尚未买入第1次)\n  released1 = 0   (尚未卖出第1次)\n  hold2 = -∞     (尚未买入第2次)\n  released2 = 0   (尚未卖出第2次)\n```\n\n| 状态 | 初始值 | 含义 |\n|------|--------|------|\n| `hold1` | `-∞` | 不可能持有（还没开始） |\n| `released1` | `0` | 没卖出就没利润 |\n| `hold2` | `-∞` | 不可能第2次持有 |\n| `released2` | `0` | 最终答案初始为 0 |\n\n> 使用 `-float('inf')` 确保第一次买入时一定会更新状态。"
+visualizationType = "code-only"
+
+# ── Step 3: 状态转移 ────────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "状态转移"
+titleEn = "State Transition"
+code = """# 123. 买卖股票的最佳时机 III
+# 最多完成 2 笔交易，求最大利润
+#
+# 关键约束:
+#   - 每天可以买入或卖出（但不能同一天同时买卖）
+#   - 最多 2 笔完整交易（买入+卖出=1笔）
+#   - 必须先买入才能卖出
+#   - 卖出后才能开始下一笔交易
+#
+# 示例:
+#   prices = [3, 3, 5, 0, 0, 3, 1, 4]
+#   第1笔: 第4天买入(0), 第6天卖出(3) → 利润 3
+#   第2笔: 第7天买入(1), 第8天卖出(4) → 利润 3
+#   总利润: 6
+
+from typing import List
+
+def maxProfit(prices: List[int]) -> int:
+    \"\"\"返回最多 2 笔交易的最大利润。\"\"\"
+    hold1, hold2 = -float('inf'), -float('inf')
+    released1, released2 = 0, 0
+    for price in prices:
+        hold1 = max(hold1, -price)
+        released1 = max(released1, hold1 + price)
+        hold2 = max(hold2, released1 - price)
+        released2 = max(released2, hold2 + price)"""
+explanation = "**第 3 步：遍历价格，更新 4 个状态**\n\n**状态转移方程**（每个状态都是「保持」vs「转换」的最大值）\n\n| 状态 | 转移 | 含义 |\n|------|------|------|\n| `hold1` | `max(hold1, -price)` | 保持原持有 或 用当前价格买入 |\n| `released1` | `max(released1, hold1 + price)` | 保持原利润 或 用当前价格卖出 |\n| `hold2` | `max(hold2, released1 - price)` | 保持原持有 或 用第1笔利润买入 |\n| `released2` | `max(released2, hold2 + price)` | 保持原利润 或 用当前价格卖出 |\n\n**示例执行（prices = [3, 3, 5]）**\n\n```\nprice=3:  hold1=-3, released1=0, hold2=-3, released2=0\nprice=3:  hold1=-3, released1=0, hold2=-3, released2=0\nprice=5:  hold1=-3, released1=2, hold2=-3, released2=2\n```\n\n> 注意顺序：必须先更新 `released1` 再更新 `hold2`，因为第2次买入依赖第1次卖出。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ────────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 123. 买卖股票的最佳时机 III
+# 最多完成 2 笔交易，求最大利润
+#
+# 关键约束:
+#   - 每天可以买入或卖出（但不能同一天同时买卖）
+#   - 最多 2 笔完整交易（买入+卖出=1笔）
+#   - 必须先买入才能卖出
+#   - 卖出后才能开始下一笔交易
+#
+# 示例:
+#   prices = [3, 3, 5, 0, 0, 3, 1, 4]
+#   第1笔: 第4天买入(0), 第6天卖出(3) → 利润 3
+#   第2笔: 第7天买入(1), 第8天卖出(4) → 利润 3
+#   总利润: 6
+
+from typing import List
+
+def maxProfit(prices: List[int]) -> int:
+    \"\"\"返回最多 2 笔交易的最大利润。\"\"\"
+    hold1, hold2 = -float('inf'), -float('inf')
+    released1, released2 = 0, 0
+    for price in prices:
+        hold1 = max(hold1, -price)
+        released1 = max(released1, hold1 + price)
+        hold2 = max(hold2, released1 - price)
+        released2 = max(released2, hold2 + price)
+    return released2"""
+explanation = "**最终结果**\n\n✅ 动态规划完成，返回 `released2`\n\n```\n输入: prices = [3, 3, 5, 0, 0, 3, 1, 4]\n输出: 6\n\n第1笔: 第4天买入(0), 第6天卖出(3) → 利润 3\n第2笔: 第7天买入(1), 第8天卖出(4) → 利润 3\n总计: 3 + 3 = 6\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | **O(n)** — 遍历一次价格数组 |\n| 空间复杂度 | **O(1)** — 只用 4 个变量 |\n\n**核心思想**\n\n- 4 个状态覆盖所有可能情况\n- 每次取最大值确保全程最优\n- 不需要记录具体交易日期，只关心最大利润\n- 可扩展到 k 笔交易（需用二维数组）"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[3, 3, 5, 0, 0, 3, 1, 4]", result = "6", highlightedIndices = [3, 5, 6, 7] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "动态规划（状态机）"
+keyInsight = "4 个状态：第1次持有、第1次卖出、第2次持有、第2次卖出；每次交易完成后才能开始下一笔"

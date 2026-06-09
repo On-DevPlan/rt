@@ -1,0 +1,243 @@
+[algorithm]
+id = "word-search-ii"
+title = "单词搜索 II"
+titleEn = "Word Search II"
+difficulty = "hard"
+tags = ["backtracking", "trie", "array", "string", "matrix"]
+testCase = "board = [[\"o\",\"a\",\"a\",\"n\"],[\"e\",\"t\",\"a\",\"e\"],[\"i\",\"h\",\"k\",\"r\"],[\"i\",\"f\",\"l\",\"v\"]], words = [\"oath\",\"pea\",\"eat\",\"rain\"]"
+expectedOutput = "[\"eat\", \"oath\"]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 单词搜索 II
+# 在 m×n 二维网格 board 中搜索字典 words 里的所有单词
+# 每个单词必须按相邻格子（上下左右四方向）的字母顺序组成
+# 同一个格子在一个单词中只能使用一次
+#
+# 关键约束:
+#   每个格子最多走一次（visited 标记）
+#   单词长度任意，需要从 words 中找出所有能拼出的单词
+#
+# 示例:
+#   board = [[\"o\",\"a\",\"a\",\"n\"],
+#            [\"e\",\"t\",\"a\",\"e\"],
+#            [\"i\",\"h\",\"k\",\"r\"],
+#            [\"i\",\"f\",\"l\",\"v\"]]
+#   words = [\"oath\",\"pea\",\"eat\",\"rain\"]
+#   结果: [\"eat\", \"oath\"]"""
+explanation = "**问题分析**\n\n要在二维字符网格中找出字典里**所有能拼出的单词**：\n\n- 每个单词由**相邻格子**（上下左右四方向）的字母组成\n- 同一格子在**同一单词路径**中只能使用一次\n- 返回所有能拼出的单词（去重）\n\n**暴力思路对比**\n\n| 方法 | 时间复杂度 | 问题 |\n|------|----------|------|\n| 对每个 word 单独 DFS | O(W·m·n·4^L) | 重复遍历 board |\n| **Trie + DFS** | **O(m·n·4^L)** | 一次性多路匹配 |\n\n> 关键思想：把 `words` 建进 Trie，从 board 每个格子出发 DFS，**沿 Trie 路径匹配**，命中 `is_end` 时收集单词。找到后把 `is_end` 置为 `false`（剪枝），避免重复。"
+visualizationType = "intro"
+
+# ── Step 1: TrieNode 类 + Trie 建树 ──────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "TrieNode 类"
+titleEn = "TrieNode Class"
+code = """# 单词搜索 II
+# 在 m×n 二维网格 board 中搜索字典 words 里的所有单词
+# 每个单词必须按相邻格子（上下左右四方向）的字母顺序组成
+# 同一个格子在一个单词中只能使用一次
+#
+# 关键约束:
+#   每个格子最多走一次（visited 标记）
+#   单词长度任意，需要从 words 中找出所有能拼出的单词
+#
+# 示例:
+#   board = [[\"o\",\"a\",\"a\",\"n\"],
+#            [\"e\",\"t\",\"a\",\"e\"],
+#            [\"i\",\"h\",\"k\",\"r\"],
+#            [\"i\",\"f\",\"l\",\"v\"]]
+#   words = [\"oath\",\"pea\",\"eat\",\"rain\"]
+#   结果: [\"eat\", \"oath\"]
+
+from typing import List
+
+class TrieNode:
+    \"\"\"Trie 节点\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+        self.word = None"""
+explanation = "**第 1 步：Trie 节点定义**\n\nTrie（前缀树）每个节点保存：\n\n| 字段 | 作用 |\n|------|------|\n| `children` | 字典 `{字符 → 子节点}` |\n| `is_end` | 是否为某单词结尾 |\n| `word` | 到达此节点对应的完整单词（仅结尾有值） |\n\n**为什么用 Trie？**\n\n- 把 `words` 预建为 Trie 后，DFS 时只要沿着 Trie 走就能**同时匹配多个前缀**\n- 在 Trie 中找不到路径就**立即剪枝**，避免无谓的搜索\n- `word` 字段存储完整单词，避免回溯路径时再拼字符串"
+visualizationType = "code-only"
+
+# ── Step 2: findWords 函数 + Trie 构建 ────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "Trie 构建"
+titleEn = "Build Trie"
+code = """# 单词搜索 II
+# 在 m×n 二维网格 board 中搜索字典 words 里的所有单词
+# 每个单词必须按相邻格子（上下左右四方向）的字母顺序组成
+# 同一个格子在一个单词中只能使用一次
+#
+# 关键约束:
+#   每个格子最多走一次（visited 标记）
+#   单词长度任意，需要从 words 中找出所有能拼出的单词
+#
+# 示例:
+#   board = [[\"o\",\"a\",\"a\",\"n\"],
+#            [\"e\",\"t\",\"a\",\"e\"],
+#            [\"i\",\"h\",\"k\",\"r\"],
+#            [\"i\",\"f\",\"l\",\"v\"]]
+#   words = [\"oath\",\"pea\",\"eat\",\"rain\"]
+#   结果: [\"eat\", \"oath\"]
+
+from typing import List
+
+class TrieNode:
+    \"\"\"Trie 节点\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+        self.word = None
+
+def findWords(board: List[List[str]], words: List[str]) -> List[str]:
+    \"\"\"返回网格中能找到的所有单词\"\"\"
+    root = TrieNode()
+    for w in words:
+        node = root
+        for ch in w:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+        node.word = w"""
+explanation = "**第 2 步：构建 Trie**\n\n遍历 `words`，逐字符插入 Trie：\n\n```python\nfor w in words:\n    node = root\n    for ch in w:\n        if ch not in node.children:\n            node.children[ch] = TrieNode()\n        node = node.children[ch]\n    node.is_end = True   # 标记单词结尾\n    node.word = w        # 记录完整单词\n```\n\n**Trie 结构示例（words = [oath, pea, eat, rain]）**\n\n```\nroot\n├── o ── a ── t ── h  (is_end=True, word=\"oath\")\n├── p ── e ── a       (is_end=True, word=\"pea\")\n├── e ── a ── t       (is_end=True, word=\"eat\")\n└── r ── a ── i ── n  (is_end=True, word=\"rain\")\n```\n\n> `is_end` 用来在 DFS 时判断是否拼出了一个完整单词。`word` 直接存字符串省去路径拼接。"
+visualizationType = "code-only"
+
+# ── Step 3: dfs 函数 + 四方向递归 ─────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "DFS 回溯"
+titleEn = "DFS Backtracking"
+code = """# 单词搜索 II
+# 在 m×n 二维网格 board 中搜索字典 words 里的所有单词
+# 每个单词必须按相邻格子（上下左右四方向）的字母顺序组成
+# 同一个格子在一个单词中只能使用一次
+#
+# 关键约束:
+#   每个格子最多走一次（visited 标记）
+#   单词长度任意，需要从 words 中找出所有能拼出的单词
+#
+# 示例:
+#   board = [[\"o\",\"a\",\"a\",\"n\"],
+#            [\"e\",\"t\",\"a\",\"e\"],
+#            [\"i\",\"h\",\"k\",\"r\"],
+#            [\"i\",\"f\",\"l\",\"v\"]]
+#   words = [\"oath\",\"pea\",\"eat\",\"rain\"]
+#   结果: [\"eat\", \"oath\"]
+
+from typing import List
+
+class TrieNode:
+    \"\"\"Trie 节点\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+        self.word = None
+
+def findWords(board: List[List[str]], words: List[str]) -> List[str]:
+    \"\"\"返回网格中能找到的所有单词\"\"\"
+    root = TrieNode()
+    for w in words:
+        node = root
+        for ch in w:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+        node.word = w
+    m, n = len(board), len(board[0])
+    res = []
+    def dfs(r: int, c: int, node: TrieNode) -> None:
+        ch = board[r][c]
+        if ch not in node.children:
+            return
+        nxt = node.children[ch]
+        if nxt.is_end:
+            res.append(nxt.word)
+            nxt.is_end = False
+        board[r][c] = '#'
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < m and 0 <= nc < n and board[nr][nc] != '#':
+                dfs(nr, nc, nxt)
+        board[r][c] = ch"""
+explanation = "**第 3 步：DFS 回溯核心**\n\n`dfs(r, c, node)` 表示「当前在 `(r, c)` 格子，处于 Trie 的 `node` 节点」。\n\n**三步逻辑**\n\n1. **剪枝**：`board[r][c]` 字符不在 `node.children` 中 → Trie 无此前缀，立即返回\n2. **收集**：到达 `nxt.is_end = True` 时，把 `nxt.word` 收入结果，并把 `is_end` 置 `false`（**关键：防止同一单词重复收集**）\n3. **回溯**：先把 `board[r][c]` 改为 `'#'` 标记已访问，递归四方向，递归结束后恢复原字符\n\n**为什么原地修改 board？**\n\n- 比维护 `visited[m][n]` 数组省空间\n- 恢复字符让其他 DFS 路径不受影响\n\n| 方向 | 偏移 |\n|------|------|\n| 右 | `(0, 1)` |\n| 左 | `(0, -1)` |\n| 下 | `(1, 0)` |\n| 上 | `(-1, 0)` |"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 单词搜索 II
+# 在 m×n 二维网格 board 中搜索字典 words 里的所有单词
+# 每个单词必须按相邻格子（上下左右四方向）的字母顺序组成
+# 同一个格子在一个单词中只能使用一次
+#
+# 关键约束:
+#   每个格子最多走一次（visited 标记）
+#   单词长度任意，需要从 words 中找出所有能拼出的单词
+#
+# 示例:
+#   board = [[\"o\",\"a\",\"a\",\"n\"],
+#            [\"e\",\"t\",\"a\",\"e\"],
+#            [\"i\",\"h\",\"k\",\"r\"],
+#            [\"i\",\"f\",\"l\",\"v\"]]
+#   words = [\"oath\",\"pea\",\"eat\",\"rain\"]
+#   结果: [\"eat\", \"oath\"]
+
+from typing import List
+
+class TrieNode:
+    \"\"\"Trie 节点\"\"\"
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+        self.word = None
+
+def findWords(board: List[List[str]], words: List[str]) -> List[str]:
+    \"\"\"返回网格中能找到的所有单词\"\"\"
+    root = TrieNode()
+    for w in words:
+        node = root
+        for ch in w:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+        node.word = w
+    m, n = len(board), len(board[0])
+    res = []
+    def dfs(r: int, c: int, node: TrieNode) -> None:
+        ch = board[r][c]
+        if ch not in node.children:
+            return
+        nxt = node.children[ch]
+        if nxt.is_end:
+            res.append(nxt.word)
+            nxt.is_end = False
+        board[r][c] = '#'
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < m and 0 <= nc < n and board[nr][nc] != '#':
+                dfs(nr, nc, nxt)
+        board[r][c] = ch
+    for i in range(m):
+        for j in range(n):
+            dfs(i, j, root)
+    return res"""
+explanation = "**最终结果**\n\n主循环遍历 board 每个格子作为起点启动 DFS：\n\n```python\nfor i in range(m):\n    for j in range(n):\n        dfs(i, j, root)\nreturn res\n```\n\n**示例执行轨迹（节选）**\n\n```\nboard[0][0] = 'o' → 沿 Trie 走 'o'→'a'→'t'→'h' → 命中 \"oath\"\nboard[1][2] = 'a' → 沿 Trie 走 'a'→... (无 'e'/'p'/'r' 前缀)\nboard[1][1] = 't' → 't' 不在 root.children → 立即剪枝\nboard[1][3] = 'e' → 沿 Trie 走 'e'→'a'→'t' → 命中 \"eat\"\n```\n\n**复杂度分析**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m·n·4^L)，L 为单词最大长度 |\n| 空间复杂度 | O(W·L)，W 为单词数 |\n\n**关键技巧**\n\n1. **Trie 剪枝**：找不到前缀立即返回，避免指数爆炸\n2. **命中即清**：`nxt.is_end = False` 防止同一单词被重复收集\n3. **原地标记**：用 `'#'` 标记访问，回溯时还原，比 `visited` 数组更省空间"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"oath\", \"pea\", \"eat\", \"rain\"]", result = "[\"eat\", \"oath\"]", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(m*n*4^L)  # L 单词最大长度"
+spaceComplexity = "O(total chars in words)"
+approach = "Trie 预建 + DFS 回溯"
+keyInsight = "Trie 沿路径匹配剪枝；找到单词后 is_end=False 防止重复；board 原地标记 + 恢复避免 visited 数组"

@@ -1,0 +1,164 @@
+[algorithm]
+id = "simplify-path"
+title = "简化路径"
+titleEn = "Simplify Path"
+difficulty = "medium"
+tags = ["string", "stack"]
+testCase = "path = \"/a/./b/../../c/\""
+expectedOutput = "\"/c\""
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 简化路径
+# 给定一个 Unix 风格的文件绝对路径 path
+# 化简为规范路径（canonical path）
+#
+# 规则:
+#   一个点 '.'  表示当前目录，忽略
+#   两个点 '..' 表示上一级目录，需回退（弹出）
+#   多个连续 '/' 视为单个 '/'
+#   路径始终以 '/' 开头
+#   末尾不能有 '/'（根目录除外）
+#
+# 示例:
+#   /home/                  -> /home
+#   /../                    -> /
+#   /home//foo/             -> /home/foo
+#   /a/./b/../../c/         -> /c"""
+explanation = "**问题分析**\n\n输入是一个 Unix 风格的绝对路径字符串，需要输出化简后的规范路径。\n\n**三种特殊片段：**\n\n| 片段 | 含义 | 处理方式 |\n|------|------|----------|\n| `.` | 当前目录 | 忽略 |\n| `..` | 上一级目录 | 弹出一个目录（若栈为空则不动）|\n| `''` | 连续斜杠产生的空段 | 忽略 |\n| 其他 | 目录名 | 入栈 |\n\n**核心思路：栈**\n\n- 按 `/` 分割成片段\n- 遍历片段，按规则入栈或弹栈\n- 最后用 `/` 拼接栈内目录\n\n> 这是一个经典的**栈应用**：路径回退天然契合 LIFO 语义。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 简化路径
+# 给定一个 Unix 风格的文件绝对路径 path
+# 化简为规范路径（canonical path）
+#
+# 规则:
+#   一个点 '.'  表示当前目录，忽略
+#   两个点 '..' 表示上一级目录，需回退（弹出）
+#   多个连续 '/' 视为单个 '/'
+#   路径始终以 '/' 开头
+#   末尾不能有 '/'（根目录除外）
+#
+# 示例:
+#   /home/                  -> /home
+#   /../                    -> /
+#   /home//foo/             -> /home/foo
+#   /a/./b/../../c/         -> /c
+
+def simplifyPath(path: str) -> str:
+    \"\"\"将 Unix 风格绝对路径化简为规范路径。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 接收参数 `path: str` — 输入的绝对路径\n- 返回类型 `str` — 化简后的规范路径\n- 文档字符串描述函数用途\n\n> 路径长度 1 ≤ |path| ≤ 3000，由英文字母、数字、`.`、`/` 组成。"
+visualizationType = "code-only"
+
+# ── Step 2: 拆分并初始化栈 ──────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化栈"
+titleEn = "Initialize Stack"
+code = """# 简化路径
+# 给定一个 Unix 风格的文件绝对路径 path
+# 化简为规范路径（canonical path）
+#
+# 规则:
+#   一个点 '.'  表示当前目录，忽略
+#   两个点 '..' 表示上一级目录，需回退（弹出）
+#   多个连续 '/' 视为单个 '/'
+#   路径始终以 '/' 开头
+#   末尾不能有 '/'（根目录除外）
+#
+# 示例:
+#   /home/                  -> /home
+#   /../                    -> /
+#   /home//foo/             -> /home/foo
+#   /a/./b/../../c/         -> /c
+
+def simplifyPath(path: str) -> str:
+    \"\"\"将 Unix 风格绝对路径化简为规范路径。\"\"\"
+    stack = []  # 用列表模拟栈，存放有效目录名"""
+explanation = "**第 2 步：初始化栈**\n\n```python\nstack = []\n```\n\n- 用 Python 列表 `stack` 模拟栈结构\n- 每个元素是一个有效的目录名\n- 栈底对应根目录，栈顶对应当前所在目录\n\n> 列表的 `append()` / `pop()` 时间复杂度为 O(1)，完美适配栈操作。"
+visualizationType = "code-only"
+
+# ── Step 3: 核心循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历处理"
+titleEn = "Process Parts"
+code = """# 简化路径
+# 给定一个 Unix 风格的文件绝对路径 path
+# 化简为规范路径（canonical path）
+#
+# 规则:
+#   一个点 '.'  表示当前目录，忽略
+#   两个点 '..' 表示上一级目录，需回退（弹出）
+#   多个连续 '/' 视为单个 '/'
+#   路径始终以 '/' 开头
+#   末尾不能有 '/'（根目录除外）
+#
+# 示例:
+#   /home/                  -> /home
+#   /../                    -> /
+#   /home//foo/             -> /home/foo
+#   /a/./b/../../c/         -> /c
+
+def simplifyPath(path: str) -> str:
+    \"\"\"将 Unix 风格绝对路径化简为规范路径。\"\"\"
+    stack = []  # 用列表模拟栈，存放有效目录名
+    for p in path.split('/'):
+        if p == '' or p == '.': continue
+        if p == '..':
+            if stack: stack.pop()
+        else:
+            stack.append(p)"""
+explanation = "**第 3 步：按 `/` 拆分并遍历**\n\n`path.split('/')` 会把路径切成片段，例如 `'/a/./b/'` → `['', 'a', '.', 'b', '']`。\n\n**遍历每个片段 `p` 的处理逻辑：**\n\n| `p` 的值 | 含义 | 操作 |\n|----------|------|------|\n| `''` 或 `'.'` | 空段 / 当前目录 | `continue` 跳过 |\n| `'..'` | 上一级 | 若栈非空则 `stack.pop()` |\n| 其他 | 目录名 | `stack.append(p)` |\n\n**示例执行 `/a/./b/../../c/`：**\n\n```\n拆分: ['', 'a', '.', 'b', '..', '..', 'c', '']\n遍历:\n  ''   跳过\n  'a'  入栈 → ['a']\n  '.'  跳过\n  'b'  入栈 → ['a', 'b']\n  '..' 弹出 → ['a']\n  '..' 弹出 → []\n  'c'  入栈 → ['c']\n  ''   跳过\n最终栈: ['c']\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 简化路径
+# 给定一个 Unix 风格的文件绝对路径 path
+# 化简为规范路径（canonical path）
+#
+# 规则:
+#   一个点 '.'  表示当前目录，忽略
+#   两个点 '..' 表示上一级目录，需回退（弹出）
+#   多个连续 '/' 视为单个 '/'
+#   路径始终以 '/' 开头
+#   末尾不能有 '/'（根目录除外）
+#
+# 示例:
+#   /home/                  -> /home
+#   /../                    -> /
+#   /home//foo/             -> /home/foo
+#   /a/./b/../../c/         -> /c
+
+def simplifyPath(path: str) -> str:
+    \"\"\"将 Unix 风格绝对路径化简为规范路径。\"\"\"
+    stack = []  # 用列表模拟栈，存放有效目录名
+    for p in path.split('/'):
+        if p == '' or p == '.': continue
+        if p == '..':
+            if stack: stack.pop()
+        else:
+            stack.append(p)
+    return '/' + '/'.join(stack)"""
+explanation = "**最终结果**\n\n拼接栈内目录，前缀补 `/` 作为根目录。\n\n```python\nreturn '/' + '/'.join(stack)\n```\n\n- `'/' + ''` = `'/'`（栈空时返回根目录）\n- `'/' + '/'.join(['c'])` = `'/c'`\n- `'/' + '/'.join(['home', 'foo'])` = `'/home/foo'`\n\n**验证示例：**\n\n| 输入 | 输出 |\n|------|------|\n| `/home/` | `/home` |\n| `/../` | `/` |\n| `/home//foo/` | `/home/foo` |\n| `/a/./b/../../c/` | `/c` |\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个字符处理一次 |\n| 空间复杂度 | O(n) — 栈最多存 n 个目录名 |\n\n**关键技巧**\n\n- `split('/')` 自动处理连续 `/`（产生空串）和首尾 `/`\n- 栈天然契合 LIFO 回退语义\n- 根目录之上仍是根：栈空时 `..` 不操作"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "['c']", result = "\"/c\"", highlightedIndices = [0] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "栈 + 按 '/' 分割"
+keyInsight = "路径片段的入栈/弹栈天然契合目录的进入/回退，'split' 自动处理连续斜杠"

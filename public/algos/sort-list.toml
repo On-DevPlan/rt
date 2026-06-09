@@ -1,0 +1,220 @@
+[algorithm]
+id = "sort-list"
+title = "排序链表"
+titleEn = "Sort List"
+difficulty = "medium"
+tags = ["linked-list", "two-pointers", "divide-and-conquer", "sorting", "merge-sort"]
+testCase = "head = [4,2,1,3]"
+expectedOutput = "[1,2,3,4]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 148. 排序链表
+# 给定链表的头结点 head，请将其按升序排列并返回排序后的链表
+#
+# 要求:
+#   时间复杂度 O(n log n)
+#   常数级（或对数级）空间复杂度
+#
+# 示例:
+#   head = [4, 2, 1, 3]
+#   结果: [1, 2, 3, 4]"""
+explanation = "**问题分析**\n\n需要在 `O(n log n)` 时间下对链表排序：\n\n- **链表特点**：不支持随机访问，但**支持 O(1) 断开与拼接**\n- **数组排序 vs 链表排序**：\n  - 快排依赖随机访问，链表代价大\n  - 归并排序完美适配链表（分割 + 合并都不需要额外空间）\n\n**核心思路：归并排序（自顶向下）**\n\n| 步骤 | 操作 | 复杂度 |\n|------|------|--------|\n| 1. 分割 | 快慢指针找中点，断链 | O(log n) 层 |\n| 2. 排序 | 递归排序左右两半 | O(n log n) |\n| 3. 合并 | 双指针合并两个有序链表 | O(n) |\n\n> 输入 `head = [4, 2, 1, 3]` 应输出 `[1, 2, 3, 4]`。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + ListNode + 边界 + 快慢指针 ────────────
+[[algorithm.steps]]
+id = 1
+title = "签名与中点"
+titleEn = "Signature & Midpoint"
+code = """# 148. 排序链表
+# 给定链表的头结点 head，请将其按升序排列并返回排序后的链表
+#
+# 要求:
+#   时间复杂度 O(n log n)
+#   常数级（或对数级）空间复杂度
+#
+# 示例:
+#   head = [4, 2, 1, 3]
+#   结果: [1, 2, 3, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def sortList(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"对链表进行升序排序，返回排序后的头结点\"\"\"
+    if not head or not head.next:
+        return head
+    # 快慢指针找中点
+    slow, fast = head, head.next
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    mid = slow.next
+    slow.next = None"""
+explanation = "**第 1 步：定义结构、签名、找中点**\n\n- `ListNode`：链表节点，含 `val` 与 `next`\n- `sortList` 返回排序后的头结点\n- **边界**：空链表或单节点直接返回（天然有序）\n\n**快慢指针找中点**\n\n```\n初始: slow → head, fast → head.next\n每次: slow += 1, fast += 2\n终止: slow 指向中点前一个节点\n```\n\n| 变量 | 含义 |\n|------|------|\n| `slow` | 走一步，最终停在 mid 之前 |\n| `fast` | 走两步，到末尾时 slow 恰好到中点 |\n| `mid` | `slow.next`，即右半链表头 |\n\n> `slow.next = None` 断链，把链表分成两半。"
+visualizationType = "code-only"
+
+# ── Step 2: 递归调用 sortList ────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "递归排序"
+titleEn = "Recursive Sort"
+code = """# 148. 排序链表
+# 给定链表的头结点 head，请将其按升序排列并返回排序后的链表
+#
+# 要求:
+#   时间复杂度 O(n log n)
+#   常数级（或对数级）空间复杂度
+#
+# 示例:
+#   head = [4, 2, 1, 3]
+#   结果: [1, 2, 3, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def sortList(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"对链表进行升序排序，返回排序后的头结点\"\"\"
+    if not head or not head.next:
+        return head
+    # 快慢指针找中点
+    slow, fast = head, head.next
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    mid = slow.next
+    slow.next = None
+    left = sortList(head)
+    right = sortList(mid)
+    return merge(left, right)"""
+explanation = "**第 2 步：递归排序两半**\n\n- `left = sortList(head)`：递归排序左半\n- `right = sortList(mid)`：递归排序右半\n- `return merge(left, right)`：合并两个有序链表\n\n**递归展开**（以 `[4,2,1,3]` 为例）：\n\n```\nsortList([4,2,1,3])\n├── sortList([4,2])  → [2,4]\n│   ├── sortList([4])  → [4]\n│   └── sortList([2])  → [2]\n└── sortList([1,3])  → [1,3]\n    ├── sortList([1])  → [1]\n    └── sortList([3])  → [3]\nmerge([2,4], [1,3])  → [1,2,3,4]\n```\n\n> 递归深度 `O(log n)`，所以空间复杂度是 `O(log n)`（递归栈）。"
+visualizationType = "code-only"
+
+# ── Step 3: merge 函数 + 双指针合并 ──────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "合并函数"
+titleEn = "Merge Function"
+code = """# 148. 排序链表
+# 给定链表的头结点 head，请将其按升序排列并返回排序后的链表
+#
+# 要求:
+#   时间复杂度 O(n log n)
+#   常数级（或对数级）空间复杂度
+#
+# 示例:
+#   head = [4, 2, 1, 3]
+#   结果: [1, 2, 3, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def sortList(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"对链表进行升序排序，返回排序后的头结点\"\"\"
+    if not head or not head.next:
+        return head
+    # 快慢指针找中点
+    slow, fast = head, head.next
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    mid = slow.next
+    slow.next = None
+    left = sortList(head)
+    right = sortList(mid)
+    return merge(left, right)
+
+def merge(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"合并两个有序链表，返回合并后的头结点\"\"\"
+    dummy = ListNode(0)
+    cur = dummy
+    while l1 and l2:
+        if l1.val <= l2.val:
+            cur.next = l1
+            l1 = l1.next
+        else:
+            cur.next = l2
+            l2 = l2.next
+        cur = cur.next
+    cur.next = l1 or l2
+    return dummy.next"""
+explanation = "**第 3 步：实现 merge 函数**\n\n**哨兵节点技巧**\n\n```\ndummy → [哨兵] → 合并结果 ...\n```\n\n用 `dummy = ListNode(0)` 作为虚拟头，避免处理 `head` 为空的边界。\n\n**双指针合并**\n\n| 条件 | 操作 |\n|------|------|\n| `l1.val <= l2.val` | `cur.next = l1`，`l1` 后移 |\n| 否则 | `cur.next = l2`，`l2` 后移 |\n| 任一为空时 | `cur.next = l1 or l2`（拼接剩余） |\n\n**示例合并 `[2,4]` 与 `[1,3]`：**\n\n```\nl1=2, l2=1: 2 > 1 → cur→1, l2→3\nl1=2, l2=3: 2 ≤ 3 → cur→2, l1→4\nl1=4, l2=3: 4 > 3 → cur→3, l2=None\nl1=4, l2=None: 跳出循环 → cur→4\n结果: 1 → 2 → 3 → 4 ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 148. 排序链表
+# 给定链表的头结点 head，请将其按升序排列并返回排序后的链表
+#
+# 要求:
+#   时间复杂度 O(n log n)
+#   常数级（或对数级）空间复杂度
+#
+# 示例:
+#   head = [4, 2, 1, 3]
+#   结果: [1, 2, 3, 4]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def sortList(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"对链表进行升序排序，返回排序后的头结点\"\"\"
+    if not head or not head.next:
+        return head
+    # 快慢指针找中点
+    slow, fast = head, head.next
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    mid = slow.next
+    slow.next = None
+    left = sortList(head)
+    right = sortList(mid)
+    return merge(left, right)
+
+def merge(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"合并两个有序链表，返回合并后的头结点\"\"\"
+    dummy = ListNode(0)
+    cur = dummy
+    while l1 and l2:
+        if l1.val <= l2.val:
+            cur.next = l1
+            l1 = l1.next
+        else:
+            cur.next = l2
+            l2 = l2.next
+        cur = cur.next
+    cur.next = l1 or l2
+    return dummy.next"""
+explanation = "**最终结果**\n\n✅ 链表已成功排序\n\n```\n输入: head = [4, 2, 1, 3]\n输出: [1, 2, 3, 4]\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n log n) — 每层合并 O(n)，共 log n 层 |\n| 空间复杂度 | O(log n) — 自顶向下递归栈 |\n\n**关键技巧**\n\n- **归并排序优于快排**：链表不支持随机访问，归并只需 O(1) 断链与拼接\n- **快慢指针找中点**：slow 走 1 步、fast 走 2 步，O(n) 时间找到中点\n- **哨兵节点**：消除合并时 `head` 为空的边界处理\n- **自顶向下 vs 自底向上**：自顶向下代码更直观，递归栈仅 O(log n)，符合常数级空间的要求"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 4]", result = "[1,2,3,4]", highlightedIndices = [0, 1, 2, 3] }
+
+[algorithm.summary]
+timeComplexity = "O(n log n)"
+spaceComplexity = "O(log n)  # 递归栈（自顶向下）"
+approach = "归并排序 + 快慢指针找中点"
+keyInsight = "链表适合归并不适合快排；快慢指针 O(n) 找中点；自顶向下递归 = O(log n) 空间"

@@ -1,0 +1,160 @@
+[algorithm]
+id = "course-schedule"
+title = "课程表"
+titleEn = "Course Schedule"
+difficulty = "medium"
+tags = ["depth-first-search", "breadth-first-search", "graph", "topological-sort"]
+testCase = "numCourses = 2, prerequisites = [[1,0]]"
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 207. 课程表
+# 判断是否能完成所有课程（等价于检测有向图是否有环）
+# 关键：BFS 拓扑排序 / 入度减一
+#
+# 示例:
+#   numCourses = 2, prerequisites = [[1,0]]
+#   表示: 想上课程 1，必须先上课程 0
+#   结果: true （先上 0，再上 1）"""
+explanation = "**问题分析**\n\n你这个学期必须选修 `numCourses` 门课程，记为 `0` 到 `numCourses - 1`。\n\n某些课程有先修课：`prerequisites[i] = [a, b]`，表示**想上课程 a，必须先上课程 b**。\n\n**示例**：`numCourses = 2, prerequisites = [[1,0]]`\n\n| 课程 | 先修 |\n|------|------|\n| 0 | 无 |\n| 1 | 0 |\n\n> 上完 0 再上 1 即可完成，结果为 `true`。\n\n**核心洞察：图论等价**\n\n把课程视为节点，先修关系视为有向边（b → a）：\n\n| 原问题 | 图问题 |\n|--------|--------|\n| 能完成所有课程 | **有向无环图（DAG）** |\n| 不能完成 | **图中存在环** |\n\n> 所以本题本质是**检测有向图是否有环**。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 建图 ──────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与建图"
+titleEn = "Signature & Build Graph"
+code = """# 207. 课程表
+# 判断是否能完成所有课程（等价于检测有向图是否有环）
+# 关键：BFS 拓扑排序 / 入度减一
+#
+# 示例:
+#   numCourses = 2, prerequisites = [[1,0]]
+#   表示: 想上课程 1，必须先上课程 0
+#   结果: true （先上 0，再上 1）
+
+from typing import List
+from collections import deque, defaultdict
+
+def canFinish(numCourses: int, prerequisites: List[List[int]]) -> bool:
+    \"\"\"判断是否能完成所有课程（无环）\"\"\"
+    indeg = [0] * numCourses
+    graph = defaultdict(list)
+    for a, b in prerequisites:
+        graph[b].append(a)
+        indeg[a] += 1"""
+explanation = "**第 1 步：建图 + 入度数组**\n\n**两个数据结构：**\n\n| 名称 | 含义 |\n|------|------|\n| `indeg[i]` | 节点 `i` 的入度（指向 `i` 的边数），即有几门前置课 |\n| `graph[b]` | `b` 的所有后继（学了 `b` 后能学的课）|\n\n**遍历 `prerequisites`，对每条边 `[a, b]`：**\n\n- `graph[b].append(a)`：加边 `b → a`\n- `indeg[a] += 1`：`a` 的入度加一\n\n**示例**：`prerequisites = [[1,0]]`\n\n```\ngraph = {0: [1]}\nindeg = [0, 1]\n```\n\n> 入度 0 的课程（如课程 0）可以直接学。\n\n**复杂度**：建图 O(E)。"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化队列 + count ──────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化队列"
+titleEn = "Initialize Queue"
+code = """# 207. 课程表
+# 判断是否能完成所有课程（等价于检测有向图是否有环）
+# 关键：BFS 拓扑排序 / 入度减一
+#
+# 示例:
+#   numCourses = 2, prerequisites = [[1,0]]
+#   表示: 想上课程 1，必须先上课程 0
+#   结果: true （先上 0，再上 1）
+
+from typing import List
+from collections import deque, defaultdict
+
+def canFinish(numCourses: int, prerequisites: List[List[int]]) -> bool:
+    \"\"\"判断是否能完成所有课程（无环）\"\"\"
+    indeg = [0] * numCourses
+    graph = defaultdict(list)
+    for a, b in prerequisites:
+        graph[b].append(a)
+        indeg[a] += 1
+    q = deque([i for i in range(numCourses) if indeg[i] == 0])
+    count = 0"""
+explanation = "**第 2 步：把所有入度 0 的节点入队**\n\n**为什么要从入度 0 开始？**\n\n> 入度 0 = 没有任何前置课程 = 第一学期就能上的课。\n\n**队列初始化：**\n\n```python\nq = deque([i for i in range(numCourses) if indeg[i] == 0])\n```\n\n把每个入度为 0 的课程塞进队列作为 BFS 起点。\n\n**计数变量 `count = 0`**\n\n记录「已完成」的课程数。最后用 `count == numCourses` 判断是否全部完成。\n\n**示例**：`indeg = [0, 1]`\n\n```\nq = deque([0])     # 只有课程 0 入度为 0\ncount = 0\n```\n\n> 课程 1 入度为 1（依赖课程 0），暂时不能学。"
+visualizationType = "code-only"
+
+# ── Step 3: BFS 主循环 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "BFS 主循环"
+titleEn = "BFS Main Loop"
+code = """# 207. 课程表
+# 判断是否能完成所有课程（等价于检测有向图是否有环）
+# 关键：BFS 拓扑排序 / 入度减一
+#
+# 示例:
+#   numCourses = 2, prerequisites = [[1,0]]
+#   表示: 想上课程 1，必须先上课程 0
+#   结果: true （先上 0，再上 1）
+
+from typing import List
+from collections import deque, defaultdict
+
+def canFinish(numCourses: int, prerequisites: List[List[int]]) -> bool:
+    \"\"\"判断是否能完成所有课程（无环）\"\"\"
+    indeg = [0] * numCourses
+    graph = defaultdict(list)
+    for a, b in prerequisites:
+        graph[b].append(a)
+        indeg[a] += 1
+    q = deque([i for i in range(numCourses) if indeg[i] == 0])
+    count = 0
+    while q:
+        node = q.popleft()
+        count += 1
+        for nb in graph[node]:
+            indeg[nb] -= 1
+            if indeg[nb] == 0:
+                q.append(nb)"""
+explanation = "**第 3 步：BFS 拓扑排序主循环**\n\n**循环逻辑：**\n\n```\nwhile q 不空:\n    弹出节点 node            ← 学一门课\n    count += 1               ← 已完成 +1\n    对 node 的每个后继 nb:\n        indeg[nb] -= 1       ← 删掉这条出边（完成前置后入度减少）\n        若 indeg[nb] == 0:\n            nb 入队          ← nb 现在没有前置了\n```\n\n**「减入度」的直觉**\n\n把课程 `node` 看作已学完，那它的所有后继都少了一门前置课。把这条边「删除」等价于「入度减一」。\n\n**示例执行**（`q = [0]`）：\n\n```\n弹出 node=0, count=1\n  graph[0] = [1]: nb=1, indeg[1] 从 1 减到 0, 入队\n循环: q = [1]\n弹出 node=1, count=2\n  graph[1] = [] (没有后继)\n循环: q = [] 结束\n```\n\n> 每次「减入度」都对应拓扑序上移除一个节点；如果存在环，环上的节点永远轮不到入度 0。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 207. 课程表
+# 判断是否能完成所有课程（等价于检测有向图是否有环）
+# 关键：BFS 拓扑排序 / 入度减一
+#
+# 示例:
+#   numCourses = 2, prerequisites = [[1,0]]
+#   表示: 想上课程 1，必须先上课程 0
+#   结果: true （先上 0，再上 1）
+
+from typing import List
+from collections import deque, defaultdict
+
+def canFinish(numCourses: int, prerequisites: List[List[int]]) -> bool:
+    \"\"\"判断是否能完成所有课程（无环）\"\"\"
+    indeg = [0] * numCourses
+    graph = defaultdict(list)
+    for a, b in prerequisites:
+        graph[b].append(a)
+        indeg[a] += 1
+    q = deque([i for i in range(numCourses) if indeg[i] == 0])
+    count = 0
+    while q:
+        node = q.popleft()
+        count += 1
+        for nb in graph[node]:
+            indeg[nb] -= 1
+            if indeg[nb] == 0:
+                q.append(nb)
+    return count == numCourses"""
+explanation = "**最终结果**\n\n✅ BFS 拓扑排序 + 入度减一 完成环检测\n\n```\n输入: numCourses = 2, prerequisites = [[1,0]]\n输出: true   （count=2 == numCourses）\n```\n\n**核心判断：`return count == numCourses`**\n\n| 情况 | count | 结果 |\n|------|-------|------|\n| 无环（DAG） | 等于 `numCourses` | `true` |\n| 有环 | 小于 `numCourses`（环上节点永远无法入队） | `false` |\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(V + E) — 每个节点和每条边最多处理一次 |\n| 空间复杂度 | O(V + E) — `graph` + `indeg` + 队列 |\n\n**关键技巧：拓扑排序 = 环检测**\n\n- 把每门课看成有向图节点，先修关系看成边\n- 入度 0 = 无前置，可以先学\n- 学完后删除出边（入度减一），新产生的入度 0 继续入队\n- 若所有节点都能被遍历完，则图中无环\n\n**DFS 替代方案（三色标记法）**\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| **BFS 拓扑排序** | **O(V + E)** | **O(V + E)** |\n| DFS 三色标记 | O(V + E) | O(V) 递归栈 |\n\n> BFS 解法思路更直观（剥洋葱），DFS 解法空间常数略小。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[0, 1]", result = "true", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(V + E)"
+spaceComplexity = "O(V + E)  # graph + indeg + queue"
+approach = "BFS 拓扑排序 + 入度减一"
+keyInsight = "入度 0 = 无前置 = 可学；删除出边后入度变 0 的继续入队；count == V 即无环"

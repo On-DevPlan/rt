@@ -1,0 +1,261 @@
+[algorithm]
+id = "substring-with-concatenation-of-all-words"
+title = "串联所有单词的子串"
+titleEn = "Substring with Concatenation of All Words"
+difficulty = "hard"
+tags = ["hash-table", "string", "sliding-window"]
+testCase = "s = \"barfoothefoobarman\", words = [\"foo\",\"bar\"]"
+expectedOutput = "[0, 9]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 串联所有单词的子串
+# 给定一个字符串 s 和一个长度相同的单词数组 words
+# 找出 s 中恰好由 words 所有单词按某种排列拼接形成的子串的起始下标
+#
+# 关键约束:
+#   words 中所有单词长度相同，记为 L
+#   words 长度为 k，总字符数 m = k * L
+#   子串必须是 words 中所有单词的某种排列拼接而成
+#
+# 示例:
+#   s = "barfoothefoobarman"
+#   words = ["foo", "bar"]
+#   L = 3, k = 2
+#   s[0:6] = "barfoo" → "bar" + "foo" ✓
+#   s[9:15] = "foobar" → "foo" + "bar" ✓
+#   结果: [0, 9]"""
+explanation = "**问题分析**\n\n给定字符串 `s` 和等长单词数组 `words`，要求找出 `s` 中**所有**由 `words` 全部单词恰好拼接一次的子串起始下标。\n\n| 符号 | 含义 |\n|------|------|\n| `n` | 字符串 s 的长度 |\n| `L` | 单个单词长度（`len(words[0])`） |\n| `k` | 单词个数（`len(words)`） |\n| `m` | words 总字符数（`k * L`） |\n\n**朴素思路 vs 滑动窗口**\n\n| 方法 | 思路 | 时间 |\n|------|------|------|\n| 朴素枚举 | 每个起点截取 `m` 字符，切词比较 | O(n·m) |\n| **滑动窗口** | **按偏移量分组并滑动比较** | **O(n·L)** |\n\n> 关键洞察：按 `offset ∈ [0, L)` 分 `L` 组独立滑动窗口，每组窗口内比较 O(m) 字符，总计 O(n·L)。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 串联所有单词的子串
+# 给定一个字符串 s 和一个长度相同的单词数组 words
+# 找出 s 中恰好由 words 所有单词按某种排列拼接形成的子串的起始下标
+#
+# 关键约束:
+#   words 中所有单词长度相同，记为 L
+#   words 长度为 k，总字符数 m = k * L
+#   子串必须是 words 中所有单词的某种排列拼接而成
+#
+# 示例:
+#   s = "barfoothefoobarman"
+#   words = ["foo", "bar"]
+#   L = 3, k = 2
+#   s[0:6] = "barfoo" → "bar" + "foo" ✓
+#   s[9:15] = "foobar" → "foo" + "bar" ✓
+#   结果: [0, 9]
+
+from typing import List
+from collections import Counter
+
+def findSubstring(s: str, words: List[str]) -> List[int]:
+    \"\"\"返回 s 中由 words 全部单词恰好拼接一次的子串起始下标列表。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- **参数**：`s: str`、`words: List[str]`\n- **返回**：`List[int]`，所有合法子串的起始下标\n- **辅助导入**：`from collections import Counter` 用于统计词频\n- **文档字符串**：使用 `\"\"\"...\"\"\"` 描述函数用途（已在 TOML 中转义）\n\n> 边界处理将在下一步加入：空串或空 words 直接返回 `[]`。"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化与目标词频 ──────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化词频"
+titleEn = "Initialize Word Frequency"
+code = """# 串联所有单词的子串
+# 给定一个字符串 s 和一个长度相同的单词数组 words
+# 找出 s 中恰好由 words 所有单词按某种排列拼接形成的子串的起始下标
+#
+# 关键约束:
+#   words 中所有单词长度相同，记为 L
+#   words 长度为 k，总字符数 m = k * L
+#   子串必须是 words 中所有单词的某种排列拼接而成
+#
+# 示例:
+#   s = "barfoothefoobarman"
+#   words = ["foo", "bar"]
+#   L = 3, k = 2
+#   s[0:6] = "barfoo" → "bar" + "foo" ✓
+#   s[9:15] = "foobar" → "foo" + "bar" ✓
+#   结果: [0, 9]
+
+from typing import List
+from collections import Counter
+
+def findSubstring(s: str, words: List[str]) -> List[int]:
+    \"\"\"返回 s 中由 words 全部单词恰好拼接一次的子串起始下标列表。\"\"\"
+    if not s or not words:
+        return []
+    n, m, k = len(s), len(words[0]), len(words)
+    need = Counter(words)
+    res = []"""
+explanation = "**第 2 步：边界处理 + 变量与目标词频**\n\n**边界处理**\n\n```python\nif not s or not words:\n    return []\n```\n\n**核心变量**\n\n| 变量 | 含义 |\n|------|------|\n| `n` | s 的长度 |\n| `m` | 单个单词长度 L |\n| `k` | 单词个数 |\n| `need` | 目标词频 `Counter(words)` |\n| `res` | 结果下标列表 |\n\n**示例状态**\n\n```\nwords = [\"foo\", \"bar\"]\nneed = {\"foo\": 1, \"bar\": 1}\n```\n\n> 接下来按 `offset ∈ [0, m)` 分 `L` 组独立滑动窗口。"
+visualizationType = "map-create"
+visualizationData = { mapContents = "{foo → 1, bar → 1}", arrayState = "[]", currentIndex = -1 }
+
+# ── Step 3: 按 offset 分组滑动 ─────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "分组滑动窗口"
+titleEn = "Grouped Sliding Window"
+code = """# 串联所有单词的子串
+# 给定一个字符串 s 和一个长度相同的单词数组 words
+# 找出 s 中恰好由 words 所有单词按某种排列拼接形成的子串的起始下标
+#
+# 关键约束:
+#   words 中所有单词长度相同，记为 L
+#   words 长度为 k，总字符数 m = k * L
+#   子串必须是 words 中所有单词的某种排列拼接而成
+#
+# 示例:
+#   s = "barfoothefoobarman"
+#   words = ["foo", "bar"]
+#   L = 3, k = 2
+#   s[0:6] = "barfoo" → "bar" + "foo" ✓
+#   s[9:15] = "foobar" → "foo" + "bar" ✓
+#   结果: [0, 9]
+
+from typing import List
+from collections import Counter
+
+def findSubstring(s: str, words: List[str]) -> List[int]:
+    \"\"\"返回 s 中由 words 全部单词恰好拼接一次的子串起始下标列表。\"\"\"
+    if not s or not words:
+        return []
+    n, m, k = len(s), len(words[0]), len(words)
+    need = Counter(words)
+    res = []
+    for offset in range(m):
+        left = offset
+        cnt = Counter()
+        match = 0
+        for right in range(offset, n - m + 1, m):
+            w = s[right:right+m]
+            cnt[w] += 1
+            match += 1"""
+explanation = "**第 3 步：按 offset 分组建立滑动窗口**\n\n**分组原因**：以 `m` 为步长切分 `s`，同组内窗口左右边界都按 `m` 推进，保证窗口长度始终是 `m` 的整数倍——能完整切成 `k` 个单词。\n\n**外层循环**：`offset ∈ [0, m)`，共 `L` 组。\n\n**内层循环**：每组内 `right` 从 `offset` 起步，步长 `m`，依次加入单词 `w = s[right:right+m]`。\n\n| 变量 | 含义 |\n|------|------|\n| `left` | 窗口左边界（按 m 对齐） |\n| `cnt` | 窗口内词频 |\n| `match` | 当前窗口内累计匹配单词数 |\n\n> 接下来处理窗口「超出」和「命中」两种状态。"
+visualizationType = "array-iteration"
+visualizationData = { mapContents = "{foo → 1, bar → 1}", arrayState = "[\"bar\",\"foo\",\"the\",\"foo\",\"bar\",\"man\"]", currentIndex = 0, currentValue = "\"bar\"", complement = "bar", found = false }
+
+# ── Step 4: 窗口收缩与命中 ─────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "窗口收缩与命中"
+titleEn = "Shrink & Match"
+code = """# 串联所有单词的子串
+# 给定一个字符串 s 和一个长度相同的单词数组 words
+# 找出 s 中恰好由 words 所有单词按某种排列拼接形成的子串的起始下标
+#
+# 关键约束:
+#   words 中所有单词长度相同，记为 L
+#   words 长度为 k，总字符数 m = k * L
+#   子串必须是 words 中所有单词的某种排列拼接而成
+#
+# 示例:
+#   s = "barfoothefoobarman"
+#   words = ["foo", "bar"]
+#   L = 3, k = 2
+#   s[0:6] = "barfoo" → "bar" + "foo" ✓
+#   s[9:15] = "foobar" → "foo" + "bar" ✓
+#   结果: [0, 9]
+
+from typing import List
+from collections import Counter
+
+def findSubstring(s: str, words: List[str]) -> List[int]:
+    \"\"\"返回 s 中由 words 全部单词恰好拼接一次的子串起始下标列表。\"\"\"
+    if not s or not words:
+        return []
+    n, m, k = len(s), len(words[0]), len(words)
+    need = Counter(words)
+    res = []
+    for offset in range(m):
+        left = offset
+        cnt = Counter()
+        match = 0
+        for right in range(offset, n - m + 1, m):
+            w = s[right:right+m]
+            cnt[w] += 1
+            match += 1
+            while cnt[w] > need.get(w, 0):
+                lw = s[left:left+m]
+                cnt[lw] -= 1
+                left += m
+                match -= 1
+            if match == k:
+                res.append(left)
+                lw = s[left:left+m]
+                cnt[lw] -= 1
+                left += m
+                match -= 1
+    return res"""
+explanation = "**第 4 步：窗口收缩与命中判定**\n\n**状态 A：窗口超出（while）**\n\n```python\nwhile cnt[w] > need.get(w, 0):\n    cnt[s[left:left+m]] -= 1\n    left += m\n    match -= 1\n```\n\n刚加入的 `w` 出现次数超过 `need[w]`，从左侧逐个弹出单词，直到合法。\n\n**状态 B：命中（if）**\n\n```python\nif match == k:\n    res.append(left)\n    cnt[s[left:left+m]] -= 1\n    left += m\n    match -= 1\n```\n\n`match == k` 表示窗口正好覆盖 `k` 个单词，与 `need` 词频完全一致（前述 while 已保证），记录 `left`，并把当前窗口左端单词弹出——为下一轮 `right` 推进腾出位置。\n\n**示例执行（offset=0）**\n\n```\ns    = bar foo the foo bar man\nneed = {foo:1, bar:1}\nright=0 left=0 → \"bar\" ✓ cnt={bar:1,foo:0} match=1\nright=3 left=0 → \"foo\" ✓ cnt={bar:1,foo:1} match=2 == k=2 → res=[0], left=3, match=1\nright=6 left=3 → \"the\" 超额（need 无 the），弹出 \"bar\" left=6, match=0\nright=9 left=6 → \"foo\" ✓ cnt={foo:1} match=1\nright=12 left=6→ \"bar\" ✓ cnt={foo:1,bar:1} match=2 == k → res=[0,9] ✓\n```\n\n> offset=1、2 同样独立滑动；本题 L=3 共三组。"
+visualizationType = "map-found"
+visualizationData = { mapContents = "{foo → 1, bar → 1}", arrayState = "[\"bar\",\"foo\",\"the\",\"foo\",\"bar\",\"man\"]", currentIndex = 0, complement = "bar", foundIndex = 0, result = "[0, 9]" }
+
+# ── Step 5: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 5
+title = "完成"
+titleEn = "Complete"
+code = """# 串联所有单词的子串
+# 给定一个字符串 s 和一个长度相同的单词数组 words
+# 找出 s 中恰好由 words 所有单词按某种排列拼接形成的子串的起始下标
+#
+# 关键约束:
+#   words 中所有单词长度相同，记为 L
+#   words 长度为 k，总字符数 m = k * L
+#   子串必须是 words 中所有单词的某种排列拼接而成
+#
+# 示例:
+#   s = "barfoothefoobarman"
+#   words = ["foo", "bar"]
+#   L = 3, k = 2
+#   s[0:6] = "barfoo" → "bar" + "foo" ✓
+#   s[9:15] = "foobar" → "foo" + "bar" ✓
+#   结果: [0, 9]
+
+from typing import List
+from collections import Counter
+
+def findSubstring(s: str, words: List[str]) -> List[int]:
+    \"\"\"返回 s 中由 words 全部单词恰好拼接一次的子串起始下标列表。\"\"\"
+    if not s or not words:
+        return []
+    n, m, k = len(s), len(words[0]), len(words)
+    need = Counter(words)
+    res = []
+    for offset in range(m):
+        left = offset
+        cnt = Counter()
+        match = 0
+        for right in range(offset, n - m + 1, m):
+            w = s[right:right+m]
+            cnt[w] += 1
+            match += 1
+            while cnt[w] > need.get(w, 0):
+                lw = s[left:left+m]
+                cnt[lw] -= 1
+                left += m
+                match -= 1
+            if match == k:
+                res.append(left)
+                lw = s[left:left+m]
+                cnt[lw] -= 1
+                left += m
+                match -= 1
+    return res"""
+explanation = "**最终结果**\n\n✅ 所有起始下标已收集到 `res`\n\n```\n输入: s = \"barfoothefoobarman\", words = [\"foo\",\"bar\"]\n输出: [0, 9]\n```\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | **O(n·L)** | L 组独立窗口，每组 O(n) 滑动 |\n| 空间复杂度 | **O(m)** | `need` + `cnt` 词频表，m = k·L |\n\n**关键技巧：按 offset 分组的滑动窗口**\n\n- 把 `n` 个起点的搜索拆成 `L` 组，每组内「左对齐」地用 `m` 步长滑动\n- `while cnt[w] > need.get(w, 0)` 保证窗口不超量，`if match == k` 判定命中\n- 命中后弹出左端单词复用窗口，**不重不漏**地扫描所有候选"
+visualizationType = "result"
+visualizationData = { mapContents = "{foo → 1, bar → 1}", arrayState = "[\"bar\",\"foo\",\"the\",\"foo\",\"bar\",\"man\"]", result = "[0, 9]", highlightedIndices = [0, 3] }
+
+[algorithm.summary]
+timeComplexity = "O(nL)"
+spaceComplexity = "O(m)"
+approach = "按 offset 分组的滑动窗口 + 词频计数"
+keyInsight = "把 n 个起点按 offset∈[0,L) 分 L 组，每组独立用 m 步长滑动窗口比较词频"

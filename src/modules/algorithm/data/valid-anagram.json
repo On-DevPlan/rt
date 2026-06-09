@@ -1,0 +1,168 @@
+{
+  "id": "valid-anagram",
+  "title": "有效的字母异位词",
+  "titleEn": "Valid Anagram",
+  "difficulty": "easy",
+  "tags": [
+    "hash-table",
+    "string",
+    "sorting"
+  ],
+  "testCase": "s = \"anagram\", t = \"nagaram\"",
+  "expectedOutput": "true",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 有效的字母异位词\n# 给定两个字符串 s 和 t\n# 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）\n#\n# 字母异位词: 两个字符串包含的字母及其数量完全相同\n#\n# 示例:\n#   s = \"anagram\", t = \"nagaram\" → true\n#   s = \"rat\",     t = \"car\"     → false",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 有效的字母异位词</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t</span>",
+        "<span class=\"tokenComment\"># 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 两个字符串包含的字母及其数量完全相同</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;anagram&quot;, t = &quot;nagaram&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;rat&quot;,     t = &quot;car&quot;     → false</span>"
+      ],
+      "explanation": "**问题分析**\n\n判断 `t` 是否是 `s` 的字母异位词：\n- 字母完全相同\n- 每个字母的出现次数也完全相同\n- 顺序无关\n\n> 关键洞察：两个字符串**长度不同**则一定不是异位词，可提前返回 `false`。\n\n**三种解法对比**\n\n| 解法 | 思路 | 时间 | 空间 |\n|------|------|------|------|\n| 排序比较 | 两字符串排序后比较 | O(n log n) | O(n) |\n| Counter 相等 | 哈希表统计字符频次 | O(n) | O(n) |\n| **计数数组** | 用 26 位数组做加减计数 | **O(n)** | **O(1)** |\n\n> 本题推荐**计数数组**法：字母限定为小写 `a-z` 共 26 个，可直接在定长数组上计数，常数空间 O(1)。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 有效的字母异位词\n# 给定两个字符串 s 和 t\n# 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）\n#\n# 字母异位词: 两个字符串包含的字母及其数量完全相同\n#\n# 示例:\n#   s = \"anagram\", t = \"nagaram\" → true\n#   s = \"rat\",     t = \"car\"     → false\n\ndef isAnagram(s: str, t: str) -> bool:\n    \"\"\"判断 t 是否是 s 的字母异位词。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 有效的字母异位词</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t</span>",
+        "<span class=\"tokenComment\"># 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 两个字符串包含的字母及其数量完全相同</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;anagram&quot;, t = &quot;nagaram&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;rat&quot;,     t = &quot;car&quot;     → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isAnagram</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 t 是否是 s 的字母异位词。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 接收两个参数：字符串 `s` 和字符串 `t`\n- 返回 `bool`：是异位词返回 `True`，否则 `False`\n- 文档字符串说明函数用途\n\n> 假设输入只包含小写字母（题目约束），这是计数数组法的前置条件。",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "初始化计数",
+      "titleEn": "Initialize Counter",
+      "code": "# 有效的字母异位词\n# 给定两个字符串 s 和 t\n# 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）\n#\n# 字母异位词: 两个字符串包含的字母及其数量完全相同\n#\n# 示例:\n#   s = \"anagram\", t = \"nagaram\" → true\n#   s = \"rat\",     t = \"car\"     → false\n\ndef isAnagram(s: str, t: str) -> bool:\n    \"\"\"判断 t 是否是 s 的字母异位词。\"\"\"\n    if len(s) != len(t):\n        return False\n    cnt = [0] * 26  # 26 个字母的计数数组",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 有效的字母异位词</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t</span>",
+        "<span class=\"tokenComment\"># 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 两个字符串包含的字母及其数量完全相同</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;anagram&quot;, t = &quot;nagaram&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;rat&quot;,     t = &quot;car&quot;     → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isAnagram</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 t 是否是 s 的字母异位词。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">if</span> <span class=\"tokenBuiltin\">len</span>(s) != <span class=\"tokenBuiltin\">len</span>(t):",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "    cnt = [<span class=\"tokenNumber\">0</span>] * <span class=\"tokenNumber\">26</span>  <span class=\"tokenComment\"># 26 个字母的计数数组</span>"
+      ],
+      "explanation": "**第 2 步：长度预检 + 初始化计数数组**\n\n```python\nif len(s) != len(t):\n    return False\ncnt = [0] * 26\n```\n\n**为什么先比长度？**\n\n- 长度不同 → 字符数必然不等 → 直接 `False`，省掉后续遍历\n- 这是关键的**剪枝**，把很多用例 O(1) 解决\n\n**计数数组 `cnt`**\n\n| 索引 | 字母 | 初始值 |\n|------|------|--------|\n| 0 | a | 0 |\n| 1 | b | 0 |\n| ... | ... | ... |\n| 25 | z | 0 |\n\n> 用 `ord(c) - ord('a')` 把字符映射到 `[0, 25]` 的索引。",
+      "visualizationType": "map-create",
+      "visualizationData": {
+        "mapContents": "{a → 0, b → 0, c → 0, d → 0, e → 0, f → 0, g → 0, h → 0, i → 0, j → 0, k → 0, l → 0, m → 0, n → 0, o → 0, p → 0, q → 0, r → 0, s → 0, t → 0, u → 0, v → 0, w → 0, x → 0, y → 0, z → 0}",
+        "arrayState": "[]",
+        "currentIndex": -1
+      }
+    },
+    {
+      "id": 3,
+      "title": "加减计数",
+      "titleEn": "Increment and Decrement",
+      "code": "# 有效的字母异位词\n# 给定两个字符串 s 和 t\n# 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）\n#\n# 字母异位词: 两个字符串包含的字母及其数量完全相同\n#\n# 示例:\n#   s = \"anagram\", t = \"nagaram\" → true\n#   s = \"rat\",     t = \"car\"     → false\n\ndef isAnagram(s: str, t: str) -> bool:\n    \"\"\"判断 t 是否是 s 的字母异位词。\"\"\"\n    if len(s) != len(t):\n        return False\n    cnt = [0] * 26  # 26 个字母的计数数组\n    for c in s:\n        cnt[ord(c) - ord('a')] += 1\n    for c in t:\n        cnt[ord(c) - ord('a')] -= 1",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 有效的字母异位词</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t</span>",
+        "<span class=\"tokenComment\"># 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 两个字符串包含的字母及其数量完全相同</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;anagram&quot;, t = &quot;nagaram&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;rat&quot;,     t = &quot;car&quot;     → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isAnagram</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 t 是否是 s 的字母异位词。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">if</span> <span class=\"tokenBuiltin\">len</span>(s) != <span class=\"tokenBuiltin\">len</span>(t):",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "    cnt = [<span class=\"tokenNumber\">0</span>] * <span class=\"tokenNumber\">26</span>  <span class=\"tokenComment\"># 26 个字母的计数数组</span>",
+        "    <span class=\"tokenKeyword\">for</span> c in s:",
+        "        cnt[<span class=\"tokenBuiltin\">ord</span>(c) - <span class=\"tokenBuiltin\">ord</span>(<span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">a</span><span class=\"tokenString\">&#x27;</span>)] += <span class=\"tokenNumber\">1</span>",
+        "    <span class=\"tokenKeyword\">for</span> c in t:",
+        "        cnt[<span class=\"tokenBuiltin\">ord</span>(c) - <span class=\"tokenBuiltin\">ord</span>(<span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">a</span><span class=\"tokenString\">&#x27;</span>)] -= <span class=\"tokenNumber\">1</span>"
+      ],
+      "explanation": "**第 3 步：一次遍历完成加减计数**\n\n```python\nfor c in s:\n    cnt[ord(c) - ord('a')] += 1   # s 中字符计数 +1\nfor c in t:\n    cnt[ord(c) - ord('a')] -= 1   # t 中字符计数 -1\n```\n\n**核心思想**\n\n- 把 `s` 中每个字符对应的计数 `+1`\n- 把 `t` 中每个字符对应的计数 `-1`\n- 若两串字母分布完全相同，最终 `cnt` 全为 0\n\n**示例追踪：`s = \"ab\"`, `t = \"ba\"`**\n\n| 步骤 | 操作 | cnt 状态（部分） |\n|------|------|------------------|\n| 初始 | — | `[0, 0, 0, ...]` |\n| `s='a'` | `cnt[0] += 1` | `[1, 0, 0, ...]` |\n| `s='b'` | `cnt[1] += 1` | `[1, 1, 0, ...]` |\n| `t='b'` | `cnt[1] -= 1` | `[1, 0, 0, ...]` |\n| `t='a'` | `cnt[0] -= 1` | `[0, 0, 0, ...]` |\n\n> 把两次循环合并成一次也行：`cnt[ord(c)-ord('a')] += 1 if i < len(s) else -1`。",
+      "visualizationType": "array-iteration",
+      "visualizationData": {
+        "mapContents": "{a → 0, b → 0, c → 0, n → 0, g → 0, r → 0, m → 0}",
+        "arrayState": "[]",
+        "currentIndex": -1,
+        "currentValue": 0,
+        "complement": 0,
+        "found": false
+      }
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 有效的字母异位词\n# 给定两个字符串 s 和 t\n# 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）\n#\n# 字母异位词: 两个字符串包含的字母及其数量完全相同\n#\n# 示例:\n#   s = \"anagram\", t = \"nagaram\" → true\n#   s = \"rat\",     t = \"car\"     → false\n\ndef isAnagram(s: str, t: str) -> bool:\n    \"\"\"判断 t 是否是 s 的字母异位词。\"\"\"\n    if len(s) != len(t):\n        return False\n    cnt = [0] * 26  # 26 个字母的计数数组\n    for c in s:\n        cnt[ord(c) - ord('a')] += 1\n    for c in t:\n        cnt[ord(c) - ord('a')] -= 1\n    return all(x == 0 for x in cnt)",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 有效的字母异位词</span>",
+        "<span class=\"tokenComment\"># 给定两个字符串 s 和 t</span>",
+        "<span class=\"tokenComment\"># 判断 t 是否是 s 的字母异位词（由相同字母按任意顺序排列而成）</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 字母异位词: 两个字符串包含的字母及其数量完全相同</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   s = &quot;anagram&quot;, t = &quot;nagaram&quot; → true</span>",
+        "<span class=\"tokenComment\">#   s = &quot;rat&quot;,     t = &quot;car&quot;     → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">isAnagram</span>(s: <span class=\"tokenBuiltin\">str</span>, t: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 t 是否是 s 的字母异位词。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">if</span> <span class=\"tokenBuiltin\">len</span>(s) != <span class=\"tokenBuiltin\">len</span>(t):",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "    cnt = [<span class=\"tokenNumber\">0</span>] * <span class=\"tokenNumber\">26</span>  <span class=\"tokenComment\"># 26 个字母的计数数组</span>",
+        "    <span class=\"tokenKeyword\">for</span> c in s:",
+        "        cnt[<span class=\"tokenBuiltin\">ord</span>(c) - <span class=\"tokenBuiltin\">ord</span>(<span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">a</span><span class=\"tokenString\">&#x27;</span>)] += <span class=\"tokenNumber\">1</span>",
+        "    <span class=\"tokenKeyword\">for</span> c in t:",
+        "        cnt[<span class=\"tokenBuiltin\">ord</span>(c) - <span class=\"tokenBuiltin\">ord</span>(<span class=\"tokenString\">&#x27;</span><span class=\"tokenString\">a</span><span class=\"tokenString\">&#x27;</span>)] -= <span class=\"tokenNumber\">1</span>",
+        "    <span class=\"tokenKeyword\">return</span> <span class=\"tokenBuiltin\">all</span>(x == <span class=\"tokenNumber\">0</span> <span class=\"tokenKeyword\">for</span> x in cnt)"
+      ],
+      "explanation": "**最终结果**\n\n```python\nreturn all(x == 0 for x in cnt)\n```\n\n用 `all()` 检查计数数组是否全部归零。\n\n**运行示例**\n\n```\ns = \"anagram\", t = \"nagaram\"  →  cnt 全 0  →  True\ns = \"rat\",     t = \"car\"      →  cnt[a]=1 ≠ 0  →  False\n```\n\n**一行极简写法**\n\n```python\nreturn sorted(s) == sorted(t)\n```\n\n> 排序法虽然代码最短，但时间复杂度 O(n log n)，空间 O(n)。计数数组才是**最优解**。\n\n**复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 两串各遍历一次 |\n| 空间复杂度 | O(1) — 26 长度的常数数组 |\n\n**关键洞察**\n\n- **字母范围有限**（小写 26 个）是计数数组可行的根本前提\n- 长度预检是廉价剪枝，先排除最常见的 False 情况\n- 加减计数法比 `Counter(s) == Counter(t)` 更省空间（不依赖哈希表）",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{a → 0, b → 0, c → 0, n → 0, g → 0, r → 0, m → 0}",
+        "arrayState": "[]",
+        "result": "true",
+        "highlightedIndices": []
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "approach": "26 长度计数数组（加减计数）",
+    "keyInsight": "字母范围限定为 a-z 共 26 个，用定长数组加减计数实现 O(1) 空间；先做长度预剪枝"
+  }
+}

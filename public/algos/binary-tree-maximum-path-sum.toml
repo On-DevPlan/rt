@@ -1,0 +1,206 @@
+[algorithm]
+id = "binary-tree-maximum-path-sum"
+title = "二叉树中的最大路径和"
+titleEn = "Binary Tree Maximum Path Sum"
+difficulty = "hard"
+tags = ["tree", "dfs", "dynamic-programming"]
+testCase = "root = [-10,9,20,null,null,15,7]"
+expectedOutput = "42"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 124. 二叉树中的最大路径和
+# 路径定义为: 树中任意节点序列，节点之间由父-子连接
+# 路径 至少包含一个节点，可以从任意节点开始/结束（不一定经过根）
+# 求所有可能路径中节点值之和的最大值
+#
+# 示例:
+#   root = [-10, 9, 20, null, null, 15, 7]
+#   树结构:
+#         -10
+#         /  \\
+#        9    20
+#            /  \\
+#           15    7
+#   最大路径: 15 → 20 → 7，和 = 15 + 20 + 7 = 42
+#   （注意：路径不经过根 -10，也不经过左子树 9）"""
+explanation = "**问题分析**\n\n给定一棵二叉树，求**任意路径**上的节点值之和的最大值。\n\n**关键约束**\n\n- 路径可以从**任意节点**开始，到**任意节点**结束\n- 路径不一定经过根\n- 路径在分叉点最多延伸出两条边（左右各一条）\n\n**示例输入**\n\n```\nroot = [-10, 9, 20, null, null, 15, 7]\n\n        -10\n        /  \\\n       9    20\n           /  \\\n          15    7\n```\n\n**为什么答案是 42？**\n\n| 候选路径 | 和 |\n|---------|------|\n| `-10 → 9` | -1 |\n| `-10 → 20` | 10 |\n| `15 → 20 → 7` | **42** |\n| `9` 单独 | 9 |\n\n> 最优路径是 `15 → 20 → 7`（在右子树内部），和为 42。\n> 这说明路径可以完全在子树内，不需要经过根。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + TreeNode + 全局 max + dfs 基础情况 ─────
+[[algorithm.steps]]
+id = 1
+title = "签名与全局最大值"
+titleEn = "Signature & Global Max"
+code = """# 124. 二叉树中的最大路径和
+# 路径定义为: 树中任意节点序列，节点之间由父-子连接
+# 路径 至少包含一个节点，可以从任意节点开始/结束（不一定经过根）
+# 求所有可能路径中节点值之和的最大值
+#
+# 示例:
+#   root = [-10, 9, 20, null, null, 15, 7]
+#   树结构:
+#         -10
+#         /  \\
+#        9    20
+#            /  \\
+#           15    7
+#   最大路径: 15 → 20 → 7，和 = 15 + 20 + 7 = 42
+#   （注意：路径不经过根 -10，也不经过左子树 9）
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def maxPathSum(root: Optional[TreeNode]) -> int:
+    \"\"\"返回二叉树中最大路径和（路径可在任意位置起止）。\"\"\"
+    self.max_sum = float('-inf')
+
+    def dfs(node: Optional[TreeNode]) -> int:
+        if not node:
+            return 0"""
+explanation = "**第 1 步：定义结构 + 全局最大 + dfs 基础情况**\n\n- `TreeNode`：标准二叉树节点\n- `maxPathSum` 闭包外初始化 `self.max_sum = -∞`（可能全为负数）\n- 内嵌 `dfs` 闭包用于递归\n\n**为什么用闭包 + `self.max_sum`？**\n\n- 最大路径可能在任意子树内部被\"截断\"，无法仅靠返回值传递\n- 闭包外的 `self.max_sum` 充当**全局变量**，在所有递归路径中持续更新\n\n**Base case：空节点返回 0**\n\n```python\nif not node:\n    return 0\n```\n\n> 注意：返回 0 表示\"不走这条分支\"，配合后面的 `max(0, ...)` 实现负数剪枝。"
+visualizationType = "code-only"
+
+# ── Step 2: 递归 + 负数截断 ─────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "递归与负数截断"
+titleEn = "Recurse & Clamp Negatives"
+code = """# 124. 二叉树中的最大路径和
+# 路径定义为: 树中任意节点序列，节点之间由父-子连接
+# 路径 至少包含一个节点，可以从任意节点开始/结束（不一定经过根）
+# 求所有可能路径中节点值之和的最大值
+#
+# 示例:
+#   root = [-10, 9, 20, null, null, 15, 7]
+#   树结构:
+#         -10
+#         /  \\
+#        9    20
+#            /  \\
+#           15    7
+#   最大路径: 15 → 20 → 7，和 = 15 + 20 + 7 = 42
+#   （注意：路径不经过根 -10，也不经过左子树 9）
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def maxPathSum(root: Optional[TreeNode]) -> int:
+    \"\"\"返回二叉树中最大路径和（路径可在任意位置起止）。\"\"\"
+    self.max_sum = float('-inf')
+
+    def dfs(node: Optional[TreeNode]) -> int:
+        if not node:
+            return 0
+        left = max(0, dfs(node.left))
+        right = max(0, dfs(node.right))"""
+explanation = "**第 2 步：递归 + `max(0, ...)` 截断负数**\n\n```python\nleft  = max(0, dfs(node.left))\nright = max(0, dfs(node.right))\n```\n\n**为什么要用 `max(0, ...)`？**\n\n| 情况 | 处理 |\n|------|------|\n| 子树返回正值 | 保留，作为路径延伸 |\n| 子树返回负值 | 截断为 0，**不延伸**（拐弯不如不走） |\n\n**示例：以节点 `-10` 为例**\n\n```\ndfs(9)   = max(0, 0) = 0    # 9 没有孩子\ndfs(15)  = 15                # 叶子，正值\ndfs(7)   = 7                 # 叶子，正值\ndfs(20)  = 20 + max(0, 15) + max(0, 7) 内的 return 部分\n       = 20 + max(15, 7) = 20 + 15 = 35  ← 向上贡献\n```\n\n> `max(0, x)` 实现了**主动剪枝**——如果一条子树路径的总和是负的，干脆不走它。"
+visualizationType = "code-only"
+
+# ── Step 3: 更新全局最大 + 返回单边贡献 ──────────────────────
+[[algorithm.steps]]
+id = 3
+title = "更新全局与返回"
+titleEn = "Update Global & Return"
+code = """# 124. 二叉树中的最大路径和
+# 路径定义为: 树中任意节点序列，节点之间由父-子连接
+# 路径 至少包含一个节点，可以从任意节点开始/结束（不一定经过根）
+# 求所有可能路径中节点值之和的最大值
+#
+# 示例:
+#   root = [-10, 9, 20, null, null, 15, 7]
+#   树结构:
+#         -10
+#         /  \\
+#        9    20
+#            /  \\
+#           15    7
+#   最大路径: 15 → 20 → 7，和 = 15 + 20 + 7 = 42
+#   （注意：路径不经过根 -10，也不经过左子树 9）
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def maxPathSum(root: Optional[TreeNode]) -> int:
+    \"\"\"返回二叉树中最大路径和（路径可在任意位置起止）。\"\"\"
+    self.max_sum = float('-inf')
+
+    def dfs(node: Optional[TreeNode]) -> int:
+        if not node:
+            return 0
+        left = max(0, dfs(node.left))
+        right = max(0, dfs(node.right))
+        self.max_sum = max(self.max_sum, node.val + left + right)
+        return node.val + max(left, right)"""
+explanation = "**第 3 步：核心——区分两个量**\n\n```python\nself.max_sum = max(self.max_sum, node.val + left + right)  # 双边路径\nreturn node.val + max(left, right)                          # 单边贡献\n```\n\n**两个量的区别**\n\n| 量 | 含义 | 公式 |\n|----|------|------|\n| `self.max_sum` | 以当前节点为**转折点**的双边路径 | `node.val + left + right` |\n| `return 值` | 向**父节点**贡献的单边延伸 | `node.val + max(left, right)` |\n\n**为什么 return 时只能取一边？**\n\n- 父节点要的是一条**直线**延伸上来的路径（不能从父节点分叉两次）\n- 所以只能取左右中较大的那一边\n- 双边路径 `node.val + left + right` 只在**当前节点**作为\"最高点\"时合法，向上传会破坏路径连续性\n\n**以节点 20 为例**\n\n```\nleft  = 15, right = 7\n双边:  20 + 15 + 7 = 42  ← 更新 self.max_sum\nreturn: 20 + max(15, 7) = 35  ← 向上贡献\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 124. 二叉树中的最大路径和
+# 路径定义为: 树中任意节点序列，节点之间由父-子连接
+# 路径 至少包含一个节点，可以从任意节点开始/结束（不一定经过根）
+# 求所有可能路径中节点值之和的最大值
+#
+# 示例:
+#   root = [-10, 9, 20, null, null, 15, 7]
+#   树结构:
+#         -10
+#         /  \\
+#        9    20
+#            /  \\
+#           15    7
+#   最大路径: 15 → 20 → 7，和 = 15 + 20 + 7 = 42
+#   （注意：路径不经过根 -10，也不经过左子树 9）
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def maxPathSum(root: Optional[TreeNode]) -> int:
+    \"\"\"返回二叉树中最大路径和（路径可在任意位置起止）。\"\"\"
+    self.max_sum = float('-inf')
+
+    def dfs(node: Optional[TreeNode]) -> int:
+        if not node:
+            return 0
+        left = max(0, dfs(node.left))
+        right = max(0, dfs(node.right))
+        self.max_sum = max(self.max_sum, node.val + left + right)
+        return node.val + max(left, right)
+    dfs(root)
+    return self.max_sum"""
+explanation = "**最终结果**\n\n```\n输入: root = [-10, 9, 20, null, null, 15, 7]\n输出: 42\n```\n\n**回溯过程**\n\n```\ndfs(9):   left=0, right=0, max=-∞ → max(0, 9+0+0)   = 9,   return 9\ndfs(15):  left=0, right=0, max=9   → max(9, 15+0+0)  = 15,  return 15\ndfs(7):   left=0, right=0, max=15  → max(15, 7+0+0)  = 15,  return 7\ndfs(20):  left=15, right=7, max=15 → max(15, 20+15+7) = 42, return 20+15=35\ndfs(-10): left=9, right=35, max=42 → max(42, -10+9+35)= 42, return -10+35=25\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个节点访问一次 |\n| 空间复杂度 | O(h) — h 为树高（递归栈） |\n\n**关键洞察**\n\n- 用闭包外的 `self.max_sum` 捕获路径的\"全局最大\"\n- 区分**向上贡献**（单边）vs **全局最大**（双边）：return 单边，update 双边\n- `max(0, ...)` 实现负数剪枝：负贡献的子树不参与路径"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[-10, 9, 20, 15, 7]", result = "42", highlightedIndices = [2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(h)  # h = 树高，递归栈"
+approach = "后序 DFS + 全局最大（闭包）"
+keyInsight = "区分两个量：向上贡献（单边 max(node.val, val+left, val+right)）vs 全局最大路径（val + left + right，双边可任选）"

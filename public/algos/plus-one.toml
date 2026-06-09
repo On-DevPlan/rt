@@ -1,0 +1,151 @@
+[algorithm]
+id = "plus-one"
+title = "加一"
+titleEn = "Plus One"
+difficulty = "easy"
+tags = ["array", "math"]
+testCase = "digits = [1,2,3]"
+expectedOutput = "[1,2,4]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 加一
+# 给定一个用数组表示的非负整数，每位数字按数组元素顺序存储
+# 数组最高位在索引 0，最低位在数组末尾
+# 将该整数加一后，返回新的数组表示
+#
+# 示例:
+#   digits = [1,2,3] → 整数 123 → 加一 → 124 → [1,2,4]
+#   digits = [9,9,9] → 整数 999 → 加一 → 1000 → [1,0,0,0]
+#
+# 关键约束:
+#   1. 数组不包含前导零（除数字 0 本身）
+#   2. 需要处理进位"""
+explanation = "**问题分析**\n\n将一个按位存储的整数加一。\n\n**示例**\n\n| 输入 | 整数 | 加一 | 输出 |\n|------|------|------|------|\n| `[1,2,3]` | 123 | 124 | `[1,2,4]` |\n| `[9,9,9]` | 999 | 1000 | `[1,0,0,0]` |\n| `[9]` | 9 | 10 | `[1,0]` |\n\n**核心思路：从右向左进位**\n\n模拟手工加法：从最低位（数组末尾）开始处理，遇到 9 变 0 并继续进位，否则直接加一返回。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 加一
+# 给定一个用数组表示的非负整数，每位数字按数组元素顺序存储
+# 数组最高位在索引 0，最低位在数组末尾
+# 将该整数加一后，返回新的数组表示
+#
+# 示例:
+#   digits = [1,2,3] → 整数 123 → 加一 → 124 → [1,2,4]
+#   digits = [9,9,9] → 整数 999 → 加一 → 1000 → [1,0,0,0]
+#
+# 关键约束:
+#   1. 数组不包含前导零（除数字 0 本身）
+#   2. 需要处理进位
+
+from typing import List
+
+def plusOne(digits: List[int]) -> List[int]:
+    \"\"\"返回加一后的结果\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 参数 `digits`：表示整数的数组\n- 返回值 `List[int]`：加一后的新数组\n- 使用类型注解明确参数和返回值类型\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化循环 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化循环"
+titleEn = "Initialize Loop"
+code = """# 加一
+# 给定一个用数组表示的非负整数，每位数字按数组元素顺序存储
+# 数组最高位在索引 0，最低位在数组末尾
+# 将该整数加一后，返回新的数组表示
+#
+# 示例:
+#   digits = [1,2,3] → 整数 123 → 加一 → 124 → [1,2,4]
+#   digits = [9,9,9] → 整数 999 → 加一 → 1000 → [1,0,0,0]
+#
+# 关键约束:
+#   1. 数组不包含前导零（除数字 0 本身）
+#   2. 需要处理进位
+
+from typing import List
+
+def plusOne(digits: List[int]) -> List[int]:
+    \"\"\"返回加一后的结果\"\"\"
+    n = len(digits)
+    for i in range(n - 1, -1, -1):
+        pass"""
+explanation = "**第 2 步：设置从右向左的循环**\n\n**从末位开始遍历：**\n\n```\ndigits: [1, 2, 3]\n            ↑\n            i\n```\n\n- `range(n - 1, -1, -1)` 产生序列 `[n-1, n-2, ..., 1, 0]`\n- 即从数组末尾（最低位）向头部（最高位）遍历\n- 每次处理一位数字的进位逻辑"
+visualizationType = "code-only"
+
+# ── Step 3: 处理非9数字 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "处理非9数字"
+titleEn = "Handle Non-9 Digit"
+code = """# 加一
+# 给定一个用数组表示的非负整数，每位数字按数组元素顺序存储
+# 数组最高位在索引 0，最低位在数组末尾
+# 将该整数加一后，返回新的数组表示
+#
+# 示例:
+#   digits = [1,2,3] → 整数 123 → 加一 → 124 → [1,2,4]
+#   digits = [9,9,9] → 整数 999 → 加一 → 1000 → [1,0,0,0]
+#
+# 关键约束:
+#   1. 数组不包含前导零（除数字 0 本身）
+#   2. 需要处理进位
+
+from typing import List
+
+def plusOne(digits: List[int]) -> List[int]:
+    \"\"\"返回加一后的结果\"\"\"
+    n = len(digits)
+    for i in range(n - 1, -1, -1):
+        if digits[i] < 9:
+            digits[i] += 1
+            return digits"""
+explanation = "**第 3 步：处理非9数字**\n\n**核心逻辑**\n\n```\nif digits[i] < 9:\n    digits[i] += 1\n    return digits\n```\n\n**示例执行：**\n\n```\ndigits = [1, 2, 3]\n\ni=2: digits[2]=3 < 9? 是 → digits[2]=4, return [1,2,4] ✓\n```\n\n| 条件 | 操作 |\n|------|------|\n| `digits[i] < 9` | 加一后直接返回，无需继续进位 |\n| `digits[i] = 9` | 需要变 0 并继续向左进位 |\n\n> 只要遇到一个小于 9 的数字，加一后就可以立即返回，后面的数字无需改变。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 加一
+# 给定一个用数组表示的非负整数，每位数字按数组元素顺序存储
+# 数组最高位在索引 0，最低位在数组末尾
+# 将该整数加一后，返回新的数组表示
+#
+# 示例:
+#   digits = [1,2,3] → 整数 123 → 加一 → 124 → [1,2,4]
+#   digits = [9,9,9] → 整数 999 → 加一 → 1000 → [1,0,0,0]
+#
+# 关键约束:
+#   1. 数组不包含前导零（除数字 0 本身）
+#   2. 需要处理进位
+
+from typing import List
+
+def plusOne(digits: List[int]) -> List[int]:
+    \"\"\"返回加一后的结果\"\"\"
+    n = len(digits)
+    for i in range(n - 1, -1, -1):
+        if digits[i] < 9:
+            digits[i] += 1
+            return digits
+        digits[i] = 0
+    return [1] + digits"""
+explanation = "**最终结果**\n\n✅ 完整进位逻辑实现\n\n**执行示例：**\n\n```\ncase 1: digits = [1,2,3]\n  i=2: 3<9? 是 → [1,2,4] 返回\n\ncase 2: digits = [9,9,9]\n  i=2: 9<9? 否 → digits[2]=0, 继续\n  i=1: 9<9? 否 → digits[1]=0, 继续\n  i=0: 9<9? 否 → digits[0]=0, 继续\n  循环结束 → return [1] + [0,0,0] = [1,0,0,0]\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 最坏情况遍历整个数组 |\n| 空间复杂度 | O(1) — 原地修改，最坏 O(n) 返回新数组 |\n\n**关键思路**\n\n- 从右向左遍历，模拟手工进位\n- 遇到 9 变 0 继续，否则加一返回\n- 循环结束说明全是 9，头部插入 1"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3]", result = "[1, 2, 4]", highlightedIndices = [2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)  # in-place，最坏 O(n) 返回新数组"
+approach = "从右向左进位"
+keyInsight = "从末位开始；<9 直接 +1 返回；=9 变 0 继续；循环结束说明全是 9，头部插入 1"

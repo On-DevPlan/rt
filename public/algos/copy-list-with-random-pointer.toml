@@ -1,0 +1,204 @@
+[algorithm]
+id = "copy-list-with-random-pointer"
+title = "随机链表的复制"
+titleEn = "Copy List with Random Pointer"
+difficulty = "medium"
+tags = ["hash-table", "linked-list"]
+testCase = "head = [[7,null],[13,0],[11,4],[10,2],[1,0]]"
+expectedOutput = "[[7,null],[13,0],[11,4],[10,2],[1,0]]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 随机链表的复制
+# 链表节点除了 next 指针外，还有一个 random 指针
+# random 指向链表中的任意节点（也可以是 None）
+#
+# 要求：深拷贝整个链表
+#   - 为每个旧节点创建新节点
+#   - 新节点的 next 指向新链表中对应的后继
+#   - 新节点的 random 指向新链表中对应的 random 目标
+#   - 不能修改原链表
+#
+# 示例:
+#   输入: [[7,null],[13,0],[11,4],[10,2],[1,0]]
+#   表示节点 0(val=7,random=None), 节点 1(val=13,random=0), ...
+#   输出: 同样结构的全新链表"""
+explanation = "**问题分析**\n\n- 普通链表只有 `next`，**线性结构**，一次遍历即可拷贝\n- 加上 `random` 后，`random` 指针可以**乱跳**到任意节点（包括 `None`）\n- 直接拷贝会出问题：第一次遍历建好新节点后，新节点的 `random` 该指向谁？\n\n**难点：跨节点的指针映射**\n\n| 指针 | 能否直接拷贝 | 原因 |\n|------|--------------|------|\n| `next` | 可以 | 沿链表方向，`old.next` 对应 `new.next` |\n| `random` | **不行** | `old.random` 是旧节点，无法直接赋给新节点 |\n\n> **核心问题**：需要建立**旧节点 → 新节点**的映射关系，把 `random` 重定向到新链表中对应的目标。\n\n**两种主流解法**\n\n| 方法 | 时间 | 空间 | 思路 |\n|------|------|------|------|\n| **哈希表映射** | O(n) | O(n) | `old → new` 存表，再二次遍历连指针 |\n| **原地交错** | O(n) | O(1) | 把新节点插在旧节点后面，最后再拆开 |\n\n> 本题采用**哈希表法**——思路最清晰，容易理解。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 随机链表的复制
+# 链表节点除了 next 指针外，还有一个 random 指针
+# random 指向链表中的任意节点（也可以是 None）
+#
+# 要求：深拷贝整个链表
+#   - 为每个旧节点创建新节点
+#   - 新节点的 next 指向新链表中对应的后继
+#   - 新节点的 random 指向新链表中对应的 random 目标
+#   - 不能修改原链表
+#
+# 示例:
+#   输入: [[7,null],[13,0],[11,4],[10,2],[1,0]]
+#   表示节点 0(val=7,random=None), 节点 1(val=13,random=0), ...
+#   输出: 同样结构的全新链表
+
+from typing import Optional
+
+class Node:
+    def __init__(self, x: int, next: 'Node' = None, random: 'Node' = None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+
+def copyRandomList(head: Optional[Node]) -> Optional[Node]:
+    \"\"\"返回深拷贝后的链表头节点。\"\"\"
+    pass"""
+explanation = "**第 1 步：定义节点与函数签名**\n\n```python\nclass Node:\n    def __init__(self, x: int, next: 'Node' = None, random: 'Node' = None):\n        self.val = int(x)\n        self.next = next\n        self.random = random\n```\n\n- `Node` 含三个属性：`val`、`next`、`random`\n- `random` 默认 `None`（LeetCode 测试样例中常用 `null` 表示）\n- `copyRandomList(head)` 返回新链表的头节点\n\n> 类型注解使用 `Optional[Node]` 允许 `head` 为 `None`（空链表）。"
+visualizationType = "code-only"
+
+# ── Step 2: 第一次遍历——建新节点 + 映射 ────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "建立映射"
+titleEn = "Build Old-to-New Map"
+code = """# 随机链表的复制
+# 链表节点除了 next 指针外，还有一个 random 指针
+# random 指向链表中的任意节点（也可以是 None）
+#
+# 要求：深拷贝整个链表
+#   - 为每个旧节点创建新节点
+#   - 新节点的 next 指向新链表中对应的后继
+#   - 新节点的 random 指向新链表中对应的 random 目标
+#   - 不能修改原链表
+#
+# 示例:
+#   输入: [[7,null],[13,0],[11,4],[10,2],[1,0]]
+#   表示节点 0(val=7,random=None), 节点 1(val=13,random=0), ...
+#   输出: 同样结构的全新链表
+
+from typing import Optional
+
+class Node:
+    def __init__(self, x: int, next: 'Node' = None, random: 'Node' = None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+
+def copyRandomList(head: Optional[Node]) -> Optional[Node]:
+    \"\"\"返回深拷贝后的链表头节点。\"\"\"
+    if not head:
+        return None
+    old2new = {}
+    cur = head
+    while cur:
+        old2new[cur] = Node(cur.val)
+        cur = cur.next"""
+explanation = "**第 2 步：第一次遍历，建立「旧节点 → 新节点」映射**\n\n```python\nif not head:\n    return None\nold2new = {}         # 哈希表：旧节点 → 新节点\ncur = head\nwhile cur:\n    old2new[cur] = Node(cur.val)  # 为每个旧节点创建对应新节点\n    cur = cur.next\n```\n\n**为什么先建立映射？**\n\n> 因为 `random` 指向**任意**节点，**不能保证顺序**。\n> 当处理 `old_node.random` 时，如果对应的新节点还没建出来，就无法正确连线。\n> 所以**第一遍只建节点**，**第二遍才连指针**。\n\n**示例追踪**（`7 → 13 → 11 → 10 → 1`）\n\n```\n第一遍结束后: old2new = {\n    A(7)  → A'(7),\n    B(13) → B'(13),\n    C(11) → C'(11),\n    D(10) → D'(10),\n    E(1)  → E'(1)\n}\n```"
+visualizationType = "map-create"
+visualizationData = { mapContents = "{}", arrayState = "[7, 13, 11, 10, 1]", currentIndex = -1 }
+
+# ── Step 3: 第二次遍历——连 next / random ───────────────────────
+[[algorithm.steps]]
+id = 3
+title = "连接指针"
+titleEn = "Connect Pointers"
+code = """# 随机链表的复制
+# 链表节点除了 next 指针外，还有一个 random 指针
+# random 指向链表中的任意节点（也可以是 None）
+#
+# 要求：深拷贝整个链表
+#   - 为每个旧节点创建新节点
+#   - 新节点的 next 指向新链表中对应的后继
+#   - 新节点的 random 指向新链表中对应的 random 目标
+#   - 不能修改原链表
+#
+# 示例:
+#   输入: [[7,null],[13,0],[11,4],[10,2],[1,0]]
+#   表示节点 0(val=7,random=None), 节点 1(val=13,random=0), ...
+#   输出: 同样结构的全新链表
+
+from typing import Optional
+
+class Node:
+    def __init__(self, x: int, next: 'Node' = None, random: 'Node' = None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+
+def copyRandomList(head: Optional[Node]) -> Optional[Node]:
+    \"\"\"返回深拷贝后的链表头节点。\"\"\"
+    if not head:
+        return None
+    old2new = {}
+    cur = head
+    while cur:
+        old2new[cur] = Node(cur.val)
+        cur = cur.next
+    cur = head
+    while cur:
+        old2new[cur].next = old2new.get(cur.next)
+        old2new[cur].random = old2new.get(cur.random)
+        cur = cur.next"""
+explanation = "**第 3 步：第二次遍历，连 `next` 和 `random`**\n\n```python\ncur = head\nwhile cur:\n    old2new[cur].next = old2new.get(cur.next)\n    old2new[cur].random = old2new.get(cur.random)\n    cur = cur.next\n```\n\n**关键技巧：使用 `dict.get(key)`**\n\n| 旧指针 | `cur.next`/`cur.random` 为 `None` | 期望新指针 |\n|--------|----------------------------------|------------|\n| 普通情况 | 旧节点 | `old2new[旧节点]` |\n| 末尾/无 random | `None` | 也应是 `None` |\n\n- `dict.get(None)` 会返回 `None`（默认），无需额外判断\n- 这样**一行同时处理**两种情况，代码更简洁\n\n**示例追踪**（用 `[7→13→11→10→1]`，random: 13→7, 7→None, 11→1, 10→11, 1→7）\n\n```\n处理 A(7): A'.next = B'   A'.random = None   (cur.random 是 None)\n处理 B(13): B'.next = C'  B'.random = A'      (cur.random = A)\n处理 C(11): C'.next = D'  C'.random = E'      (cur.random = E)\n处理 D(10): D'.next = E'  D'.random = C'      (cur.random = C)\n处理 E(1):  E'.next = None  E'.random = A'    (cur.random = A)\n```"
+visualizationType = "array-iteration"
+visualizationData = { mapContents = "{A → A', B → B', C → C', D → D', E → E'}", arrayState = "[7, 13, 11, 10, 1]", currentIndex = 0, currentValue = 7, found = false }
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 随机链表的复制
+# 链表节点除了 next 指针外，还有一个 random 指针
+# random 指向链表中的任意节点（也可以是 None）
+#
+# 要求：深拷贝整个链表
+#   - 为每个旧节点创建新节点
+#   - 新节点的 next 指向新链表中对应的后继
+#   - 新节点的 random 指向新链表中对应的 random 目标
+#   - 不能修改原链表
+#
+# 示例:
+#   输入: [[7,null],[13,0],[11,4],[10,2],[1,0]]
+#   表示节点 0(val=7,random=None), 节点 1(val=13,random=0), ...
+#   输出: 同样结构的全新链表
+
+from typing import Optional
+
+class Node:
+    def __init__(self, x: int, next: 'Node' = None, random: 'Node' = None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+
+def copyRandomList(head: Optional[Node]) -> Optional[Node]:
+    \"\"\"返回深拷贝后的链表头节点。\"\"\"
+    if not head:
+        return None
+    old2new = {}
+    cur = head
+    while cur:
+        old2new[cur] = Node(cur.val)
+        cur = cur.next
+    cur = head
+    while cur:
+        old2new[cur].next = old2new.get(cur.next)
+        old2new[cur].random = old2new.get(cur.random)
+        cur = cur.next
+    return old2new[head]"""
+explanation = "**最终结果**\n\n```python\nreturn old2new[head]\n```\n\n返回旧头节点 `head` 在哈希表中对应的**新节点**——这就是新链表的头。\n\n**算法复杂度**\n\n| 指标 | 值 | 说明 |\n|------|------|------|\n| 时间复杂度 | **O(n)** | 两次遍历，每次 O(n) |\n| 空间复杂度 | **O(n)** | 哈希表存 n 个旧→新映射 |\n\n**关键技巧总结**\n\n1. **分离「建节点」与「连指针」**——避免 `random` 指向未建好的节点\n2. **哈希表** `old → new` 提供 O(1) 指针重定向\n3. **`dict.get()` 优雅处理 `None`**——`old2new.get(None)` 返回 `None`，无需特判\n\n**进阶：O(1) 空间的原地交错法**\n\n> 如果面试官追问 O(1) 空间，可以采用三步法：\n> 1. 把新节点 `A'` 插到 `A` 后面，形成 `A → A' → B → B' → ...`\n> 2. 利用 `old.random.next` 直接定位新 random 目标：`A'.random = A.random.next`\n> 3. 第二次遍历把交错链表拆成两条独立链表\n>\n> 这样省掉哈希表，但**会修改原链表**（虽然最后会还原）。"
+visualizationType = "result"
+visualizationData = { mapContents = "{A → A', B → B', C → C', D → D', E → E'}", arrayState = "[7, 13, 11, 10, 1]", result = "[[7,null],[13,0],[11,4],[10,2],[1,0]]", highlightedIndices = [0, 1, 2, 3, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(n)"
+approach = "哈希表映射旧→新节点 + 两次遍历"
+keyInsight = "random 可指向任意节点，必须先用哈希表建立 old→new 映射，再第二次遍历连 next/random；dict.get() 优雅处理 None"

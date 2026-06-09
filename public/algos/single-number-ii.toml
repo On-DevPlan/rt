@@ -1,0 +1,154 @@
+[algorithm]
+id = "single-number-ii"
+title = "只出现一次的数字 II"
+titleEn = "Single Number II"
+difficulty = "medium"
+tags = ["array", "bit-manipulation"]
+testCase = "nums = [2,2,3,2]"
+expectedOutput = "3"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 只出现一次的数字 II
+# 给定一个整数数组，其中每个元素都出现三次，除了一个元素只出现一次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，常量空间复杂度
+#
+# 示例:
+#   输入: [2,2,3,2]
+#   输出: 3
+#
+# 关键思路: 位计数
+#   每个数出现 3 次，所以每个位上的计数 % 3 就是只出现一次的数在该位的值
+#   用 ones 和 twos 两个变量跟踪出现 1 次和 2 次的位"""
+explanation = "**问题分析**\n\n数组中除了一个元素出现**一次**，其他所有元素都出现**三次**。\n\n**朴素方法的问题**\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 哈希表计数 | O(n) | O(n) |\n| 排序后遍历 | O(n log n) | O(1) |\n| **位计数** | **O(n)** | **O(1)** ✓ |\n\n**核心思想：位运算状态机**\n\n对于每个二进制位，统计它出现的次数：\n- 如果某个数出现 3 次，该位的计数也是 3 的倍数\n- 所以 `计数 % 3` 就是只出现一次的数在该位的值\n\n**状态机设计**\n\n用两个变量 `ones` 和 `twos` 跟踪每个位的状态：\n\n```\n00（未出现）→ 01（出现1次）→ 10（出现2次）→ 00（出现3次，重置）\n          ↑             └─────────────────────┘\n          └──────────────────────────────────┘\n                    循环往复\n```\n\n| 状态 | ones | twos | 含义 |\n|------|------|------|------|\n| 00 | 0 | 0 | 该位未出现或出现3次（重置） |\n| 01 | 1 | 0 | 该位出现1次 |\n| 10 | 0 | 1 | 该位出现2次 |"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 初始化 ───────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "初始化变量"
+titleEn = "Initialize Variables"
+code = """# 只出现一次的数字 II
+# 给定一个整数数组，其中每个元素都出现三次，除了一个元素只出现一次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，常量空间复杂度
+#
+# 示例:
+#   输入: [2,2,3,2]
+#   输出: 3
+#
+# 关键思路: 位计数
+#   每个数出现 3 次，所以每个位上的计数 % 3 就是只出现一次的数在该位的值
+#   用 ones 和 twos 两个变量跟踪出现 1 次和 2 次的位
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字\"\"\"
+    ones, twos = 0, 0"""
+explanation = "**第 1 步：初始化状态变量**\n\n```\nones = 0  # 跟踪出现 1 次的位\ntwos = 0  # 跟踪出现 2 次的位\n```\n\n**变量含义**\n\n| 变量 | 作用 |\n|------|------|\n| `ones` | 二进制位为 1 表示该位在已处理的元素中出现了**奇数次**（1 次 mod 2） |\n| `twos` | 二进制位为 1 表示该位在已处理的元素中出现了**2 次 mod 3** |\n\n> 初始状态都是 0，表示所有位都处于「未出现」状态（状态 00）。"
+visualizationType = "code-only"
+
+# ── Step 2: 遍历数组 ───────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "遍历数组"
+titleEn = "Iterate Array"
+code = """# 只出现一次的数字 II
+# 给定一个整数数组，其中每个元素都出现三次，除了一个元素只出现一次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，常量空间复杂度
+#
+# 示例:
+#   输入: [2,2,3,2]
+#   输出: 3
+#
+# 关键思路: 位计数
+#   每个数出现 3 次，所以每个位上的计数 % 3 就是只出现一次的数在该位的值
+#   用 ones 和 twos 两个变量跟踪出现 1 次和 2 次的位
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字\"\"\"
+    ones, twos = 0, 0
+    for num in nums:
+        pass"""
+explanation = "**第 2 步：遍历所有数字**\n\n对每个数字 `num`，更新 `ones` 和 `twos` 的状态。\n\n**状态转移逻辑**\n\n当处理新数字 `num` 时：\n\n| 当前状态 | 输入 | 新状态 |\n|----------|------|--------|\n| 00 (ones=0, twos=0) | num | 01 (ones=1, twos=0) |\n| 01 (ones=1, twos=0) | num | 10 (ones=0, twos=1) |\n| 10 (ones=0, twos=1) | num | 00 (ones=0, twos=0) |\n\n> 关键：每个数字出现 3 次后，状态会重置回 00。"
+visualizationType = "code-only"
+
+# ── Step 3: 位运算状态机 ───────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "更新状态"
+titleEn = "Update State"
+code = """# 只出现一次的数字 II
+# 给定一个整数数组，其中每个元素都出现三次，除了一个元素只出现一次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，常量空间复杂度
+#
+# 示例:
+#   输入: [2,2,3,2]
+#   输出: 3
+#
+# 关键思路: 位计数
+#   每个数出现 3 次，所以每个位上的计数 % 3 就是只出现一次的数在该位的值
+#   用 ones 和 twos 两个变量跟踪出现 1 次和 2 次的位
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字\"\"\"
+    ones, twos = 0, 0
+    for num in nums:
+        ones = (ones ^ num) & ~twos
+        twos = (twos ^ num) & ~ones
+        pass"""
+explanation = "**第 3 步：实现状态转移**\n\n**位运算解析**\n\n```\nones = (ones ^ num) & ~twos\ntwos = (twos ^ num) & ~ones\n```\n\n| 运算 | 作用 |\n|------|------|\n| `ones ^ num` | 将 num 的位异或到 ones（翻转出现状态） |\n| `& ~twos` | 排除已经在 twos 中的位（避免出现 3 次） |\n| `twos ^ num` | 将 num 的位异或到 twos |\n| `& ~ones` | 排除刚刚进入 ones 的位（优先进入 ones） |\n\n**为什么这样设计？**\n\n1. **先更新 `ones`**：如果 `twos` 中某位是 1，说明该位已经出现 2 次，再出现就应该重置为 0\n2. **再更新 `twos`**：如果 `ones` 中某位刚变成 1，说明该位是第 1 次出现，不应该进入 `twos`\n\n**示例：处理 [2, 2, 3, 2]**\n\n```\n初始: ones=0, twos=0\n\n处理 2 (010):\n  ones = (0 ^ 2) & ~0 = 2 & ~0 = 2 (010)\n  twos = (0 ^ 2) & ~2 = 2 & ~2 = 0\n  状态: ones=2, twos=0\n\n处理 2 (010) 第二次:\n  ones = (2 ^ 2) & ~0 = 0 & ~0 = 0\n  twos = (0 ^ 2) & ~0 = 2 & ~0 = 2 (010)\n  状态: ones=0, twos=2\n\n处理 3 (011):\n  ones = (0 ^ 3) & ~2 = 3 & ~2 = 3 & 1 = 1 (001)\n  twos = (2 ^ 3) & ~1 = 1 & ~1 = 1 & 0 = 0\n  状态: ones=1, twos=0\n\n处理 2 (010) 第三次:\n  ones = (1 ^ 2) & ~0 = 3 & ~0 = 3 (011)\n  twos = (0 ^ 2) & ~3 = 2 & ~3 = 2 & 0 = 0\n  状态: ones=3, twos=0\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ─────────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 只出现一次的数字 II
+# 给定一个整数数组，其中每个元素都出现三次，除了一个元素只出现一次
+# 找出那个只出现一次的元素
+#
+# 要求: 线性时间复杂度，常量空间复杂度
+#
+# 示例:
+#   输入: [2,2,3,2]
+#   输出: 3
+#
+# 关键思路: 位计数
+#   每个数出现 3 次，所以每个位上的计数 % 3 就是只出现一次的数在该位的值
+#   用 ones 和 twos 两个变量跟踪出现 1 次和 2 次的位
+
+from typing import List
+
+def singleNumber(nums: List[int]) -> int:
+    \"\"\"返回只出现一次的数字\"\"\"
+    ones, twos = 0, 0
+    for num in nums:
+        ones = (ones ^ num) & ~twos
+        twos = (twos ^ num) & ~ones
+    return ones"""
+explanation = "**最终结果**\n\n✅ 返回 `ones`，它存储的就是只出现一次的数字。\n\n```\n输入: [2, 2, 3, 2]\n输出: 3\n```\n\n**为什么答案是 `ones`？**\n\n- 出现 3 次的数字：所有位都经历了 `00 → 01 → 10 → 00`，最终在 `ones` 中无贡献\n- 出现 1 次的数字：所有位经历 `00 → 01`，停留在 `ones` 中\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 遍历一次数组 |\n| 空间复杂度 | O(1) — 只用了两个变量 |\n\n**状态机总结**\n\n```\n当前状态    输入    新状态\nones twos          ones twos\n 0    0    + x  =   x    0    (第一次出现)\n x    0    + x  =   0    x    (第二次出现)\n 0    x    + x  =   0    0    (第三次出现，重置)\n```\n\n> 这种位运算技巧可以推广到「其他数字出现 k 次，只有一个数字出现 1 次」的情况，只需要设计对应的状态机。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 2, 3, 2]", result = "3", highlightedIndices = [2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "位计数状态机"
+keyInsight = "ones 跟踪出现 1 次的位，twos 跟踪出现 2 次的位；状态机 00→01→10→00；最终 ones 就是只出现一次的数字"

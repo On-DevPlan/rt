@@ -1,0 +1,190 @@
+[algorithm]
+id = "rotate-list"
+title = "旋转链表"
+titleEn = "Rotate List"
+difficulty = "medium"
+category = "linked-list"
+tags = ["linked-list", "two-pointers"]
+testCase = "head = [1,2,3,4,5], k = 2"
+expectedOutput = "[4,5,1,2,3]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 旋转链表
+# 给定链表头节点 head 和正整数 k
+# 将链表向右旋转 k 个位置
+#
+# 示例:
+#   head = [1, 2, 3, 4, 5], k = 2
+#   结果: [4, 5, 1, 2, 3]
+#
+# 关键观察:
+#   旋转 k 次 = 把倒数 k 个节点搬到链表头部
+#   旋转 n 次（n = 链表长度）= 回到原样"""
+explanation = "**问题分析**\n\n给定单链表的头节点 `head` 和正整数 `k`，将链表每个节点向右移动 `k` 个位置。\n\n**直观理解**\n\n```\nhead = [1 → 2 → 3 → 4 → 5], k = 2\n\n旋转后:  [4 → 5 → 1 → 2 → 3]\n```\n\n相当于把链表的**最后 k 个节点**搬到**头部**。\n\n**核心约束**\n\n| 情况 | 处理 |\n|------|------|\n| `head` 为空 | 直接返回 `None` |\n| 链表只有一个节点 | 不需要旋转 |\n| `k == 0` | 不旋转 |\n| `k > length` | 取 `k % length` 等价旋转 |\n\n> 解题技巧：**先连成环，再在合适位置断环**。这样不需要遍历多次或额外存储。"
+visualizationType = "intro"
+
+# ── Step 1: 定义节点 + 函数签名 + 边界 ────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "定义节点和签名"
+titleEn = "Define Node and Signature"
+code = """# 旋转链表
+# 给定链表头节点 head 和正整数 k
+# 将链表向右旋转 k 个位置
+#
+# 示例:
+#   head = [1, 2, 3, 4, 5], k = 2
+#   结果: [4, 5, 1, 2, 3]
+#
+# 关键观察:
+#   旋转 k 次 = 把倒数 k 个节点搬到链表头部
+#   旋转 n 次（n = 链表长度）= 回到原样
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def rotateRight(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"将链表向右旋转 k 个位置。\"\"\"
+    if not head or not head.next or k == 0:
+        return head"""
+explanation = "**第 1 步：定义节点 + 函数签名 + 边界处理**\n\n**节点定义**\n\n```python\nclass ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n```\n\n标准的链表节点结构：`val`（节点值）和 `next`（后继指针）。\n\n**函数签名**\n\n| 参数 | 类型 | 说明 |\n|------|------|------|\n| `head` | `Optional[ListNode]` | 链表头节点 |\n| `k` | `int` | 旋转步数（向右） |\n| 返回 | `Optional[ListNode]` | 旋转后的头节点 |\n\n**边界条件**\n\n| 条件 | 处理 |\n|------|------|\n| `not head` — 链表为空 | 直接返回 `None` |\n| `not head.next` — 只有一个节点 | 无需旋转 |\n| `k == 0` — 不旋转 | 直接返回原链表 |\n\n> 这三种情况都需要在第一时间短路返回，避免后续空指针错误。"
+visualizationType = "code-only"
+
+# ── Step 2: 求链表长度 + 成环 ─────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "求长度并成环"
+titleEn = "Compute Length and Form a Ring"
+code = """# 旋转链表
+# 给定链表头节点 head 和正整数 k
+# 将链表向右旋转 k 个位置
+#
+# 示例:
+#   head = [1, 2, 3, 4, 5], k = 2
+#   结果: [4, 5, 1, 2, 3]
+#
+# 关键观察:
+#   旋转 k 次 = 把倒数 k 个节点搬到链表头部
+#   旋转 n 次（n = 链表长度）= 回到原样
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def rotateRight(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"将链表向右旋转 k 个位置。\"\"\"
+    if not head or not head.next or k == 0:
+        return head
+    length = 1
+    cur = head
+    while cur.next:
+        cur = cur.next
+        length += 1
+    cur.next = head  # 成环：尾节点指向头"""
+explanation = "**第 2 步：遍历求长度 + 成环**\n\n**第一步：求链表长度**\n\n从 `head` 开始遍历到末尾，统计节点数量 `length`。注意从 `1` 开始计数（因为已经访问了 `head`）。\n\n```\n1 → 2 → 3 → 4 → 5 → None\n                ↑\n               cur（走到末尾）\nlength = 5\n```\n\n**第二步：成环**\n\n让最后一个节点的 `next` 指向 `head`，把链表变成一个**环**：\n\n```\n1 → 2 → 3 → 4 → 5\n↑               ↓\n└───────────────┘\n```\n\n> 这一步非常关键：成环之后，从任意节点出发走 `length` 步都会回到原点。这让我们可以**精确定位新尾节点**。\n\n| 操作 | 复杂度 |\n|------|--------|\n| 遍历求长度 | O(n) |\n| 成环 | O(1) |"
+visualizationType = "code-only"
+
+# ── Step 3: k 取模 + 找新尾/新头 ──────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "定位新尾和新头"
+titleEn = "Locate New Tail and New Head"
+code = """# 旋转链表
+# 给定链表头节点 head 和正整数 k
+# 将链表向右旋转 k 个位置
+#
+# 示例:
+#   head = [1, 2, 3, 4, 5], k = 2
+#   结果: [4, 5, 1, 2, 3]
+#
+# 关键观察:
+#   旋转 k 次 = 把倒数 k 个节点搬到链表头部
+#   旋转 n 次（n = 链表长度）= 回到原样
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def rotateRight(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"将链表向右旋转 k 个位置。\"\"\"
+    if not head or not head.next or k == 0:
+        return head
+    length = 1
+    cur = head
+    while cur.next:
+        cur = cur.next
+        length += 1
+    cur.next = head  # 成环：尾节点指向头
+    k = k % length
+    steps = length - k
+    new_tail = head
+    for _ in range(steps - 1):
+        new_tail = new_tail.next"""
+explanation = "**第 3 步：k 取模 + 找新尾节点**\n\n**取模运算**\n\n```python\nk = k % length\n```\n\n旋转 `length` 次会回到原状，所以只需要考虑 `k < length` 的情况。\n\n**关键推导**\n\n| 概念 | 值 |\n|------|------|\n| 链表总长 | `length` |\n| 需要移到前面的节点数 | `k` |\n| **新的尾节点** | 第 `(length - k)` 个节点 |\n| 新的头节点 | 新尾节点的 `next` |\n\n```\n原始: 1 → 2 → 3 → 4 → 5 → (环回到 1)\nk = 2\nsteps = 5 - 2 = 3\n\n走 steps - 1 = 2 步: 从 1 走到 3\nnew_tail = 3\nnew_head = 3.next = 4\n```\n\n> **为什么是 `steps - 1`？**\n> 起点 `head` 是第 1 个节点，再走 `steps - 1` 步正好到达第 `steps` 个节点（即新尾）。"
+visualizationType = "code-only"
+
+# ── Step 4: 断环 + 返回 ───────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "断环并返回"
+titleEn = "Break the Ring and Return"
+code = """# 旋转链表
+# 给定链表头节点 head 和正整数 k
+# 将链表向右旋转 k 个位置
+#
+# 示例:
+#   head = [1, 2, 3, 4, 5], k = 2
+#   结果: [4, 5, 1, 2, 3]
+#
+# 关键观察:
+#   旋转 k 次 = 把倒数 k 个节点搬到链表头部
+#   旋转 n 次（n = 链表长度）= 回到原样
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def rotateRight(head: Optional[ListNode], k: int) -> Optional[ListNode]:
+    \"\"\"将链表向右旋转 k 个位置。\"\"\"
+    if not head or not head.next or k == 0:
+        return head
+    length = 1
+    cur = head
+    while cur.next:
+        cur = cur.next
+        length += 1
+    cur.next = head  # 成环：尾节点指向头
+    k = k % length
+    steps = length - k
+    new_tail = head
+    for _ in range(steps - 1):
+        new_tail = new_tail.next
+    new_head = new_tail.next
+    new_tail.next = None  # 断环
+    return new_head"""
+explanation = "**第 4 步：断环 + 返回新头**\n\n**断环**\n\n```python\nnew_head = new_tail.next\nnew_tail.next = None\n```\n\n定位完成后，必须把新尾节点的 `next` 置为 `None`，否则会形成环导致死循环。\n\n**完整流程示例**\n\n```\n输入: 1 → 2 → 3 → 4 → 5, k = 2\n\n1. 求 length = 5\n2. 成环: 1 → 2 → 3 → 4 → 5 → (回到 1)\n3. k = 2 % 5 = 2, steps = 5 - 2 = 3\n4. 从 head 走 2 步: 1 → 2 → 3\n5. new_tail = 3, new_head = 3.next = 4\n6. 断环: 3.next = None\n\n结果: 4 → 5 → 1 → 2 → 3 ✓\n```\n\n**复杂度分析**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 遍历链表两次（求长度 + 定位） |\n| 空间复杂度 | O(1) — 仅用几个指针 |\n\n**关键技巧：成环 + 断环**\n\n- 避免使用数组额外存储\n- 旋转的物理意义：把倒数 k 个搬到前面 = 找到第 (n - k) 个节点作为新尾"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[4, 5, 1, 2, 3]", result = "[4,5,1,2,3]", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "成环 + 断环"
+keyInsight = "旋转 = 把尾接到头：先连成环找到新尾位置，再断环即可"

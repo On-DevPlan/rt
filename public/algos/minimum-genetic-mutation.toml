@@ -1,0 +1,171 @@
+[algorithm]
+id = "minimum-genetic-mutation"
+title = "最小基因变化"
+titleEn = "Minimum Genetic Mutation"
+difficulty = "medium"
+tags = ["breadth-first-search", "hash-table", "string"]
+testCase = "startGene = \"AACCGGTT\", endGene = \"AACCGGTA\", bank = [\"AACCGGTA\"]"
+expectedOutput = "1"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 433. 最小基因变化
+# 基因字符串长度为 8，字符集为 {A, C, G, T}
+# 每次变化只能替换一个字符，且新串必须出现在 bank 中
+# 求从 startGene 到 endGene 的最小变化次数
+#
+# 示例:
+#   startGene = "AACCGGTT", endGene = "AACCGGTA", bank = ["AACCGGTA"]
+#   结果: 1  (只需把最后一位 T 替换为 A)"""
+explanation = "**问题分析**\n\n基因字符串固定为 8 位，字符集 `{A, C, G, T}`，每次只能改 1 个字符，且中间产物必须在 `bank` 中。\n\n**示例**\n\n```\nstartGene = \"AACCGGTT\"\nendGene   = \"AACCGGTA\"\nbank      = [\"AACCGGTA\"]\n```\n\n| 项 | 值 |\n|------|------|\n| 起始 | `AACCGGTT` |\n| 目标 | `AACCGGTA` |\n| 中间可选 | 仅 `AACCGGTA` |\n\n> 把最后一位 `T` 换成 `A` 即可命中 `endGene`，答案为 **1**。\n\n**关键思路：BFS + 单字符替换**\n\n把每个基因看作图中的一个节点，两个基因相差 1 个字符就连一条边。BFS 的层数即为最小变化次数。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 边界 + bank_set + 队列初始化 ───────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与初始化"
+titleEn = "Signature & Initialization"
+code = """# 433. 最小基因变化
+# 基因字符串长度为 8，字符集为 {A, C, G, T}
+# 每次变化只能替换一个字符，且新串必须出现在 bank 中
+# 求从 startGene 到 endGene 的最小变化次数
+#
+# 示例:
+#   startGene = "AACCGGTT", endGene = "AACCGGTA", bank = ["AACCGGTA"]
+#   结果: 1  (只需把最后一位 T 替换为 A)
+
+from typing import List
+from collections import deque
+
+def minMutation(startGene: str, endGene: str, bank: List[str]) -> int:
+    \"\"\"返回从 startGene 到 endGene 的最小变化次数\"\"\"
+    if endGene not in bank:
+        return -1
+    bank_set = set(bank)
+    bank_set.discard(startGene)
+    q = deque([(startGene, 0)])"""
+explanation = "**第 1 步：签名与初始化**\n\n- **边界判断**：若 `endGene` 不在 `bank` 中，根本无法到达，直接返回 `-1`。\n- **`bank_set`**：用 `set` 把列表转成哈希集合，便于 O(1) 查找；同时移除 `startGene`（起点无需再访问）。\n- **`q`**：双端队列，元素为 `(当前基因, 已变化步数)`。\n\n> 队列初始化时放入 `(startGene, 0)`，步数从 0 开始。"
+visualizationType = "code-only"
+
+# ── Step 2: 字符集 + BFS 主循环 + 命中返回 ─────────────────────
+[[algorithm.steps]]
+id = 2
+title = "BFS 主循环"
+titleEn = "BFS Main Loop"
+code = """# 433. 最小基因变化
+# 基因字符串长度为 8，字符集为 {A, C, G, T}
+# 每次变化只能替换一个字符，且新串必须出现在 bank 中
+# 求从 startGene 到 endGene 的最小变化次数
+#
+# 示例:
+#   startGene = "AACCGGTT", endGene = "AACCGGTA", bank = ["AACCGGTA"]
+#   结果: 1  (只需把最后一位 T 替换为 A)
+
+from typing import List
+from collections import deque
+
+def minMutation(startGene: str, endGene: str, bank: List[str]) -> int:
+    \"\"\"返回从 startGene 到 endGene 的最小变化次数\"\"\"
+    if endGene not in bank:
+        return -1
+    bank_set = set(bank)
+    bank_set.discard(startGene)
+    q = deque([(startGene, 0)])
+    chars = ['A', 'C', 'G', 'T']
+    while q:
+        cur, steps = q.popleft()
+        if cur == endGene:
+            return steps"""
+explanation = "**第 2 步：BFS 主循环**\n\n- **`chars = ['A', 'C', 'G', 'T']`**：固定的字符集。\n- **`while q:`**：标准 BFS，队列为空说明搜完所有可达节点。\n- **命中条件 `cur == endGene`**：BFS 保证第一次遇到目标时步数最小，直接返回。\n\n**示例执行**\n\n```\nq = [(AACCGGTT, 0)]\n  → 弹出 cur=AACCGGTT, steps=0\n  → cur != endGene (AACCGGTA) → 继续扩展\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 双层循环扩展邻居 ──────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "扩展邻居"
+titleEn = "Expand Neighbors"
+code = """# 433. 最小基因变化
+# 基因字符串长度为 8，字符集为 {A, C, G, T}
+# 每次变化只能替换一个字符，且新串必须出现在 bank 中
+# 求从 startGene 到 endGene 的最小变化次数
+#
+# 示例:
+#   startGene = "AACCGGTT", endGene = "AACCGGTA", bank = ["AACCGGTA"]
+#   结果: 1  (只需把最后一位 T 替换为 A)
+
+from typing import List
+from collections import deque
+
+def minMutation(startGene: str, endGene: str, bank: List[str]) -> int:
+    \"\"\"返回从 startGene 到 endGene 的最小变化次数\"\"\"
+    if endGene not in bank:
+        return -1
+    bank_set = set(bank)
+    bank_set.discard(startGene)
+    q = deque([(startGene, 0)])
+    chars = ['A', 'C', 'G', 'T']
+    while q:
+        cur, steps = q.popleft()
+        if cur == endGene:
+            return steps
+        for i in range(len(cur)):
+            for ch in chars:
+                if ch == cur[i]:
+                    continue
+                nxt = cur[:i] + ch + cur[i+1:]
+                if nxt in bank_set:
+                    bank_set.remove(nxt)
+                    q.append((nxt, steps + 1))"""
+explanation = "**第 3 步：双层循环生成邻居**\n\n```\n外层: 位置 i ∈ [0, 8)\n内层: 字符 ch ∈ {A, C, G, T}\n```\n\n- **跳过相同字符** `ch == cur[i]`：避免生成无意义的相同串。\n- **拼接新串** `cur[:i] + ch + cur[i+1:]`：经典切片替换，O(1)。\n- **合法性检查** `if nxt in bank_set`：\n  - 若新串在 `bank` 中 → 是合法邻居\n  - **立即从 `bank_set` 移除**该邻居，避免后续从其他路径重复入队（环/重复访问）\n  - 加入队列，步数 +1\n\n**示例**\n\n```\ncur = AACCGGTT, bank_set = {AACCGGTA}\ni=7, ch=A → nxt = AACCGGTA ∈ bank_set ✓\n  → bank_set.remove(AACCGGTA) → {}\n  → q.append((AACCGGTA, 1))\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完整最终代码 + return -1 ─────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 433. 最小基因变化
+# 基因字符串长度为 8，字符集为 {A, C, G, T}
+# 每次变化只能替换一个字符，且新串必须出现在 bank 中
+# 求从 startGene 到 endGene 的最小变化次数
+#
+# 示例:
+#   startGene = "AACCGGTT", endGene = "AACCGGTA", bank = ["AACCGGTA"]
+#   结果: 1  (只需把最后一位 T 替换为 A)
+
+from typing import List
+from collections import deque
+
+def minMutation(startGene: str, endGene: str, bank: List[str]) -> int:
+    \"\"\"返回从 startGene 到 endGene 的最小变化次数\"\"\"
+    if endGene not in bank:
+        return -1
+    bank_set = set(bank)
+    bank_set.discard(startGene)
+    q = deque([(startGene, 0)])
+    chars = ['A', 'C', 'G', 'T']
+    while q:
+        cur, steps = q.popleft()
+        if cur == endGene:
+            return steps
+        for i in range(len(cur)):
+            for ch in chars:
+                if ch == cur[i]:
+                    continue
+                nxt = cur[:i] + ch + cur[i+1:]
+                if nxt in bank_set:
+                    bank_set.remove(nxt)
+                    q.append((nxt, steps + 1))
+    return -1"""
+explanation = "**最终结果**\n\n```\n输入: startGene = \"AACCGGTT\", endGene = \"AACCGGTA\", bank = [\"AACCGGTA\"]\n输出: 1\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n × b × 4) — n 为串长 (8), b 为 bank 大小 |\n| 空间复杂度 | O(b) — `bank_set` + 队列 |\n\n**关键技巧**\n\n- **BFS 层次 = 变化次数**：第一次命中 `endGene` 即为最小步数。\n- **入队即移除**：从 `bank_set` 移除已入队的邻居，避免回环和重复入队。\n- **跳过相同字符**：当前位置与 `ch` 相同则跳过，减少无效邻居。\n- **终点未在 bank 中**：直接返回 `-1`，BFS 完毕仍未命中也返回 `-1`。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[\"AACCGGTT\", \"AACCGGTA\"]", result = "1", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(n * b * 4)  # n 串长, b bank 大小"
+spaceComplexity = "O(b)  # bank_set + 队列"
+approach = "BFS + 单字符替换"
+keyInsight = "每次替换 1 个字符（4 选 1）= 一个邻居；BFS 层次 = 变化次数；从 bank_set 移除访问过的避免回环"

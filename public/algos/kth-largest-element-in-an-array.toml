@@ -1,0 +1,235 @@
+[algorithm]
+id = "kth-largest-element-in-an-array"
+title = "数组中的第K个最大元素"
+titleEn = "Kth Largest Element in an Array"
+difficulty = "medium"
+tags = ["array", "divide-and-conquer", "heap", "quickselect"]
+testCase = "nums = [3,2,1,5,6,4], k = 2"
+expectedOutput = "5"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 215. 数组中的第K个最大元素
+# 找出无序数组中第 k 个最大的元素
+#
+# 示例:
+#   nums = [3,2,1,5,6,4], k = 2
+#   排序后: [1,2,3,4,5,6]
+#   第2大: 5"""
+explanation = """**问题分析**
+
+给定无序数组 `nums` 和整数 `k`，返回第 `k` 个最大的元素。
+
+**示例理解**
+
+```
+nums = [3, 2, 1, 5, 6, 4], k = 2
+排序后: [1, 2, 3, 4, 5, 6]
+从右往左数: 第1大=6, 第2大=5
+答案: 5
+```
+
+**解法对比**
+
+| 方法 | 时间 | 空间 |
+|------|------|------|
+| 排序 | O(n log n) | O(1) / O(n) |
+| **最小堆(size=k)** | **O(n log k)** | **O(k)** |
+| 快速选择 | O(n) 平均 | O(1) |
+
+> 使用**最小堆（固定大小 k）**是最平衡的方案：堆顶就是第 k 大。"""
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 215. 数组中的第K个最大元素
+# 找出无序数组中第 k 个最大的元素
+#
+# 示例:
+#   nums = [3,2,1,5,6,4], k = 2
+#   排序后: [1,2,3,4,5,6]
+#   第2大: 5
+
+import heapq
+from typing import List
+
+def findKthLargest(nums: List[int], k: int) -> int:
+    \"\"\"返回第 k 个最大元素。\"\"\"
+    pass"""
+explanation = """**第 1 步：编写函数签名**
+
+- 导入 `heapq` 模块（Python 标准堆操作库）
+- 接收 `nums` 数组和整数 `k`
+- 返回 `int` 类型的第 k 大元素
+- 使用类型注解明确参数和返回值类型
+
+**堆的性质**
+
+```
+heapq 实现的是最小堆
+heap[0] 永远是最小元素
+```
+
+> 我们要维护「当前最大的 k 个元素」，所以用最小堆：堆顶是这 k 个中最小的，也就是第 k 大。"""
+visualizationType = "code-only"
+
+# ── Step 2: 初始化堆 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化堆"
+titleEn = "Initialize Heap"
+code = """# 215. 数组中的第K个最大元素
+# 找出无序数组中第 k 个最大的元素
+#
+# 示例:
+#   nums = [3,2,1,5,6,4], k = 2
+#   排序后: [1,2,3,4,5,6]
+#   第2大: 5
+
+import heapq
+from typing import List
+
+def findKthLargest(nums: List[int], k: int) -> int:
+    \"\"\"返回第 k 个最大元素。\"\"\"
+    heap = nums[:k]
+    heapq.heapify(heap)"""
+explanation = """**第 2 步：初始化堆**
+
+取前 `k` 个元素，原地转化为最小堆：
+
+```
+nums = [3, 2, 1, 5, 6, 4], k = 2
+
+heap = [3, 2]  # 前 k 个元素
+heapify(heap) → heap = [2, 3]
+               ↑ 堆顶（最小）
+```
+
+**堆的示意图**
+
+```
+    2          heap[0] = 2 (堆顶，最小)
+   / \\
+  3           heap[1] = 3
+```
+
+> 堆大小固定为 `k`，堆顶 `heap[0]` 就是「当前第 k 大」的候选值。"""
+visualizationType = "code-only"
+
+# ── Step 3: 遍历并维护堆 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "维护堆大小"
+titleEn = "Maintain Heap Size"
+code = """# 215. 数组中的第K个最大元素
+# 找出无序数组中第 k 个最大的元素
+#
+# 示例:
+#   nums = [3,2,1,5,6,4], k = 2
+#   排序后: [1,2,3,4,5,6]
+#   第2大: 5
+
+import heapq
+from typing import List
+
+def findKthLargest(nums: List[int], k: int) -> int:
+    \"\"\"返回第 k 个最大元素。\"\"\"
+    heap = nums[:k]
+    heapq.heapify(heap)
+    for num in nums[k:]:
+        if num > heap[0]:
+            heapq.heapreplace(heap, num)"""
+explanation = """**第 3 步：遍历剩余元素，维护堆大小**
+
+对于 `nums[k:]` 中的每个元素：
+
+| 条件 | 操作 | 含义 |
+|------|------|------|
+| `num > heap[0]` | `heapreplace(heap, num)` | 新元素比堆顶大，替换 |
+| `num <= heap[0]` | 跳过 | 新元素进不了前 k，丢弃 |
+
+**heapreplace 的行为**
+
+```
+heapreplace(heap, num):
+    1. 弹出堆顶（最小）
+    2. 压入 num
+    3. 重新堆化，时间 O(log k)
+```
+
+**示例执行**
+
+```
+初始: heap = [2, 3] (堆顶=2)
+
+num=1: 1 > 2? 否 → 跳过
+num=5: 5 > 2? 是 → heapreplace → heap = [3, 5] (堆顶=3)
+num=6: 6 > 3? 是 → heapreplace → heap = [5, 6] (堆顶=5)
+num=4: 4 > 5? 否 → 跳过
+
+最终: heap = [5, 6]，堆顶 = 5 ✓
+```"""
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 215. 数组中的第K个最大元素
+# 找出无序数组中第 k 个最大的元素
+#
+# 示例:
+#   nums = [3,2,1,5,6,4], k = 2
+#   排序后: [1,2,3,4,5,6]
+#   第2大: 5
+
+import heapq
+from typing import List
+
+def findKthLargest(nums: List[int], k: int) -> int:
+    \"\"\"返回第 k 个最大元素。\"\"\"
+    heap = nums[:k]
+    heapq.heapify(heap)
+    for num in nums[k:]:
+        if num > heap[0]:
+            heapq.heapreplace(heap, num)
+    return heap[0]"""
+explanation = """**最终结果**
+
+✅ 堆顶就是第 k 大元素
+
+```
+输入: nums = [3,2,1,5,6,4], k = 2
+输出: 5
+```
+
+**算法复杂度**
+
+| 指标 | 值 |
+|------|------|
+| 时间复杂度 | O(n log k) — heapify 是 O(k)，循环 n-k 次，每次 heapreplace 是 O(log k) |
+| 空间复杂度 | O(k) — 堆的大小固定为 k |
+
+**核心思想**
+
+- 堆大小固定为 `k`，始终维护「当前最大的 k 个元素」
+- 堆顶是这 k 个中最小的，即第 k 大
+- 新元素大于堆顶才替换，保证堆中是最大的 k 个
+- 遍历结束后，堆顶就是答案
+
+> 相比排序的 O(n log n)，当 k 远小于 n 时，O(n log k) 更优。"""
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[3, 2, 1, 5, 6, 4]", result = "5", highlightedIndices = [4] }
+
+[algorithm.summary]
+timeComplexity = "O(n log k)"
+spaceComplexity = "O(k)"
+approach = "最小堆（size = k）"
+keyInsight = "堆大小固定为 k；堆顶是当前 k 个最大元素中的最小值（即第 k 大）；新元素 > 堆顶时替换"

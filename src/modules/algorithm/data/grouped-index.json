@@ -1,0 +1,313 @@
+[
+  {
+    "id": "array_string",
+    "name": "数组 / 字符串",
+    "icon": "📊",
+    "algorithms": [
+      { "id": "merge-sorted-array", "title": "合并两个有序数组", "titleEn": "Merge Sorted Array", "difficulty": "easy" },
+      { "id": "remove-element", "title": "移除元素", "titleEn": "Remove Element", "difficulty": "easy" },
+      { "id": "remove-duplicates", "title": "删除有序数组中的重复项", "titleEn": "Remove Duplicates from Sorted Array", "difficulty": "easy" },
+      { "id": "remove-duplicates-ii", "title": "删除有序数组中的重复项 II", "titleEn": "Remove Duplicates from Sorted Array II", "difficulty": "medium" },
+      { "id": "majority-element", "title": "多数元素", "titleEn": "Majority Element", "difficulty": "easy" },
+      { "id": "rotate-array", "title": "轮转数组", "titleEn": "Rotate Array", "difficulty": "medium" },
+      { "id": "best-time-to-buy-and-sell-stock", "title": "买卖股票的最佳时机", "titleEn": "Best Time to Buy and Sell Stock", "difficulty": "easy" },
+      { "id": "best-time-to-buy-and-sell-stock-ii", "title": "买卖股票的最佳时机 II", "titleEn": "Best Time to Buy and Sell Stock II", "difficulty": "medium" },
+      { "id": "jump-game", "title": "跳跃游戏", "titleEn": "Jump Game", "difficulty": "medium" },
+      { "id": "jump-game-ii", "title": "跳跃游戏 II", "titleEn": "Jump Game II", "difficulty": "medium" },
+      { "id": "h-index", "title": "H 指数", "titleEn": "H Index", "difficulty": "medium" },
+      { "id": "insert-delete-getrandom-o1", "title": "O(1) 时间插入删除和获取随机元素", "titleEn": "Insert Delete GetRandom O(1)", "difficulty": "medium" },
+      { "id": "product-of-array-except-self", "title": "除了自身以外数组的乘积", "titleEn": "Product of Array Except Self", "difficulty": "medium" },
+      { "id": "gas-station", "title": "加油站", "titleEn": "Gas Station", "difficulty": "medium" },
+      { "id": "candy", "title": "分发糖果", "titleEn": "Candy", "difficulty": "hard" },
+      { "id": "trapping-rain-water", "title": "接雨水", "titleEn": "Trapping Rain Water", "difficulty": "hard" },
+      { "id": "roman-to-integer", "title": "罗马数字转整数", "titleEn": "Roman to Integer", "difficulty": "easy" },
+      { "id": "integer-to-roman", "title": "整数转罗马数字", "titleEn": "Integer to Roman", "difficulty": "medium" },
+      { "id": "length-of-last-word", "title": "最后一个单词的长度", "titleEn": "Length of Last Word", "difficulty": "easy" },
+      { "id": "longest-common-prefix", "title": "最长公共前缀", "titleEn": "Longest Common Prefix", "difficulty": "easy" },
+      { "id": "reverse-words-in-a-string", "title": "反转字符串中的单词", "titleEn": "Reverse Words in a String", "difficulty": "medium" },
+      { "id": "zigzag-conversion", "title": "Z 字形变换", "titleEn": "Zigzag Conversion", "difficulty": "medium" },
+      { "id": "find-the-index-of-the-first-occurrence-in-a-string", "title": "找出字符串中第一个匹配项的下标", "titleEn": "Find the Index of the First Occurrence in a String", "difficulty": "easy" },
+      { "id": "text-justification", "title": "文本左右对齐", "titleEn": "Text Justification", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "two-pointers",
+    "name": "双指针",
+    "icon": "↔",
+    "algorithms": [
+      { "id": "valid-palindrome", "title": "验证回文串", "titleEn": "Valid Palindrome", "difficulty": "easy" },
+      { "id": "is-subsequence", "title": "判断子序列", "titleEn": "Is Subsequence", "difficulty": "easy" },
+      { "id": "two-sum-ii-input-array-is-sorted", "title": "两数之和 II", "titleEn": "Two Sum II", "difficulty": "medium" },
+      { "id": "container-with-most-water", "title": "盛最多水的容器", "titleEn": "Container With Most Water", "difficulty": "medium" },
+      { "id": "3sum", "title": "三数之和", "titleEn": "3Sum", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "sliding-window",
+    "name": "滑动窗口",
+    "icon": "◫",
+    "algorithms": [
+      { "id": "minimum-size-subarray-sum", "title": "长度最小的子数组", "titleEn": "Minimum Size Subarray Sum", "difficulty": "medium" },
+      { "id": "longest-substring-without-repeating-characters", "title": "无重复字符的最长子串", "titleEn": "Longest Substring Without Repeating Characters", "difficulty": "medium" },
+      { "id": "substring-with-concatenation-of-all-words", "title": "串联所有单词的子串", "titleEn": "Substring with Concatenation of All Words", "difficulty": "hard" },
+      { "id": "minimum-window-substring", "title": "最小覆盖子串", "titleEn": "Minimum Window Substring", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "matrix",
+    "name": "矩阵",
+    "icon": "▦",
+    "algorithms": [
+      { "id": "valid-sudoku", "title": "有效的数独", "titleEn": "Valid Sudoku", "difficulty": "medium" },
+      { "id": "spiral-matrix", "title": "螺旋矩阵", "titleEn": "Spiral Matrix", "difficulty": "medium" },
+      { "id": "rotate-image", "title": "旋转图像", "titleEn": "Rotate Image", "difficulty": "medium" },
+      { "id": "set-matrix-zeroes", "title": "矩阵置零", "titleEn": "Set Matrix Zeroes", "difficulty": "medium" },
+      { "id": "game-of-life", "title": "生命游戏", "titleEn": "Game of Life", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "hash_table",
+    "name": "哈希表",
+    "icon": "#",
+    "algorithms": [
+      { "id": "ransom-note", "title": "赎金信", "titleEn": "Ransom Note", "difficulty": "easy" },
+      { "id": "isomorphic-strings", "title": "同构字符串", "titleEn": "Isomorphic Strings", "difficulty": "easy" },
+      { "id": "word-pattern", "title": "单词规律", "titleEn": "Word Pattern", "difficulty": "easy" },
+      { "id": "valid-anagram", "title": "有效的字母异位词", "titleEn": "Valid Anagram", "difficulty": "easy" },
+      { "id": "group-anagrams", "title": "字母异位词分组", "titleEn": "Group Anagrams", "difficulty": "medium" },
+      { "id": "two-sum", "title": "两数之和", "titleEn": "Two Sum", "difficulty": "easy" },
+      { "id": "happy-number", "title": "快乐数", "titleEn": "Happy Number", "difficulty": "easy" },
+      { "id": "contains-duplicate-ii", "title": "存在重复元素 II", "titleEn": "Contains Duplicate II", "difficulty": "easy" },
+      { "id": "longest-consecutive-sequence", "title": "最长连续序列", "titleEn": "Longest Consecutive Sequence", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "intervals",
+    "name": "区间",
+    "icon": "▭",
+    "algorithms": [
+      { "id": "summary-ranges", "title": "汇总区间", "titleEn": "Summary Ranges", "difficulty": "easy" },
+      { "id": "merge-intervals", "title": "合并区间", "titleEn": "Merge Intervals", "difficulty": "medium" },
+      { "id": "insert-interval", "title": "插入区间", "titleEn": "Insert Interval", "difficulty": "medium" },
+      { "id": "minimum-number-of-arrows-to-burst-balloons", "title": "用最少数量的箭引爆气球", "titleEn": "Minimum Number of Arrows to Burst Balloons", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "stack",
+    "name": "栈",
+    "icon": "⊥",
+    "algorithms": [
+      { "id": "valid-parentheses", "title": "有效的括号", "titleEn": "Valid Parentheses", "difficulty": "easy" },
+      { "id": "simplify-path", "title": "简化路径", "titleEn": "Simplify Path", "difficulty": "medium" },
+      { "id": "min-stack", "title": "最小栈", "titleEn": "Min Stack", "difficulty": "medium" },
+      { "id": "evaluate-reverse-polish-notation", "title": "逆波兰表达式求值", "titleEn": "Evaluate Reverse Polish Notation", "difficulty": "medium" },
+      { "id": "basic-calculator", "title": "基本计算器", "titleEn": "Basic Calculator", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "linked_list",
+    "name": "链表",
+    "icon": "⛓",
+    "algorithms": [
+      { "id": "linked-list-cycle", "title": "环形链表", "titleEn": "Linked List Cycle", "difficulty": "easy" },
+      { "id": "add-two-numbers", "title": "两数相加", "titleEn": "Add Two Numbers", "difficulty": "medium" },
+      { "id": "merge-two-sorted-lists", "title": "合并两个有序链表", "titleEn": "Merge Two Sorted Lists", "difficulty": "easy" },
+      { "id": "copy-list-with-random-pointer", "title": "随机链表的复制", "titleEn": "Copy List with Random Pointer", "difficulty": "medium" },
+      { "id": "reverse-linked-list-ii", "title": "反转链表 II", "titleEn": "Reverse Linked List II", "difficulty": "medium" },
+      { "id": "reverse-nodes-in-k-group", "title": "K 个一组翻转链表", "titleEn": "Reverse Nodes in k-Group", "difficulty": "hard" },
+      { "id": "remove-nth-node-from-end-of-list", "title": "删除链表的倒数第 N 个结点", "titleEn": "Remove Nth Node From End of List", "difficulty": "medium" },
+      { "id": "remove-duplicates-from-sorted-list-ii", "title": "删除排序链表中的重复元素 II", "titleEn": "Remove Duplicates from Sorted List II", "difficulty": "medium" },
+      { "id": "rotate-list", "title": "旋转链表", "titleEn": "Rotate List", "difficulty": "medium" },
+      { "id": "partition-list", "title": "分隔链表", "titleEn": "Partition List", "difficulty": "medium" },
+      { "id": "lru-cache", "title": "LRU 缓存", "titleEn": "LRU Cache", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "binary_tree",
+    "name": "二叉树",
+    "icon": "🌲",
+    "algorithms": [
+      { "id": "maximum-depth-of-binary-tree", "title": "二叉树的最大深度", "titleEn": "Maximum Depth of Binary Tree", "difficulty": "easy" },
+      { "id": "same-tree", "title": "相同的树", "titleEn": "Same Tree", "difficulty": "easy" },
+      { "id": "invert-binary-tree", "title": "翻转二叉树", "titleEn": "Invert Binary Tree", "difficulty": "easy" },
+      { "id": "symmetric-tree", "title": "对称二叉树", "titleEn": "Symmetric Tree", "difficulty": "easy" },
+      { "id": "construct-binary-tree-from-preorder-and-inorder-traversal", "title": "从前序与中序遍历序列构造二叉树", "titleEn": "Construct Binary Tree from Preorder and Inorder Traversal", "difficulty": "medium" },
+      { "id": "construct-binary-tree-from-inorder-and-postorder-traversal", "title": "从中序与后序遍历序列构造二叉树", "titleEn": "Construct Binary Tree from Inorder and Postorder Traversal", "difficulty": "medium" },
+      { "id": "populating-next-right-pointers-in-each-node-ii", "title": "填充每个节点的下一个右侧节点指针 II", "titleEn": "Populating Next Right Pointers in Each Node II", "difficulty": "medium" },
+      { "id": "flatten-binary-tree-to-linked-list", "title": "二叉树展开为链表", "titleEn": "Flatten Binary Tree to Linked List", "difficulty": "medium" },
+      { "id": "path-sum", "title": "路径总和", "titleEn": "Path Sum", "difficulty": "easy" },
+      { "id": "sum-root-to-leaf-numbers", "title": "求根节点到叶节点数字之和", "titleEn": "Sum Root to Leaf Numbers", "difficulty": "medium" },
+      { "id": "binary-tree-maximum-path-sum", "title": "二叉树中的最大路径和", "titleEn": "Binary Tree Maximum Path Sum", "difficulty": "hard" },
+      { "id": "binary-search-tree-iterator", "title": "二叉搜索树迭代器", "titleEn": "Binary Search Tree Iterator", "difficulty": "medium" },
+      { "id": "count-complete-tree-nodes", "title": "完全二叉树的节点个数", "titleEn": "Count Complete Tree Nodes", "difficulty": "easy" },
+      { "id": "lowest-common-ancestor-of-a-binary-tree", "title": "二叉树的最近公共祖先", "titleEn": "Lowest Common Ancestor of a Binary Tree", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "tree_bfs",
+    "name": "二叉树层次遍历",
+    "icon": "📏",
+    "algorithms": [
+      { "id": "binary-tree-right-side-view", "title": "二叉树的右视图", "titleEn": "Binary Tree Right Side View", "difficulty": "medium" },
+      { "id": "average-of-levels-in-binary-tree", "title": "二叉树的层平均值", "titleEn": "Average of Levels in Binary Tree", "difficulty": "easy" },
+      { "id": "binary-tree-level-order-traversal", "title": "二叉树的层序遍历", "titleEn": "Binary Tree Level Order Traversal", "difficulty": "medium" },
+      { "id": "binary-tree-zigzag-level-order-traversal", "title": "二叉树的锯齿形层序遍历", "titleEn": "Binary Tree Zigzag Level Order Traversal", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "bst",
+    "name": "二叉搜索树",
+    "icon": "🔍",
+    "algorithms": [
+      { "id": "minimum-absolute-difference-in-bst", "title": "二叉搜索树的最小绝对差", "titleEn": "Minimum Absolute Difference in BST", "difficulty": "easy" },
+      { "id": "kth-smallest-element-in-a-bst", "title": "二叉搜索树中第 K 小的元素", "titleEn": "Kth Smallest Element in a BST", "difficulty": "medium" },
+      { "id": "validate-binary-search-tree", "title": "验证二叉搜索树", "titleEn": "Validate Binary Search Tree", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "graph",
+    "name": "图",
+    "icon": "◉",
+    "algorithms": [
+      { "id": "number-of-islands", "title": "岛屿数量", "titleEn": "Number of Islands", "difficulty": "medium" },
+      { "id": "surrounded-regions", "title": "被围绕的区域", "titleEn": "Surrounded Regions", "difficulty": "medium" },
+      { "id": "clone-graph", "title": "克隆图", "titleEn": "Clone Graph", "difficulty": "medium" },
+      { "id": "evaluate-division", "title": "除法求值", "titleEn": "Evaluate Division", "difficulty": "medium" },
+      { "id": "course-schedule", "title": "课程表", "titleEn": "Course Schedule", "difficulty": "medium" },
+      { "id": "course-schedule-ii", "title": "课程表 II", "titleEn": "Course Schedule II", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "graph_bfs",
+    "name": "图的广度优先搜索",
+    "icon": "🔎",
+    "algorithms": [
+      { "id": "snakes-and-ladders", "title": "蛇梯棋", "titleEn": "Snakes and Ladders", "difficulty": "medium" },
+      { "id": "minimum-genetic-mutation", "title": "最小基因变化", "titleEn": "Minimum Genetic Mutation", "difficulty": "medium" },
+      { "id": "word-ladder", "title": "单词接龙", "titleEn": "Word Ladder", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "trie",
+    "name": "字典树",
+    "icon": "🌐",
+    "algorithms": [
+      { "id": "implement-trie-prefix-tree", "title": "实现 Trie (前缀树)", "titleEn": "Implement Trie (Prefix Tree)", "difficulty": "medium" },
+      { "id": "design-add-and-search-words-data-structure", "title": "添加与搜索单词 - 数据结构设计", "titleEn": "Design Add and Search Words Data Structure", "difficulty": "medium" },
+      { "id": "word-search-ii", "title": "单词搜索 II", "titleEn": "Word Search II", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "backtracking",
+    "name": "回溯",
+    "icon": "↩",
+    "algorithms": [
+      { "id": "letter-combinations-of-a-phone-number", "title": "电话号码的字母组合", "titleEn": "Letter Combinations of a Phone Number", "difficulty": "medium" },
+      { "id": "combinations", "title": "组合", "titleEn": "Combinations", "difficulty": "medium" },
+      { "id": "permutations", "title": "全排列", "titleEn": "Permutations", "difficulty": "medium" },
+      { "id": "combination-sum", "title": "组合总和", "titleEn": "Combination Sum", "difficulty": "medium" },
+      { "id": "n-queens-ii", "title": "N 皇后 II", "titleEn": "N-Queens II", "difficulty": "hard" },
+      { "id": "generate-parentheses", "title": "括号生成", "titleEn": "Generate Parentheses", "difficulty": "medium" },
+      { "id": "word-search", "title": "单词搜索", "titleEn": "Word Search", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "divide_conquer",
+    "name": "分治",
+    "icon": "⊘",
+    "algorithms": [
+      { "id": "convert-sorted-array-to-binary-search-tree", "title": "将有序数组转换为二叉搜索树", "titleEn": "Convert Sorted Array to Binary Search Tree", "difficulty": "easy" },
+      { "id": "sort-list", "title": "排序链表", "titleEn": "Sort List", "difficulty": "medium" },
+      { "id": "construct-quad-tree", "title": "建立四叉树", "titleEn": "Construct Quad Tree", "difficulty": "medium" },
+      { "id": "merge-k-sorted-lists", "title": "合并 K 个升序链表", "titleEn": "Merge k Sorted Lists", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "kadane",
+    "name": "Kadane 算法",
+    "icon": "∑",
+    "algorithms": [
+      { "id": "maximum-subarray", "title": "最大子数组和", "titleEn": "Maximum Subarray", "difficulty": "medium" },
+      { "id": "maximum-sum-circular-subarray", "title": "环形子数组的最大和", "titleEn": "Maximum Sum Circular Subarray", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "binary_search",
+    "name": "二分查找",
+    "icon": "⌕",
+    "algorithms": [
+      { "id": "search-insert-position", "title": "搜索插入位置", "titleEn": "Search Insert Position", "difficulty": "easy" },
+      { "id": "search-a-2d-matrix", "title": "搜索二维矩阵", "titleEn": "Search a 2D Matrix", "difficulty": "medium" },
+      { "id": "find-peak-element", "title": "寻找峰值", "titleEn": "Find Peak Element", "difficulty": "medium" },
+      { "id": "search-in-rotated-sorted-array", "title": "搜索旋转排序数组", "titleEn": "Search in Rotated Sorted Array", "difficulty": "medium" },
+      { "id": "find-first-and-last-position-of-element-in-sorted-array", "title": "在排序数组中查找元素的第一个和最后一个位置", "titleEn": "Find First and Last Position of Element in Sorted Array", "difficulty": "medium" },
+      { "id": "find-minimum-in-rotated-sorted-array", "title": "寻找旋转排序数组中的最小值", "titleEn": "Find Minimum in Rotated Sorted Array", "difficulty": "medium" },
+      { "id": "median-of-two-sorted-arrays", "title": "寻找两个正序数组的中位数", "titleEn": "Median of Two Sorted Arrays", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "heap",
+    "name": "堆",
+    "icon": "🏔",
+    "algorithms": [
+      { "id": "kth-largest-element-in-an-array", "title": "数组中的第K个最大元素", "titleEn": "Kth Largest Element in an Array", "difficulty": "medium" },
+      { "id": "ipo", "title": "IPO", "titleEn": "IPO", "difficulty": "hard" },
+      { "id": "find-k-pairs-with-smallest-sums", "title": "查找和最小的 K 对数字", "titleEn": "Find K Pairs with Smallest Sums", "difficulty": "medium" },
+      { "id": "find-median-from-data-stream", "title": "数据流的中位数", "titleEn": "Find Median from Data Stream", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "bit_manipulation",
+    "name": "位运算",
+    "icon": "⊕",
+    "algorithms": [
+      { "id": "add-binary", "title": "二进制求和", "titleEn": "Add Binary", "difficulty": "easy" },
+      { "id": "reverse-bits", "title": "颠倒二进制位", "titleEn": "Reverse Bits", "difficulty": "easy" },
+      { "id": "number-of-1-bits", "title": "位1的个数", "titleEn": "Number of 1 Bits", "difficulty": "easy" },
+      { "id": "single-number", "title": "只出现一次的数字", "titleEn": "Single Number", "difficulty": "easy" },
+      { "id": "single-number-ii", "title": "只出现一次的数字 II", "titleEn": "Single Number II", "difficulty": "medium" },
+      { "id": "bitwise-and-of-numbers-range", "title": "数字范围按位与", "titleEn": "Bitwise AND of Numbers Range", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "math",
+    "name": "数学",
+    "icon": "∑",
+    "algorithms": [
+      { "id": "palindrome-number", "title": "回文数", "titleEn": "Palindrome Number", "difficulty": "easy" },
+      { "id": "plus-one", "title": "加一", "titleEn": "Plus One", "difficulty": "easy" },
+      { "id": "factorial-trailing-zeroes", "title": "阶乘后的零", "titleEn": "Factorial Trailing Zeroes", "difficulty": "medium" },
+      { "id": "sqrtx", "title": "x 的平方根", "titleEn": "Sqrt(x)", "difficulty": "easy" },
+      { "id": "powx-n", "title": "Pow(x, n)", "titleEn": "Pow(x, n)", "difficulty": "medium" },
+      { "id": "max-points-on-a-line", "title": "直线上最多的点数", "titleEn": "Max Points on a Line", "difficulty": "hard" }
+    ]
+  },
+  {
+    "id": "dp_1d",
+    "name": "一维动态规划",
+    "icon": "➤",
+    "algorithms": [
+      { "id": "climbing-stairs", "title": "爬楼梯", "titleEn": "Climbing Stairs", "difficulty": "easy" },
+      { "id": "house-robber", "title": "打家劫舍", "titleEn": "House Robber", "difficulty": "medium" },
+      { "id": "word-break", "title": "单词拆分", "titleEn": "Word Break", "difficulty": "medium" },
+      { "id": "coin-change", "title": "零钱兑换", "titleEn": "Coin Change", "difficulty": "medium" },
+      { "id": "longest-increasing-subsequence", "title": "最长递增子序列", "titleEn": "Longest Increasing Subsequence", "difficulty": "medium" }
+    ]
+  },
+  {
+    "id": "dp_multi",
+    "name": "多维动态规划",
+    "icon": "▤",
+    "algorithms": [
+      { "id": "triangle", "title": "三角形最小路径和", "titleEn": "Triangle", "difficulty": "medium" },
+      { "id": "minimum-path-sum", "title": "最小路径和", "titleEn": "Minimum Path Sum", "difficulty": "medium" },
+      { "id": "unique-paths-ii", "title": "不同路径 II", "titleEn": "Unique Paths II", "difficulty": "medium" },
+      { "id": "longest-palindromic-substring", "title": "最长回文子串", "titleEn": "Longest Palindromic Substring", "difficulty": "medium" },
+      { "id": "interleaving-string", "title": "交错字符串", "titleEn": "Interleaving String", "difficulty": "medium" },
+      { "id": "edit-distance", "title": "编辑距离", "titleEn": "Edit Distance", "difficulty": "medium" },
+      { "id": "best-time-to-buy-and-sell-stock-iii", "title": "买卖股票的最佳时机 III", "titleEn": "Best Time to Buy and Sell Stock III", "difficulty": "hard" },
+      { "id": "best-time-to-buy-and-sell-stock-iv", "title": "买卖股票的最佳时机 IV", "titleEn": "Best Time to Buy and Sell Stock IV", "difficulty": "hard" },
+      { "id": "maximal-square", "title": "最大正方形", "titleEn": "Maximal Square", "difficulty": "medium" }
+    ]
+  }
+]

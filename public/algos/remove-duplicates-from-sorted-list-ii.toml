@@ -1,0 +1,189 @@
+[algorithm]
+id = "remove-duplicates-from-sorted-list-ii"
+title = "删除排序链表中的重复元素 II"
+titleEn = "Remove Duplicates from Sorted List II"
+difficulty = "medium"
+tags = ["linked-list", "two-pointers"]
+testCase = "head = [1,2,3,3,4,4,5]"
+expectedOutput = "[1,2,5]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 82. 删除排序链表中的重复元素 II
+# 给定已排序的链表头节点 head，删除所有出现重复的数字
+# 只保留原始链表中没有重复出现的数字
+#
+# 与「保留一个」的 83 题不同，本题要删除所有重复节点
+#
+# 示例:
+#   head = [1,2,3,3,4,4,5]
+#   结果: [1,2,5]
+#
+#   head = [1,1,1,2,3]
+#   结果: [2,3]"""
+explanation = "**问题分析**\n\n给定**已排序**链表，删除所有出现过**两次及以上**的节点，只保留出现**唯一一次**的数字。\n\n**与第 83 题的区别**\n\n| 题目 | 行为 |\n|------|------|\n| 83. 删除重复元素 I | 重复节点**保留一个** |\n| **82. 删除重复元素 II** | **全部删除**，只留唯一 |\n\n> 关键洞察：因为链表已排序，所有相同的值都**连续相邻**，只需要跳过整段重复节点即可。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 82. 删除排序链表中的重复元素 II
+# 给定已排序的链表头节点 head，删除所有出现重复的数字
+# 只保留原始链表中没有重复出现的数字
+#
+# 与「保留一个」的 83 题不同，本题要删除所有重复节点
+#
+# 示例:
+#   head = [1,2,3,3,4,4,5]
+#   结果: [1,2,5]
+#
+#   head = [1,1,1,2,3]
+#   结果: [2,3]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def deleteDuplicates(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"删除所有重复节点，仅保留唯一元素\"\"\"
+    pass"""
+explanation = "**第 1 步：定义数据结构和函数签名**\n\n- `ListNode`：标准链表节点定义\n- `deleteDuplicates`：接收链表头节点，返回处理后的链表头\n- 使用 `Optional[ListNode]` 表示 head 可能为空\n- 文档字符串说明函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化哨兵和双指针 ──────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化指针"
+titleEn = "Initialize Pointers"
+code = """# 82. 删除排序链表中的重复元素 II
+# 给定已排序的链表头节点 head，删除所有出现重复的数字
+# 只保留原始链表中没有重复出现的数字
+#
+# 与「保留一个」的 83 题不同，本题要删除所有重复节点
+#
+# 示例:
+#   head = [1,2,3,3,4,4,5]
+#   结果: [1,2,5]
+#
+#   head = [1,1,1,2,3]
+#   结果: [2,3]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def deleteDuplicates(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"删除所有重复节点，仅保留唯一元素\"\"\"
+    dummy = ListNode(0, head)
+    prev = dummy
+    cur = head"""
+explanation = "**第 2 步：初始化 dummy 哨兵和双指针**\n\n```\n链表: 1 → 2 → 3 → 3 → 4 → 4 → 5\n       ↑              ↑\n     head           head\n\ndummy → head\n  ↓\n  0 → 1 → 2 → 3 → 3 → 4 → 4 → 5\n  ↑    ↑\n prev cur\n```\n\n| 变量 | 含义 |\n|------|------|\n| `dummy` | 哨兵节点，简化对头节点删除的处理 |\n| `prev` | 指向**已确定无重复**的最后一个节点 |\n| `cur` | 当前正在检查的节点 |\n\n> 为什么需要 dummy？因为头节点也可能被删除（如 `head=[1,1,2]`），哨兵保证 `prev` 始终存在。"
+visualizationType = "code-only"
+
+# ── Step 3: 核心循环 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "检测与跳过"
+titleEn = "Detect and Skip"
+code = """# 82. 删除排序链表中的重复元素 II
+# 给定已排序的链表头节点 head，删除所有出现重复的数字
+# 只保留原始链表中没有重复出现的数字
+#
+# 与「保留一个」的 83 题不同，本题要删除所有重复节点
+#
+# 示例:
+#   head = [1,2,3,3,4,4,5]
+#   结果: [1,2,5]
+#
+#   head = [1,1,1,2,3]
+#   结果: [2,3]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def deleteDuplicates(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"删除所有重复节点，仅保留唯一元素\"\"\"
+    dummy = ListNode(0, head)
+    prev = dummy
+    cur = head
+    while cur:
+        # 检测当前节点是否重复
+        has_duplicate = cur.next and cur.next.val == cur.val
+        if has_duplicate:
+            dup_val = cur.val
+            while cur and cur.val == dup_val:
+                cur = cur.next  # 跳过整段重复节点
+            prev.next = cur
+        else:
+            prev = cur
+            cur = cur.next
+    return dummy.next"""
+explanation = "**第 3 步：双层循环检测并跳过整段重复**\n\n**外层循环** — 遍历整个链表：\n\n```\nwhile cur:\n```\n\n**内层逻辑** — 判断是否重复：\n\n| 条件 | 操作 |\n|------|------|\n| `cur.next` 存在且 `cur.next.val == cur.val` | **进入跳过模式** |\n| 否则 | `prev = cur; cur = cur.next` |\n\n**跳过模式**：用 `dup_val` 记录重复值，把 `cur` 一路推进到第一个**不同值**的节点，然后让 `prev.next` 指向它，整段重复节点全部跳过。\n\n**示例执行（head=[1,2,3,3,4,4,5]）**\n\n```\ncur=1, 无重复 → prev=1, cur=2\ncur=2, 无重复 → prev=2, cur=3\ncur=3, 重复 → 跳过两个3 → cur=4\ncur=4, 重复 → 跳过两个4 → cur=5\ncur=5, 无重复 → prev=5, cur=None\n返回: [1,2,5] ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 82. 删除排序链表中的重复元素 II
+# 给定已排序的链表头节点 head，删除所有出现重复的数字
+# 只保留原始链表中没有重复出现的数字
+#
+# 与「保留一个」的 83 题不同，本题要删除所有重复节点
+#
+# 示例:
+#   head = [1,2,3,3,4,4,5]
+#   结果: [1,2,5]
+#
+#   head = [1,1,1,2,3]
+#   结果: [2,3]
+
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def deleteDuplicates(head: Optional[ListNode]) -> Optional[ListNode]:
+    \"\"\"删除所有重复节点，仅保留唯一元素\"\"\"
+    dummy = ListNode(0, head)
+    prev = dummy
+    cur = head
+    while cur:
+        # 检测当前节点是否重复
+        has_duplicate = cur.next and cur.next.val == cur.val
+        if has_duplicate:
+            dup_val = cur.val
+            while cur and cur.val == dup_val:
+                cur = cur.next  # 跳过整段重复节点
+            prev.next = cur
+        else:
+            prev = cur
+            cur = cur.next
+    return dummy.next"""
+explanation = "**最终结果**\n\n```\n输入:  head = [1, 2, 3, 3, 4, 4, 5]\n输出:  [1, 2, 5]\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 每个节点最多访问两次 |\n| 空间复杂度 | O(1) — 仅用 dummy/prev/cur 三个指针 |\n\n**核心要点**\n\n- **dummy 哨兵**：统一处理头节点被删除的情况\n- **prev 永远指向无重复段尾部**：保证 `prev.next` 是有效操作\n- **跳过整段重复**：用内层 while 把所有相同值节点全部跳过去"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 5]", result = "[1, 2, 5]", highlightedIndices = [0, 1, 2] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "dummy 哨兵 + 双层循环跳过重复段"
+keyInsight = "外层 prev 跟踪无重复尾部；内层 cur 检测并跳过整段重复节点"

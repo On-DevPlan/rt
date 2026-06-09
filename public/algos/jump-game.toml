@@ -1,0 +1,179 @@
+[algorithm]
+id = "jump-game"
+title = "跳跃游戏"
+titleEn = "Jump Game"
+difficulty = "medium"
+tags = ["array", "greedy", "dp"]
+testCase = "nums = [2,3,1,1,4]"
+expectedOutput = "true (可以到达最后一个下标)"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 跳跃游戏
+# 给定一个非负整数数组 nums，初始位置在下标 0
+# 数组中每个元素 nums[i] 表示在位置 i 可以跳跃的最大长度
+# 判断是否能够到达最后一个下标
+#
+# 关键点:
+#   nums[i] 是「最大跳跃长度」，不是「必须跳」的长度
+#   题目只要求「能否到达」，不要求「最少跳几次」
+#   所有 nums[i] >= 0
+#
+# 示例 1:
+#   nums = [2, 3, 1, 1, 4] → true
+#   路径: 0 → 1 → 4
+#
+# 示例 2:
+#   nums = [3, 2, 1, 0, 4] → false
+#   到达下标 3 后，最大只能跳 0，无法到 4"""
+explanation = "**问题分析**\n\n给定非负整数数组 `nums`，从下标 `0` 出发，每个位置 `i` 上可以跳 `0` 到 `nums[i]` 步，判断能否到达最后一个下标。\n\n**贪心思路**\n\n不需要记录具体路径，只关心**最远能到哪里**。\n\n- 维护变量 `far`：当前能到达的最远下标\n- 遍历数组时，如果当前位置 `i` 超出 `far`，说明前面跳不到这里\n- 否则用 `i + nums[i]` 更新 `far`\n\n> 这是经典的「最远可达位置」贪心模式，时间 O(n)，空间 O(1)。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 跳跃游戏
+# 给定一个非负整数数组 nums，初始位置在下标 0
+# 数组中每个元素 nums[i] 表示在位置 i 可以跳跃的最大长度
+# 判断是否能够到达最后一个下标
+#
+# 关键点:
+#   nums[i] 是「最大跳跃长度」，不是「必须跳」的长度
+#   题目只要求「能否到达」，不要求「最少跳几次」
+#   所有 nums[i] >= 0
+#
+# 示例 1:
+#   nums = [2, 3, 1, 1, 4] → true
+#   路径: 0 → 1 → 4
+#
+# 示例 2:
+#   nums = [3, 2, 1, 0, 4] → false
+#   到达下标 3 后，最大只能跳 0，无法到 4
+
+from typing import List
+
+def can_jump(nums: List[int]) -> bool:
+    \"\"\"判断是否能从下标 0 跳到最后一个下标。\"\"\"
+    pass"""
+explanation = "**第 1 步：函数签名**\n\n- 入参：`nums: List[int]` 非负整数数组\n- 返回：`bool`，能到达返回 `True`，否则 `False`\n- 不需要额外的状态参数（不用递归、不用记忆化）\n- 文档字符串简要描述行为"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化最远可达位置 ──────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化最远距离"
+titleEn = "Initialize Farthest Reach"
+code = """# 跳跃游戏
+# 给定一个非负整数数组 nums，初始位置在下标 0
+# 数组中每个元素 nums[i] 表示在位置 i 可以跳跃的最大长度
+# 判断是否能够到达最后一个下标
+#
+# 关键点:
+#   nums[i] 是「最大跳跃长度」，不是「必须跳」的长度
+#   题目只要求「能否到达」，不要求「最少跳几次」
+#   所有 nums[i] >= 0
+#
+# 示例 1:
+#   nums = [2, 3, 1, 1, 4] → true
+#   路径: 0 → 1 → 4
+#
+# 示例 2:
+#   nums = [3, 2, 1, 0, 4] → false
+#   到达下标 3 后，最大只能跳 0，无法到 4
+
+from typing import List
+
+def can_jump(nums: List[int]) -> bool:
+    \"\"\"判断是否能从下标 0 跳到最后一个下标。\"\"\"
+    n = len(nums)
+    far = 0  # 当前能到达的最远下标"""
+explanation = "**第 2 步：初始化**\n\n```\nnums = [2, 3, 1, 1, 4]\n   ↑\n   far = 0      ← 起点就是 0，远端也是 0\n   n   = 5\n```\n\n- `n = len(nums)`：数组长度\n- `far = 0`：从下标 0 出发，初始能到达的最远下标就是 0\n\n> `far` 的含义：**到目前为止，任意已访问的位置能跳到的最远下标**。"
+visualizationType = "code-only"
+
+# ── Step 3: 遍历并维护最远位置 ──────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历并更新"
+titleEn = "Iterate and Update"
+code = """# 跳跃游戏
+# 给定一个非负整数数组 nums，初始位置在下标 0
+# 数组中每个元素 nums[i] 表示在位置 i 可以跳跃的最大长度
+# 判断是否能够到达最后一个下标
+#
+# 关键点:
+#   nums[i] 是「最大跳跃长度」，不是「必须跳」的长度
+#   题目只要求「能否到达」，不要求「最少跳几次」
+#   所有 nums[i] >= 0
+#
+# 示例 1:
+#   nums = [2, 3, 1, 1, 4] → true
+#   路径: 0 → 1 → 4
+#
+# 示例 2:
+#   nums = [3, 2, 1, 0, 4] → false
+#   到达下标 3 后，最大只能跳 0，无法到 4
+
+from typing import List
+
+def can_jump(nums: List[int]) -> bool:
+    \"\"\"判断是否能从下标 0 跳到最后一个下标。\"\"\"
+    n = len(nums)
+    far = 0  # 当前能到达的最远下标
+
+    for i in range(n):
+        if i > far:
+            return False
+        far = max(far, i + nums[i])
+    return True"""
+explanation = "**第 3 步：贪心遍历**\n\n```\nfor i in range(n):\n    if i > far:           # 当前位置已经够不到了\n        return False\n    far = max(far, i + nums[i])\n```\n\n**两个关键判断**\n\n| 条件 | 含义 | 动作 |\n|------|------|------|\n| `i > far` | 下标 `i` 都到不了 | 直接返回 `False` |\n| 否则 | 下标 `i` 可达 | 用 `i + nums[i]` 更新最远距离 |\n\n**执行示例**（`nums = [2, 3, 1, 1, 4]`）\n\n```\ni=0: 0 > 0? 否 → far = max(0, 0+2) = 2\ni=1: 1 > 2? 否 → far = max(2, 1+3) = 4\ni=2: 2 > 4? 否 → far = max(4, 2+1) = 4\ni=3: 3 > 4? 否 → far = max(4, 3+1) = 4\ni=4: 4 > 4? 否 → far = max(4, 4+4) = 8\nreturn True ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 跳跃游戏
+# 给定一个非负整数数组 nums，初始位置在下标 0
+# 数组中每个元素 nums[i] 表示在位置 i 可以跳跃的最大长度
+# 判断是否能够到达最后一个下标
+#
+# 关键点:
+#   nums[i] 是「最大跳跃长度」，不是「必须跳」的长度
+#   题目只要求「能否到达」，不要求「最少跳几次」
+#   所有 nums[i] >= 0
+#
+# 示例 1:
+#   nums = [2, 3, 1, 1, 4] → true
+#   路径: 0 → 1 → 4
+#
+# 示例 2:
+#   nums = [3, 2, 1, 0, 4] → false
+#   到达下标 3 后，最大只能跳 0，无法到 4
+
+from typing import List
+
+def can_jump(nums: List[int]) -> bool:
+    \"\"\"判断是否能从下标 0 跳到最后一个下标。\"\"\"
+    n = len(nums)
+    far = 0  # 当前能到达的最远下标
+
+    for i in range(n):
+        if i > far:
+            return False
+        far = max(far, i + nums[i])
+    return True"""
+explanation = "**最终结果**\n\n✅ `nums = [2, 3, 1, 1, 4]` → `True` （可到达）\n\n❌ `nums = [3, 2, 1, 0, 4]` → `False` （在 3 处卡住）\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — 单次遍历 |\n| 空间复杂度 | O(1) — 仅用 `far` 和 `n` |\n\n**贪心核心**\n\n- **不维护路径，只维护「最远能到哪里」**\n- 一旦发现下一个位置 `i` 已经超出 `far`，就说明前面所有跳跃的组合都到不了这里，**立即剪枝**返回 `False`\n- 用 `max(far, i + nums[i])` 不断扩张可达范围\n\n> 这种「最远可达位置」贪心也适用于 [LeetCode 45. 跳跃游戏 II](https://leetcode.cn/problems/jump-game-ii/)（求最少跳跃次数）。"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[2, 3, 1, 1, 4]", result = "true", highlightedIndices = [0, 1, 4] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(1)"
+approach = "贪心：维护最远可达位置"
+keyInsight = "只需跟踪最远可达下标 far，发现 i > far 即失败；否则用 i + nums[i] 扩展 far"

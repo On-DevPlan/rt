@@ -1,0 +1,120 @@
+[algorithm]
+id = "number-of-1-bits"
+title = "位1的个数"
+titleEn = "Number of 1 Bits"
+difficulty = "easy"
+tags = ["bit-manipulation"]
+testCase = "n = 0b1011 (11)"
+expectedOutput = "3"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 191. 位1的个数
+# 计算无符号整数二进制表示中 1 的个数
+# 也称为汉明重量（Hamming Weight）
+#
+# 示例:
+#   n = 0b1011 (11)  → 输出: 3 (3个1)
+#   n = 0b1111 (15)  → 输出: 4 (4个1)
+#   n = 0b0000 (0)   → 输出: 0 (0个1)"""
+explanation = "**问题分析**\n\n给定一个无符号整数，返回其二进制表达式中「1」的个数。\n\n**直观解法 vs 优化解法**\n\n| 方法 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| 逐位检查 | O(32) 或 O(log n) | 遍历每一位，用 mask 检查 |\n| **Brian Kernighan** | **O(k)** | k 为 1 的个数，跳过 0 位 |\n\n> **Brian Kernighan 算法**的核心：`n & (n-1)` 可以消除 `n` 的**最低位的 1**。\n\n**原理演示：**\n\n```\nn     = 0b1011  (11)\nn-1   = 0b1010  (10)\nn&(n-1)= 0b1010  (10)  → 消除了最低位的1\n\nn     = 0b1010  (10)\nn-1   = 0b1001  (9)\nn&(n-1)= 0b1000  (8)   → 又消除一个1\n\nn     = 0b1000  (8)\nn-1   = 0b0111  (7)\nn&(n-1)= 0b0000  (0)   → 最后一个1也被消除\n```\n\n每次操作 `n &= n-1` 都会**消除一个 1**，count 加 1，直到 `n = 0` 为止。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 191. 位1的个数
+# 计算无符号整数二进制表示中 1 的个数
+# 也称为汉明重量（Hamming Weight）
+#
+# 示例:
+#   n = 0b1011 (11)  → 输出: 3 (3个1)
+#   n = 0b1111 (15)  → 输出: 4 (4个1)
+#   n = 0b0000 (0)   → 输出: 0 (0个1)
+
+def hammingWeight(n: int) -> int:
+    \"\"\"返回二进制中 1 的个数\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 输入：`n` —— 无符号整数（实际用 `int` 类型）\n- 输出：`int` —— 1 的个数\n- 文档字符串说明函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化计数器 ───────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化计数器"
+titleEn = "Initialize Counter"
+code = """# 191. 位1的个数
+# 计算无符号整数二进制表示中 1 的个数
+# 也称为汉明重量（Hamming Weight）
+#
+# 示例:
+#   n = 0b1011 (11)  → 输出: 3 (3个1)
+#   n = 0b1111 (15)  → 输出: 4 (4个1)
+#   n = 0b0000 (0)   → 输出: 0 (0个1)
+
+def hammingWeight(n: int) -> int:
+    \"\"\"返回二进制中 1 的个数\"\"\"
+    count = 0
+    while n:
+        pass"""
+explanation = "**第 2 步：初始化计数器与循环**\n\n- `count = 0` —— 记录 1 的个数\n- `while n:` —— 当 n 不为 0 时继续（即还有 1 需要消除）"
+visualizationType = "code-only"
+
+# ── Step 3: 核心操作 ───────────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "消除最低位的1"
+titleEn = "Remove Lowest Set Bit"
+code = """# 191. 位1的个数
+# 计算无符号整数二进制表示中 1 的个数
+# 也称为汉明重量（Hamming Weight）
+#
+# 示例:
+#   n = 0b1011 (11)  → 输出: 3 (3个1)
+#   n = 0b1111 (15)  → 输出: 4 (4个1)
+#   n = 0b0000 (0)   → 输出: 0 (0个1)
+
+def hammingWeight(n: int) -> int:
+    \"\"\"返回二进制中 1 的个数\"\"\"
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1"""
+explanation = "**第 3 步：消除最低位的 1 并计数**\n\n**核心操作**\n\n```python\nn &= n - 1   # 消除 n 的最低位的1\ncount += 1   # 计数加1\n```\n\n**执行示例（n = 0b1011）**\n\n| 迭代 | n 的值 | n-1 | n&(n-1) | count |\n|------|--------|-----|---------|-------|\n| 初始 | 0b1011 (11) | - | - | 0 |\n| 1次后 | 0b1010 (10) | 0b1010 | 0b1010 | 1 |\n| 2次后 | 0b1000 (8) | 0b1001 | 0b1000 | 2 |\n| 3次后 | 0b0000 (0) | 0b0111 | 0b0000 | 3 |\n\n**时间复杂度优势**\n\n- 传统方法：遍历所有 32 位 → O(32)\n- Brian Kernighan：只遍历「1」的个数 → O(k)，k 为 1 的个数\n- 对于 `0b10000000`（128），传统方法需要 32 次循环，本算法只需 1 次！"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ───────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 191. 位1的个数
+# 计算无符号整数二进制表示中 1 的个数
+# 也称为汉明重量（Hamming Weight）
+#
+# 示例:
+#   n = 0b1011 (11)  → 输出: 3 (3个1)
+#   n = 0b1111 (15)  → 输出: 4 (4个1)
+#   n = 0b0000 (0)   → 输出: 0 (0个1)
+
+def hammingWeight(n: int) -> int:
+    \"\"\"返回二进制中 1 的个数\"\"\"
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1
+    return count"""
+explanation = "**最终结果**\n\n✅ Brian Kernighan 算法完成\n\n```\n输入: n = 0b1011 (11)\n输出: 3\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(k) — k 为 1 的个数 |\n| 空间复杂度 | O(1) — 只用了一个计数器 |\n\n**关键技巧**\n\n- `n & (n-1)` 消除最低位的 1\n- 循环直到 `n = 0`，此时所有 1 都被消除\n- 每次消除一个 1，count 加 1\n\n**边界条件**\n\n- `n = 0`：循环不执行，直接返回 0\n- `n = 0xFFFFFFFF`（32 个 1）：循环执行 32 次"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 0, 1, 1]", result = "3", highlightedIndices = [0, 2, 3] }
+
+[algorithm.summary]
+timeComplexity = "O(k)  # k 为 1 的个数"
+spaceComplexity = "O(1)"
+approach = "Brian Kernighan 算法"
+keyInsight = "n & (n-1) 消除最低位的 1；每次操作 count++；直到 n = 0"

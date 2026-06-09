@@ -1,0 +1,146 @@
+[algorithm]
+id = "combinations"
+title = "组合"
+titleEn = "Combinations"
+difficulty = "medium"
+tags = ["backtracking"]
+testCase = "n = 4, k = 2"
+expectedOutput = "[[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 77. 组合
+# 给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合
+# 顺序无关：组合 [1,2] 与 [2,1] 视为同一个
+#
+# 示例:
+#   n = 4, k = 2
+#   结果: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]"""
+explanation = "**问题分析**\n\n给定 `n` 和 `k`，从 `[1..n]` 中选出所有大小为 `k` 的组合。\n\n**关键约束**\n\n- 组合**无序**：`[1,2]` 和 `[2,1]` 是同一个组合\n- 不能重复选取：每个数字最多出现一次\n- 总数 `C(n, k)`：n=4, k=2 时为 6 个\n\n**示例（n=4, k=2）**\n\n| 选法 | 组合 |\n|------|------|\n| 1,2 | [1,2] |\n| 1,3 | [1,3] |\n| 1,4 | [1,4] |\n| 2,3 | [2,3] |\n| 2,4 | [2,4] |\n| 3,4 | [3,4] |\n\n> 思路：用**回溯**枚举所有合法路径，每步保证选出的元素单调递增即可避免重复组合。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + 终止条件 ──────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 77. 组合
+# 给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合
+# 顺序无关：组合 [1,2] 与 [2,1] 视为同一个
+#
+# 示例:
+#   n = 4, k = 2
+#   结果: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+
+from typing import List
+
+def combine(n: int, k: int) -> List[List[int]]:
+    \"\"\"返回 [1..n] 中所有大小为 k 的组合\"\"\"
+    res = []
+    def backtrack(start: int, path: List[int]) -> None:
+        if len(path) == k:
+            res.append(path[:])
+            return"""
+explanation = "**第 1 步：函数签名 + 终止条件**\n\n- `combine(n, k)` 返回所有大小为 `k` 的组合\n- 内部嵌套 `backtrack(start, path)`：\n  - `start`：本轮枚举的起点（保证单调递增，避免重复）\n  - `path`：当前已选路径\n\n**终止条件**\n\n```python\nif len(path) == k:\n    res.append(path[:])  # 复制快照，避免后续 pop 污染结果\n    return\n```\n\n> 必须用 `path[:]` 而不是 `path`，因为 `path` 后续会被 `pop` 修改。"
+visualizationType = "code-only"
+
+# ── Step 2: 枚举与递归 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "枚举与递归"
+titleEn = "Enumerate and Recurse"
+code = """# 77. 组合
+# 给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合
+# 顺序无关：组合 [1,2] 与 [2,1] 视为同一个
+#
+# 示例:
+#   n = 4, k = 2
+#   结果: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+
+from typing import List
+
+def combine(n: int, k: int) -> List[List[int]]:
+    \"\"\"返回 [1..n] 中所有大小为 k 的组合\"\"\"
+    res = []
+    def backtrack(start: int, path: List[int]) -> None:
+        if len(path) == k:
+            res.append(path[:])
+            return
+        for i in range(start, n + 1):
+            path.append(i)
+            backtrack(i + 1, path)
+            path.pop()"""
+explanation = "**第 2 步：枚举 + 递归**\n\n```python\nfor i in range(start, n + 1):\n    path.append(i)\n    backtrack(i + 1, path)\n    path.pop()\n```\n\n**关键点**\n\n| 操作 | 作用 |\n|------|------|\n| `path.append(i)` | 做出选择：把 `i` 加入当前路径 |\n| `backtrack(i + 1, path)` | 递归：下一层从 `i+1` 开始枚举（保证单调） |\n| `path.pop()` | 撤销选择：回溯到上一层 |\n\n**为什么下一层从 `i+1` 开始？**\n\n- 从 `i+1` 起枚举，避免选到比 `i` 小的数\n- 保证组合内元素**严格递增**，天然去重\n\n**示例（n=4, k=2）执行流程**\n\n```\nbacktrack(1, [])\n├─ i=1: [1] → backtrack(2, [1])\n│          ├─ i=2: [1,2] ✓ 加入结果\n│          ├─ i=3: [1,3] ✓\n│          └─ i=4: [1,4] ✓\n├─ i=2: [2] → backtrack(3, [2])\n│          ├─ i=3: [2,3] ✓\n│          └─ i=4: [2,4] ✓\n└─ i=3: [3] → backtrack(4, [3])\n           └─ i=4: [3,4] ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 启动回溯 + 返回结果 ──────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "启动回溯"
+titleEn = "Start Backtracking"
+code = """# 77. 组合
+# 给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合
+# 顺序无关：组合 [1,2] 与 [2,1] 视为同一个
+#
+# 示例:
+#   n = 4, k = 2
+#   结果: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+
+from typing import List
+
+def combine(n: int, k: int) -> List[List[int]]:
+    \"\"\"返回 [1..n] 中所有大小为 k 的组合\"\"\"
+    res = []
+    def backtrack(start: int, path: List[int]) -> None:
+        if len(path) == k:
+            res.append(path[:])
+            return
+        for i in range(start, n + 1):
+            path.append(i)
+            backtrack(i + 1, path)
+            path.pop()
+    backtrack(1, [])
+    return res"""
+explanation = "**第 3 步：启动回溯 + 返回结果**\n\n```python\nbacktrack(1, [])\nreturn res\n```\n\n- 从 `start=1`、空路径开始\n- 回溯结束后 `res` 收集了所有合法组合\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | `O(C(n,k) * k)` — 每个组合复制需 O(k) |\n| 空间复杂度 | `O(k)` — 递归栈 + path |\n\n**关键技巧**\n\n- `start` 参数避免重复枚举\n- `path[:]` 复制快照入结果\n- `path.pop()` 撤销选择，保证共享同一份 path"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 77. 组合
+# 给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合
+# 顺序无关：组合 [1,2] 与 [2,1] 视为同一个
+#
+# 示例:
+#   n = 4, k = 2
+#   结果: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+
+from typing import List
+
+def combine(n: int, k: int) -> List[List[int]]:
+    \"\"\"返回 [1..n] 中所有大小为 k 的组合\"\"\"
+    res = []
+    def backtrack(start: int, path: List[int]) -> None:
+        if len(path) == k:
+            res.append(path[:])
+            return
+        for i in range(start, n + 1):
+            path.append(i)
+            backtrack(i + 1, path)
+            path.pop()
+    backtrack(1, [])
+    return res"""
+explanation = "**最终结果**\n\n✅ 回溯枚举完成\n\n```\n输入: n = 4, k = 2\n输出: [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]\n```\n\n**复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | `O(C(n,k) * k)` |\n| 空间复杂度 | `O(k)` |\n\n**关键技巧：回溯 + 起始位置剪枝**\n\n- 下一层从 `i+1` 枚举避免重复组合\n- `path[:]` 复制快照入结果\n- 回溯用 `pop` 撤销选择\n- 共享同一份 `path`，避免额外空间"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]", result = "[[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]", highlightedIndices = [0, 1, 2, 3, 4, 5] }
+
+[algorithm.summary]
+timeComplexity = "O(C(n,k) * k)"
+spaceComplexity = "O(k)  # 递归栈 + path"
+approach = "回溯 + 起始位置剪枝"
+keyInsight = "下一层从 i+1 枚举避免重复组合；path[:] 复制快照入结果；回溯用 pop 撤销"

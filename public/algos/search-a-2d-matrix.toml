@@ -1,0 +1,166 @@
+[algorithm]
+id = "search-a-2d-matrix"
+title = "搜索二维矩阵"
+titleEn = "Search a 2D Matrix"
+difficulty = "medium"
+tags = ["array", "matrix", "binary-search"]
+testCase = "matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3"
+expectedOutput = "true"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 搜索二维矩阵
+# 在每行升序、每行首大于前行末的矩阵中查找目标
+# 关键：二分查找（一维化）
+#
+# 矩阵特性:
+#   每行从左到右升序
+#   每行首元素大于前一行末元素
+#   整体展平后严格升序
+#
+# 示例:
+#   matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+#   展平: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+#   结果: true"""
+explanation = "**问题分析**\n\n给定一个满足以下条件的矩阵：\n- 每行从左到右升序排列\n- 每行的第一个整数大于前一行的最后一个整数\n\n**关键洞察：一维化**\n\n将矩阵按行展平后，会得到一个严格升序的一维数组：\n\n```\n矩阵:      [1, 3, 5, 7]\n          [10, 11, 16, 20]\n          [23, 30, 34, 60]\n\n展平索引:   0  1  2  3  4   5   6   7   8   9  10  11\n展平值:    [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]\n```\n\n**坐标映射**\n\n对于 `m×n` 矩阵，一维索引 `mid` 对应的二维坐标为：\n\n```\n行 = mid // n\n列 = mid % n\n```\n\n示例：`n=4, mid=5` → `行=5//4=1, 列=5%4=1` → `matrix[1][1]=11`"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 搜索二维矩阵
+# 在每行升序、每行首大于前行末的矩阵中查找目标
+# 关键：二分查找（一维化）
+#
+# 矩阵特性:
+#   每行从左到右升序
+#   每行首元素大于前一行末元素
+#   整体展平后严格升序
+#
+# 示例:
+#   matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+#   展平: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+#   结果: true
+
+from typing import List
+
+def searchMatrix(matrix: List[List[int]], target: int) -> bool:
+    \"\"\"判断目标是否在矩阵中。\"\"\"
+    pass"""
+explanation = "**第 1 步：编写函数签名**\n\n- 接收 `matrix`（二维列表）和 `target`（目标值）\n- 返回布尔值：存在返回 `True`，否则返回 `False`\n- 使用类型注解明确参数和返回值类型\n- 文档字符串描述函数用途"
+visualizationType = "code-only"
+
+# ── Step 2: 初始化边界 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化边界"
+titleEn = "Initialize Boundaries"
+code = """# 搜索二维矩阵
+# 在每行升序、每行首大于前行末的矩阵中查找目标
+# 关键：二分查找（一维化）
+#
+# 矩阵特性:
+#   每行从左到右升序
+#   每行首元素大于前一行末元素
+#   整体展平后严格升序
+#
+# 示例:
+#   matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+#   展平: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+#   结果: true
+
+from typing import List
+
+def searchMatrix(matrix: List[List[int]], target: int) -> bool:
+    \"\"\"判断目标是否在矩阵中。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    left, right = 0, m * n"""
+explanation = "**第 2 步：设置搜索边界**\n\n```\n矩阵: 3行 × 4列 = 12个元素\n\n一维索引范围: [0, 12)\n  left = 0\n  right = 12\n```\n\n| 变量 | 含义 | 值 |\n|------|------|------|\n| `m` | 行数 | `len(matrix)` |\n| `n` | 列数 | `len(matrix[0])` |\n| `left` | 搜索区间左边界（包含） | `0` |\n| `right` | 搜索区间右边界（不包含） | `m * n` |\n\n> 使用左闭右开区间 `[left, right)`，终止条件为 `left == right`。"
+visualizationType = "code-only"
+
+# ── Step 3: 二分查找核心逻辑 ──────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "二分查找"
+titleEn = "Binary Search"
+code = """# 搜索二维矩阵
+# 在每行升序、每行首大于前行末的矩阵中查找目标
+# 关键：二分查找（一维化）
+#
+# 矩阵特性:
+#   每行从左到右升序
+#   每行首元素大于前一行末元素
+#   整体展平后严格升序
+#
+# 示例:
+#   matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+#   展平: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+#   结果: true
+
+from typing import List
+
+def searchMatrix(matrix: List[List[int]], target: int) -> bool:
+    \"\"\"判断目标是否在矩阵中。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    left, right = 0, m * n
+    while left < right:
+        mid = (left + right) // 2
+        val = matrix[mid // n][mid % n]
+        if val < target:
+            left = mid + 1
+        elif val > target:
+            right = mid
+        else:
+            return True"""
+explanation = "**第 3 步：实现二分查找**\n\n**循环条件**：`while left < right`\n\n当 `left == right` 时，区间为空，说明未找到目标。\n\n**坐标映射**\n\n```\nmid = 5, n = 4\n行 = mid // n = 5 // 4 = 1\n列 = mid % n  = 5 % 4  = 1\nval = matrix[1][1] = 11\n```\n\n**二分逻辑**\n\n| 条件 | 操作 | 区间变化 |\n|------|------|----------|\n| `val < target` | `left = mid + 1` | 去掉左半部分 |\n| `val > target` | `right = mid` | 去掉右半部分 |\n| `val == target` | `return True` | 找到目标 |\n\n**示例执行**（target=3）：\n\n```\n初始: left=0, right=12\n\n第1轮: mid=6, val=16 > 3 → right=6\n第2轮: mid=3, val=7  > 3 → right=3\n第3轮: mid=1, val=3  = 3 → return True ✓\n```"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ──────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 搜索二维矩阵
+# 在每行升序、每行首大于前行末的矩阵中查找目标
+# 关键：二分查找（一维化）
+#
+# 矩阵特性:
+#   每行从左到右升序
+#   每行首元素大于前一行末元素
+#   整体展平后严格升序
+#
+# 示例:
+#   matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+#   展平: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+#   结果: true
+
+from typing import List
+
+def searchMatrix(matrix: List[List[int]], target: int) -> bool:
+    \"\"\"判断目标是否在矩阵中。\"\"\"
+    m, n = len(matrix), len(matrix[0])
+    left, right = 0, m * n
+    while left < right:
+        mid = (left + right) // 2
+        val = matrix[mid // n][mid % n]
+        if val < target:
+            left = mid + 1
+        elif val > target:
+            right = mid
+        else:
+            return True
+    return False"""
+explanation = "**最终结果**\n\n✅ 二分查找完成\n\n```\n输入: matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3\n输出: true\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(log(m×n)) — 每次区间减半 |\n| 空间复杂度 | O(1) — 只用了四个变量 |\n\n**核心技巧：一维化映射**\n\n- 将二维矩阵视为严格升序的一维数组\n- 通过 `mid // n` 和 `mid % n` 实现一维索引到二维坐标的映射\n- 避免了先二分行、再二分列的两次查找"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]", result = "true", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(log(m*n))"
+spaceComplexity = "O(1)"
+approach = "二分查找（一维化）"
+keyInsight = "矩阵按行展平后严格升序；mid 映射到二维坐标：(mid // n, mid % n)"

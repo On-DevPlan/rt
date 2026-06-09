@@ -1,0 +1,227 @@
+[algorithm]
+id = "minimum-absolute-difference-in-bst"
+title = "二叉搜索树的最小绝对差"
+titleEn = "Minimum Absolute Difference in BST"
+difficulty = "easy"
+tags = ["tree", "dfs", "binary-search-tree"]
+testCase = "root = [4,2,6,1,3]"
+expectedOutput = "1"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 530. 二叉搜索树的最小绝对差
+# 给定一个 BST，返回树中任意两不同节点值之差的最小绝对值
+#
+# 关键点:
+#   树是 BST（左 < 根 < 右）
+#   任意两节点的 |val1 - val2| 最小值
+#
+# 示例:
+#   root = [4, 2, 6, 1, 3]
+#
+#         4
+#        / \\
+#       2   6
+#      / \\
+#     1   3
+#
+#   中序遍历: 1, 2, 3, 4, 6
+#   相邻差:   1  1  1  2
+#   最小差:   1"""
+explanation = "**问题分析**\n\n**目标**：在 BST 中找任意两节点值之差的最小绝对值。\n\n**示例 BST**\n\n```\n        4\n       / \\\\\n      2   6\n     / \\\\\n    1   3\n```\n\n**关键洞察：BST 中序序列有序**\n\n- BST 的中序遍历结果是**严格递增**序列\n- 任意两节点的差 = 排序序列中某两元素的差\n- **相邻元素的差一定 ≤ 任意两非相邻元素的差**\n- 因此只需比较所有**相邻元素**的差\n\n**示例遍历**\n\n| 中序序列 | 1 | 2 | 3 | 4 | 6 |\n|----------|---|---|---|---|---|\n| 与前一个差 | — | 1 | 1 | 1 | 2 |\n\n最小差 = **1** ✓\n\n> 关键思路：中序遍历 + 维护上一个访问节点 `prev` 与全局最小差 `min_diff`。"
+visualizationType = "intro"
+
+# ── Step 1: 签名 + TreeNode + 全局状态 + 调用 inorder ─────────
+[[algorithm.steps]]
+id = 1
+title = "签名与状态"
+titleEn = "Signature & State"
+code = """# 530. 二叉搜索树的最小绝对差
+# 给定一个 BST，返回树中任意两不同节点值之差的最小绝对值
+#
+# 关键点:
+#   树是 BST（左 < 根 < 右）
+#   任意两节点的 |val1 - val2| 最小值
+#
+# 示例:
+#   root = [4, 2, 6, 1, 3]
+#
+#         4
+#        / \\
+#       2   6
+#      / \\
+#     1   3
+#
+#   中序遍历: 1, 2, 3, 4, 6
+#   相邻差:   1  1  1  2
+#   最小差:   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def getMinimumDifference(root: Optional[TreeNode]) -> int:
+    \"\"\"返回 BST 中任意两节点值之差的最小绝对值\"\"\"
+    prev = [None]      # 上一个访问的节点（用 list 模拟 nonlocal）
+    min_diff = [float('inf')]  # 全局最小差
+    inorder(root)"""
+explanation = "**第 1 步：函数签名与全局状态**\n\n**TreeNode**：标准二叉树节点结构。\n\n**`getMinimumDifference`**\n\n- 入参：根节点 `root`\n- 返回：`int`，最小绝对差\n\n**关键技巧：用 list 模拟 `nonlocal`**\n\nPython 闭包内不能直接修改外层基本类型变量，但**修改 list 元素**是允许的：\n\n| 变量 | 作用 |\n|------|------|\n| `prev[0]` | 上一个访问的节点（初始 `None`） |\n| `min_diff[0]` | 全局最小差（初始 `+∞`） |\n\n**为什么用 list？**\n\n```python\n# 直接赋值会报错：local variable referenced before assignment\n# 而 list.append / list[0] = x 不触发这个限制\n```\n\n> 另一种方式是用 `self.prev` / `self.min_diff` 把函数改成类，但 list 方案更轻量。"
+visualizationType = "code-only"
+
+# ── Step 2: 定义 inorder + base case + 遍历左子树 ─────────────
+[[algorithm.steps]]
+id = 2
+title = "递归左子树"
+titleEn = "Recurse Left"
+code = """# 530. 二叉搜索树的最小绝对差
+# 给定一个 BST，返回树中任意两不同节点值之差的最小绝对值
+#
+# 关键点:
+#   树是 BST（左 < 根 < 右）
+#   任意两节点的 |val1 - val2| 最小值
+#
+# 示例:
+#   root = [4, 2, 6, 1, 3]
+#
+#         4
+#        / \\
+#       2   6
+#      / \\
+#     1   3
+#
+#   中序遍历: 1, 2, 3, 4, 6
+#   相邻差:   1  1  1  2
+#   最小差:   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def getMinimumDifference(root: Optional[TreeNode]) -> int:
+    \"\"\"返回 BST 中任意两节点值之差的最小绝对值\"\"\"
+    prev = [None]      # 上一个访问的节点（用 list 模拟 nonlocal）
+    min_diff = [float('inf')]  # 全局最小差
+    def inorder(node: Optional[TreeNode]) -> None:
+        if not node:
+            return
+        inorder(node.left)
+    inorder(root)"""
+explanation = "**第 2 步：定义 inorder + 递归左子树**\n\n**中序遍历顺序**：左 → 根 → 右\n\n```\n中序遍历步骤:\n  1. 访问 node.left（递归）\n  2. 访问 node 自身（计算与 prev 的差）  ← 下一行做\n  3. 访问 node.right（递归）            ← 下下一步做\n```\n\n**base case**\n\n```python\nif not node:\n    return\n```\n\n遇到 `None` 直接返回（空树或叶子节点的空孩子）。\n\n**示例**\n\n对 `root=4` 调用 `inorder(4)` 后，会依次递归：\n\n```\ninorder(4)\n └─ inorder(2)\n     ├─ inorder(1)\n     │   ├─ inorder(None) -> return\n     │   ├─ (处理 1)\n     │   └─ inorder(None) -> return\n     ├─ (处理 2)\n     └─ inorder(3)\n         ├─ inorder(None) -> return\n         ├─ (处理 3)\n         └─ inorder(None) -> return\n ├─ (处理 4)\n └─ inorder(6)\n     ├─ inorder(None) -> return\n     ├─ (处理 6)\n     └─ inorder(None) -> return\n```"
+visualizationType = "code-only"
+
+# ── Step 3: 计算差 + 更新 min_diff + 更新 prev + 遍历右子树 ──
+[[algorithm.steps]]
+id = 3
+title = "更新最小差"
+titleEn = "Update Min Diff"
+code = """# 530. 二叉搜索树的最小绝对差
+# 给定一个 BST，返回树中任意两不同节点值之差的最小绝对值
+#
+# 关键点:
+#   树是 BST（左 < 根 < 右）
+#   任意两节点的 |val1 - val2| 最小值
+#
+# 示例:
+#   root = [4, 2, 6, 1, 3]
+#
+#         4
+#        / \\
+#       2   6
+#      / \\
+#     1   3
+#
+#   中序遍历: 1, 2, 3, 4, 6
+#   相邻差:   1  1  1  2
+#   最小差:   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def getMinimumDifference(root: Optional[TreeNode]) -> int:
+    \"\"\"返回 BST 中任意两节点值之差的最小绝对值\"\"\"
+    prev = [None]      # 上一个访问的节点（用 list 模拟 nonlocal）
+    min_diff = [float('inf')]  # 全局最小差
+    def inorder(node: Optional[TreeNode]) -> None:
+        if not node:
+            return
+        inorder(node.left)
+        if prev[0] is not None:
+            min_diff[0] = min(min_diff[0], abs(node.val - prev[0].val))
+        prev[0] = node
+        inorder(node.right)
+    inorder(root)"""
+explanation = "**第 3 步：核心计算**\n\n中序遍历到 `node` 时的三步操作：\n\n**1. 计算当前节点与 prev 的差**\n\n```python\nif prev[0] is not None:\n    min_diff[0] = min(min_diff[0], abs(node.val - prev[0].val))\n```\n\n- 第一个节点没有 prev，跳过\n- 由于 BST 中序递增，`node.val > prev[0].val`，`abs()` 实际上可以去掉\n\n**2. 更新 prev**\n\n```python\nprev[0] = node\n```\n\n**3. 递归遍历右子树**\n\n```python\ninorder(node.right)\n```\n\n**示例执行**\n\n| 当前节点 | prev | 差值 | min_diff |\n|----------|------|------|----------|\n| 1 | None | — | ∞ |\n| 2 | 1 | 1 | 1 |\n| 3 | 2 | 1 | 1 |\n| 4 | 3 | 1 | 1 |\n| 6 | 4 | 2 | 1 |\n\n最终 `min_diff[0] = 1` ✓"
+visualizationType = "code-only"
+
+# ── Step 4: 返回结果 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 530. 二叉搜索树的最小绝对差
+# 给定一个 BST，返回树中任意两不同节点值之差的最小绝对值
+#
+# 关键点:
+#   树是 BST（左 < 根 < 右）
+#   任意两节点的 |val1 - val2| 最小值
+#
+# 示例:
+#   root = [4, 2, 6, 1, 3]
+#
+#         4
+#        / \\
+#       2   6
+#      / \\
+#     1   3
+#
+#   中序遍历: 1, 2, 3, 4, 6
+#   相邻差:   1  1  1  2
+#   最小差:   1
+
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def getMinimumDifference(root: Optional[TreeNode]) -> int:
+    \"\"\"返回 BST 中任意两节点值之差的最小绝对值\"\"\"
+    prev = [None]      # 上一个访问的节点（用 list 模拟 nonlocal）
+    min_diff = [float('inf')]  # 全局最小差
+    def inorder(node: Optional[TreeNode]) -> None:
+        if not node:
+            return
+        inorder(node.left)
+        if prev[0] is not None:
+            min_diff[0] = min(min_diff[0], abs(node.val - prev[0].val))
+        prev[0] = node
+        inorder(node.right)
+    inorder(root)
+    return min_diff[0]"""
+explanation = "**最终结果**\n\n✅ 中序遍历 + prev 维护完成\n\n```\n输入: root = [4, 2, 6, 1, 3]\n输出: 1\n```\n\n**完整算法流程**\n\n1. 用 `prev` 记录上一个访问的节点，`min_diff` 记录全局最小差\n2. 中序遍历：先左 → 处理当前 → 后右\n3. 每访问一个节点，就与 `prev` 比一次，更新 `min_diff`\n4. 遍历结束返回 `min_diff[0]`\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | **O(n)** — 每个节点访问一次 |\n| 空间复杂度 | **O(h)** — 递归栈，h 是树高 |\n| 最坏情况 | h = n（链状 BST） |\n\n**关键技巧**\n\n- **BST 中序序列有序** → 任意两节点的差 = 相邻差\n- **prev 节点 + min_diff 全局变量**：在 O(1) 空间内跟踪最优解\n- **list 模拟 nonlocal**：避免定义类的开销"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[1, 2, 3, 4, 6]", result = "1", highlightedIndices = [0, 1] }
+
+[algorithm.summary]
+timeComplexity = "O(n)"
+spaceComplexity = "O(h)  # 递归栈"
+approach = "BST 中序遍历 + prev 维护"
+keyInsight = "BST 中序序列有序；相邻元素差最小即全局最小差；用 prev 节点 + min_diff 全局变量"

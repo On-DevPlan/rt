@@ -1,0 +1,171 @@
+{
+  "id": "word-pattern",
+  "title": "单词规律",
+  "titleEn": "Word Pattern",
+  "difficulty": "easy",
+  "tags": [
+    "hash-table",
+    "string"
+  ],
+  "testCase": "pattern = \"abba\", s = \"dog cat cat dog\"",
+  "expectedOutput": "true",
+  "steps": [
+    {
+      "id": 0,
+      "title": "理解问题",
+      "titleEn": "Understand the Problem",
+      "code": "# 单词规律 (lc290)\n# 给定一种 pattern 字符串和一个字符串 s\n# 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中\n# 空格分隔的单词之间是否存在一一对应（双射）关系。\n#\n# 示例:\n#   pattern = \"abba\", s = \"dog cat cat dog\"   → true\n#   pattern = \"abba\", s = \"dog cat cat fish\"  → false\n#   pattern = \"aaaa\", s = \"dog cat cat dog\"   → false",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 单词规律 (lc290)</span>",
+        "<span class=\"tokenComment\"># 给定一种 pattern 字符串和一个字符串 s</span>",
+        "<span class=\"tokenComment\"># 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中</span>",
+        "<span class=\"tokenComment\"># 空格分隔的单词之间是否存在一一对应（双射）关系。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat dog&quot;   → true</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat fish&quot;  → false</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;aaaa&quot;, s = &quot;dog cat cat dog&quot;   → false</span>"
+      ],
+      "explanation": "**问题分析**\n\n- `pattern` 是字符序列，`s` 是空格分隔的单词序列\n- 要求字符 ↔ 单词的**一一对应（双射）**：\n  - 不同字符必须映射到不同单词\n  - 同一字符必须映射到同一单词\n\n**与 lc205「同构字符串」完全相同**，只是把字符换成单词、字符串换成 `s.split()`。\n\n> 仅当 `len(pattern) == len(words)` 时才可能匹配，因此首先做长度检查。",
+      "visualizationType": "intro",
+      "visualizationData": {}
+    },
+    {
+      "id": 1,
+      "title": "函数签名",
+      "titleEn": "Function Signature",
+      "code": "# 单词规律 (lc290)\n# 给定一种 pattern 字符串和一个字符串 s\n# 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中\n# 空格分隔的单词之间是否存在一一对应（双射）关系。\n#\n# 示例:\n#   pattern = \"abba\", s = \"dog cat cat dog\"   → true\n#   pattern = \"abba\", s = \"dog cat cat fish\"  → false\n#   pattern = \"aaaa\", s = \"dog cat cat dog\"   → false\n\ndef wordPattern(pattern: str, s: str) -> bool:\n    \"\"\"判断 pattern 字符与 s 单词是否一一对应。\"\"\"\n    pass",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 单词规律 (lc290)</span>",
+        "<span class=\"tokenComment\"># 给定一种 pattern 字符串和一个字符串 s</span>",
+        "<span class=\"tokenComment\"># 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中</span>",
+        "<span class=\"tokenComment\"># 空格分隔的单词之间是否存在一一对应（双射）关系。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat dog&quot;   → true</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat fish&quot;  → false</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;aaaa&quot;, s = &quot;dog cat cat dog&quot;   → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">wordPattern</span>(pattern: <span class=\"tokenBuiltin\">str</span>, s: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 pattern 字符与 s 单词是否一一对应。&quot;&quot;&quot;</span>",
+        "    <span class=\"tokenKeyword\">pass</span>"
+      ],
+      "explanation": "**第 1 步：编写函数签名**\n\n- 接收两个参数：`pattern`（字符序列）、`s`（空格分隔的字符串）\n- 返回 `bool`：遵循规律为 `true`，否则 `false`\n- 使用类型注解明确参数与返回值\n- 文档字符串说明函数用途",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 2,
+      "title": "拆词与校验",
+      "titleEn": "Split and Validate Length",
+      "code": "# 单词规律 (lc290)\n# 给定一种 pattern 字符串和一个字符串 s\n# 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中\n# 空格分隔的单词之间是否存在一一对应（双射）关系。\n#\n# 示例:\n#   pattern = \"abba\", s = \"dog cat cat dog\"   → true\n#   pattern = \"abba\", s = \"dog cat cat fish\"  → false\n#   pattern = \"aaaa\", s = \"dog cat cat dog\"   → false\n\ndef wordPattern(pattern: str, s: str) -> bool:\n    \"\"\"判断 pattern 字符与 s 单词是否一一对应。\"\"\"\n    words = s.split()\n    if len(pattern) != len(words):\n        return False",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 单词规律 (lc290)</span>",
+        "<span class=\"tokenComment\"># 给定一种 pattern 字符串和一个字符串 s</span>",
+        "<span class=\"tokenComment\"># 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中</span>",
+        "<span class=\"tokenComment\"># 空格分隔的单词之间是否存在一一对应（双射）关系。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat dog&quot;   → true</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat fish&quot;  → false</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;aaaa&quot;, s = &quot;dog cat cat dog&quot;   → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">wordPattern</span>(pattern: <span class=\"tokenBuiltin\">str</span>, s: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 pattern 字符与 s 单词是否一一对应。&quot;&quot;&quot;</span>",
+        "    words = s.split()",
+        "    <span class=\"tokenKeyword\">if</span> <span class=\"tokenBuiltin\">len</span>(pattern) != <span class=\"tokenBuiltin\">len</span>(words):",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>"
+      ],
+      "explanation": "**第 2 步：拆分单词并校验长度**\n\n```python\nwords = s.split()           # 默认按任意空白字符拆分\nif len(pattern) != len(words):\n    return False\n```\n\n| 关键点 | 说明 |\n|--------|------|\n| `s.split()` | 按任意空白字符拆分，返回单词列表 |\n| 长度不一致 | 必然不匹配，直接返回 `False` |\n\n**示例**\n\n```\npattern = \"abba\"            # 4 个字符\ns       = \"dog cat cat dog\" # split() → [\"dog\", \"cat\", \"cat\", \"dog\"]\n长度匹配 ✓\n```",
+      "visualizationType": "code-only",
+      "visualizationData": {}
+    },
+    {
+      "id": 3,
+      "title": "双射检测",
+      "titleEn": "Check Bijection",
+      "code": "# 单词规律 (lc290)\n# 给定一种 pattern 字符串和一个字符串 s\n# 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中\n# 空格分隔的单词之间是否存在一一对应（双射）关系。\n#\n# 示例:\n#   pattern = \"abba\", s = \"dog cat cat dog\"   → true\n#   pattern = \"abba\", s = \"dog cat cat fish\"  → false\n#   pattern = \"aaaa\", s = \"dog cat cat dog\"   → false\n\ndef wordPattern(pattern: str, s: str) -> bool:\n    \"\"\"判断 pattern 字符与 s 单词是否一一对应。\"\"\"\n    words = s.split()\n    if len(pattern) != len(words):\n        return False\n    p2w, w2p = {}, {}\n    for p, w in zip(pattern, words):\n        if (p in p2w and p2w[p] != w) or (w in w2p and w2p[w] != p):\n            return False\n        p2w[p] = w\n        w2p[w] = p",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 单词规律 (lc290)</span>",
+        "<span class=\"tokenComment\"># 给定一种 pattern 字符串和一个字符串 s</span>",
+        "<span class=\"tokenComment\"># 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中</span>",
+        "<span class=\"tokenComment\"># 空格分隔的单词之间是否存在一一对应（双射）关系。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat dog&quot;   → true</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat fish&quot;  → false</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;aaaa&quot;, s = &quot;dog cat cat dog&quot;   → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">wordPattern</span>(pattern: <span class=\"tokenBuiltin\">str</span>, s: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 pattern 字符与 s 单词是否一一对应。&quot;&quot;&quot;</span>",
+        "    words = s.split()",
+        "    <span class=\"tokenKeyword\">if</span> <span class=\"tokenBuiltin\">len</span>(pattern) != <span class=\"tokenBuiltin\">len</span>(words):",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "    p2w, w2p = {}, {}",
+        "    <span class=\"tokenKeyword\">for</span> p, w in <span class=\"tokenBuiltin\">zip</span>(pattern, words):",
+        "        <span class=\"tokenKeyword\">if</span> (p in p2w and p2w[p] != w) or (w in w2p and w2p[w] != p):",
+        "            <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "        p2w[p] = w",
+        "        w2p[w] = p"
+      ],
+      "explanation": "**第 3 步：用两个哈希表维护双射**\n\n单向映射不够 —— 只查 `char → word` 会漏掉 `pattern=\"ab\"`, `s=\"dog dog\"` 的情况。\n\n| 哈希表 | 含义 |\n|--------|------|\n| `p2w` | pattern 字符 → 单词 |\n| `w2p` | 单词 → pattern 字符 |\n\n**检测冲突**\n\n```python\nif (p in p2w and p2w[p] != w) or (w in w2p and w2p[w] != p):\n    return False\n```\n\n- `p` 已映射但对应其他单词 → 违反一致性\n- `w` 已被其他字符映射 → 违反一一对应\n\n> 两个 map 同时维护，才能保证**双射**。",
+      "visualizationType": "array-iteration",
+      "visualizationData": {
+        "mapContents": "{a → dog, b → cat}",
+        "arrayState": "[\"dog\", \"cat\", \"cat\", \"dog\"]",
+        "currentIndex": 2,
+        "currentValue": "cat",
+        "found": false
+      }
+    },
+    {
+      "id": 4,
+      "title": "完成",
+      "titleEn": "Complete",
+      "code": "# 单词规律 (lc290)\n# 给定一种 pattern 字符串和一个字符串 s\n# 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中\n# 空格分隔的单词之间是否存在一一对应（双射）关系。\n#\n# 示例:\n#   pattern = \"abba\", s = \"dog cat cat dog\"   → true\n#   pattern = \"abba\", s = \"dog cat cat fish\"  → false\n#   pattern = \"aaaa\", s = \"dog cat cat dog\"   → false\n\ndef wordPattern(pattern: str, s: str) -> bool:\n    \"\"\"判断 pattern 字符与 s 单词是否一一对应。\"\"\"\n    words = s.split()\n    if len(pattern) != len(words):\n        return False\n    p2w, w2p = {}, {}\n    for p, w in zip(pattern, words):\n        if (p in p2w and p2w[p] != w) or (w in w2p and w2p[w] != p):\n            return False\n        p2w[p] = w\n        w2p[w] = p\n    return True",
+      "codeHtml": [
+        "<span class=\"tokenComment\"># 单词规律 (lc290)</span>",
+        "<span class=\"tokenComment\"># 给定一种 pattern 字符串和一个字符串 s</span>",
+        "<span class=\"tokenComment\"># 判断 s 是否遵循相同的规律，即 pattern 中的字符与 s 中</span>",
+        "<span class=\"tokenComment\"># 空格分隔的单词之间是否存在一一对应（双射）关系。</span>",
+        "<span class=\"tokenComment\">#</span>",
+        "<span class=\"tokenComment\"># 示例:</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat dog&quot;   → true</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;abba&quot;, s = &quot;dog cat cat fish&quot;  → false</span>",
+        "<span class=\"tokenComment\">#   pattern = &quot;aaaa&quot;, s = &quot;dog cat cat dog&quot;   → false</span>",
+        "",
+        "<span class=\"tokenKeyword\">def</span> <span class=\"tokenFunction\">wordPattern</span>(pattern: <span class=\"tokenBuiltin\">str</span>, s: <span class=\"tokenBuiltin\">str</span>) -&gt; <span class=\"tokenBuiltin\">bool</span>:",
+        "    <span class=\"tokenString\">&quot;&quot;&quot;判断 pattern 字符与 s 单词是否一一对应。&quot;&quot;&quot;</span>",
+        "    words = s.split()",
+        "    <span class=\"tokenKeyword\">if</span> <span class=\"tokenBuiltin\">len</span>(pattern) != <span class=\"tokenBuiltin\">len</span>(words):",
+        "        <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "    p2w, w2p = {}, {}",
+        "    <span class=\"tokenKeyword\">for</span> p, w in <span class=\"tokenBuiltin\">zip</span>(pattern, words):",
+        "        <span class=\"tokenKeyword\">if</span> (p in p2w and p2w[p] != w) or (w in w2p and w2p[w] != p):",
+        "            <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">False</span>",
+        "        p2w[p] = w",
+        "        w2p[w] = p",
+        "    <span class=\"tokenKeyword\">return</span> <span class=\"tokenKeyword\">True</span>"
+      ],
+      "explanation": "**最终结果**\n\n循环结束未发现冲突 → 全部一致对应，返回 `True`。\n\n```\n输入: pattern = \"abba\", s = \"dog cat cat dog\"\ni=0: p='a', w='dog'  → 写入 {a:dog, dog:a}\ni=1: p='b', w='cat'  → 写入 {a:dog, b:cat, cat:b, dog:a}\ni=2: p='b', w='cat'  → 已存在且一致 ✓\ni=3: p='a', w='dog'  → 已存在且一致 ✓\n输出: true\n```\n\n**反例**\n\n```\npattern = \"abba\", s = \"dog cat cat fish\"\ni=3: p='a', w='fish' → a 已映射 dog ≠ fish → 返回 false\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(n) — n 为单词总数 |\n| 空间复杂度 | O(n) — 两个哈希表 |\n\n**关键技巧：双射**\n\n- 单向映射会漏掉「不同字符映射到同一单词」的反例\n- 双哈希表 `p2w` + `w2p` 同时维护，保证一一对应",
+      "visualizationType": "result",
+      "visualizationData": {
+        "mapContents": "{a → dog, b → cat}",
+        "arrayState": "[\"dog\", \"cat\", \"cat\", \"dog\"]",
+        "result": "true",
+        "highlightedIndices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "approach": "双哈希表维护 pattern 字符与 s 单词的双射",
+    "keyInsight": "双向映射 (char↔word) 才能保证一一对应，单向映射会漏掉不同字符映射到同一单词的反例"
+  }
+}

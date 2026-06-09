@@ -1,0 +1,240 @@
+[algorithm]
+id = "surrounded-regions"
+title = "被围绕的区域"
+titleEn = "Surrounded Regions"
+difficulty = "medium"
+tags = ["depth-first-search", "breadth-first-search", "union-find", "array", "matrix"]
+testCase = "board = [[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"O\",\"O\",\"X\"],[\"X\",\"X\",\"O\",\"X\"],[\"X\",\"O\",\"X\",\"X\"]]"
+expectedOutput = "[[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"O\",\"X\",\"X\"]]"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 130. 被围绕的区域
+# 把所有被 X 完全围绕的 O 翻转为 X
+# 与边界连通的 O 保持不变（不能被完全围绕）
+#
+# 关键观察:
+#   只有「不与边界连通」的 O 才被翻转
+#
+# 示例:
+#   board = [
+#     ["X","X","X","X"],
+#     ["X","O","O","X"],
+#     ["X","X","O","X"],
+#     ["X","O","X","X"]
+#   ]
+#   结果: [
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","O","X","X"]
+#   ]"""
+explanation = "**问题分析**\n\n给定一个 `m × n` 的二维棋盘 `board`，包含字符 `'X'` 和 `'O'`，需要**原地**把所有**被 `'X'` 围绕**的区域中的 `'O'` 翻转为 `'X'`。\n\n**关键观察：边界连通性**\n\n- 任何**与边界 `'O'` 相连**的 `'O'` 都不会被翻转（无法被完全围绕）\n- 只有**不与边界连通**的 `'O'` 才被翻转为 `'X'`\n\n**思路对比**\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 对每个 O 做 BFS/DFS 判断是否被围绕 | O((m·n)²) | O(m·n) |\n| **边界 DFS 反向标记** | **O(m·n)** | **O(m·n)** |\n\n> 反向思路：先标记所有「安全」的 O（与边界连通），剩下的 O 一律翻转为 X。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名 + dfs 定义 ──────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名"
+titleEn = "Function Signature"
+code = """# 130. 被围绕的区域
+# 把所有被 X 完全围绕的 O 翻转为 X
+# 与边界连通的 O 保持不变（不能被完全围绕）
+#
+# 关键观察:
+#   只有「不与边界连通」的 O 才被翻转
+#
+# 示例:
+#   board = [
+#     ["X","X","X","X"],
+#     ["X","O","O","X"],
+#     ["X","X","O","X"],
+#     ["X","O","X","X"]
+#   ]
+#   结果: [
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","O","X","X"]
+#   ]
+
+from typing import List
+
+def solve(board: List[List[str]]) -> None:
+    \"\"\"原地翻转被围绕的 O 区域\"\"\"
+    if not board or not board[0]:
+        return
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != 'O':
+            return
+        pass"""
+explanation = "**第 1 步：搭建函数骨架**\n\n- **签名**：`solve(board)` 接收二维字符列表，原地修改，返回 `None`\n- **空棋盘保护**：`if not board or not board[0]: return`\n- **维度**：`m` 行数，`n` 列数\n- **内嵌 `dfs(i, j)`**：递归标记函数\n  - **边界检查**：越界或当前格不是 `'O'` 直接返回（已标记的 `'S'` 也不再是 `'O'`，避免重复访问）\n\n> 内嵌 `dfs` 可以直接捕获外层的 `board`、`m`、`n`，无需传参。"
+visualizationType = "code-only"
+
+# ── Step 2: dfs 完整实现 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "DFS 标记"
+titleEn = "DFS Mark Safe"
+code = """# 130. 被围绕的区域
+# 把所有被 X 完全围绕的 O 翻转为 X
+# 与边界连通的 O 保持不变（不能被完全围绕）
+#
+# 关键观察:
+#   只有「不与边界连通」的 O 才被翻转
+#
+# 示例:
+#   board = [
+#     ["X","X","X","X"],
+#     ["X","O","O","X"],
+#     ["X","X","O","X"],
+#     ["X","O","X","X"]
+#   ]
+#   结果: [
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","O","X","X"]
+#   ]
+
+from typing import List
+
+def solve(board: List[List[str]]) -> None:
+    \"\"\"原地翻转被围绕的 O 区域\"\"\"
+    if not board or not board[0]:
+        return
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != 'O':
+            return
+        board[i][j] = 'S'  # 标记为「安全」（与边界连通）
+        dfs(i + 1, j)
+        dfs(i - 1, j)
+        dfs(i, j + 1)
+        dfs(i, j - 1)"""
+explanation = "**第 2 步：实现 DFS 标记逻辑**\n\n- **标记**：把当前 `'O'` 改为 `'S'`（Safe），表示**与边界连通，不会被翻转**\n- **四方向递归**：上下左右四个邻居继续 DFS\n- **回溯检查**：`board[i][j] != 'O'` 的判断同时处理了**越界**和**重复访问**（`'S'` 不再等于 `'O'`）\n\n**为什么用 `'S'` 中间态？**\n\n> 翻转阶段才能区分「真·安全 O」和「待翻转 O」。如果原地改成 `'X'`，DFS 会把本该保留的 O 也改掉。"
+visualizationType = "code-only"
+
+# ── Step 3: 边界 DFS 入口 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "遍历边界"
+titleEn = "Sweep Boundary"
+code = """# 130. 被围绕的区域
+# 把所有被 X 完全围绕的 O 翻转为 X
+# 与边界连通的 O 保持不变（不能被完全围绕）
+#
+# 关键观察:
+#   只有「不与边界连通」的 O 才被翻转
+#
+# 示例:
+#   board = [
+#     ["X","X","X","X"],
+#     ["X","O","O","X"],
+#     ["X","X","O","X"],
+#     ["X","O","X","X"]
+#   ]
+#   结果: [
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","O","X","X"]
+#   ]
+
+from typing import List
+
+def solve(board: List[List[str]]) -> None:
+    \"\"\"原地翻转被围绕的 O 区域\"\"\"
+    if not board or not board[0]:
+        return
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != 'O':
+            return
+        board[i][j] = 'S'  # 标记为「安全」（与边界连通）
+        dfs(i + 1, j)
+        dfs(i - 1, j)
+        dfs(i, j + 1)
+        dfs(i, j - 1)
+    # 从四条边上的 O 开始 DFS
+    for i in range(m):
+        for j in [0, n - 1]:
+            if board[i][j] == 'O':
+                dfs(i, j)
+    for j in range(n):
+        for i in [0, m - 1]:
+            if board[i][j] == 'O':
+                dfs(i, j)"""
+explanation = "**第 3 步：从边界出发 DFS**\n\n遍历棋盘的**四条边**，对每个边界上的 `'O'` 启动 `dfs`：\n\n| 循环 | 覆盖的边界 |\n|------|----------|\n| `for i in range(m): for j in [0, n-1]` | 左列、右列 |\n| `for j in range(n): for i in [0, m-1]` | 上行、下行 |\n\n> 四角 `(0,0)`、`(0,n-1)`、`(m-1,0)`、`(m-1,n-1)` 会被两个循环都扫到，但因为 `dfs` 内的 `!= 'O'` 守卫，重复调用是**幂等**的。"
+visualizationType = "code-only"
+
+# ── Step 4: 翻转 + 完成 ──────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 130. 被围绕的区域
+# 把所有被 X 完全围绕的 O 翻转为 X
+# 与边界连通的 O 保持不变（不能被完全围绕）
+#
+# 关键观察:
+#   只有「不与边界连通」的 O 才被翻转
+#
+# 示例:
+#   board = [
+#     ["X","X","X","X"],
+#     ["X","O","O","X"],
+#     ["X","X","O","X"],
+#     ["X","O","X","X"]
+#   ]
+#   结果: [
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","X","X","X"],
+#     ["X","O","X","X"]
+#   ]
+
+from typing import List
+
+def solve(board: List[List[str]]) -> None:
+    \"\"\"原地翻转被围绕的 O 区域\"\"\"
+    if not board or not board[0]:
+        return
+    m, n = len(board), len(board[0])
+    def dfs(i: int, j: int) -> None:
+        if i < 0 or i >= m or j < 0 or j >= n or board[i][j] != 'O':
+            return
+        board[i][j] = 'S'  # 标记为「安全」（与边界连通）
+        dfs(i + 1, j)
+        dfs(i - 1, j)
+        dfs(i, j + 1)
+        dfs(i, j - 1)
+    # 从四条边上的 O 开始 DFS
+    for i in range(m):
+        for j in [0, n - 1]:
+            if board[i][j] == 'O':
+                dfs(i, j)
+    for j in range(n):
+        for i in [0, m - 1]:
+            if board[i][j] == 'O':
+                dfs(i, j)
+    # 统一翻转：O -> X（被围绕），S -> O（恢复）
+    for i in range(m):
+        for j in range(n):
+            if board[i][j] == 'O':
+                board[i][j] = 'X'
+            elif board[i][j] == 'S':
+                board[i][j] = 'O'"""
+explanation = "**最终结果**\n\n✅ 原地翻转完成\n\n**最后一步：统一翻转**\n\nDFS 标记结束后，再扫一次整个棋盘：\n\n| 当前格 | 操作 | 含义 |\n|--------|------|------|\n| `'O'` | 改为 `'X'` | 没被 DFS 标记过 → 被围绕 → 翻转 |\n| `'S'` | 改为 `'O'` | DFS 标记过的安全格 → 恢复成 `'O'` |\n| `'X'` | 保持不变 | 原本就是 `'X'` |\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m·n) — 每个格子最多访问常数次 |\n| 空间复杂度 | O(m·n) — 递归栈深度，最坏整盘都是 O |\n\n**关键技巧：反向标记**\n\n- 不要正面判断「哪些 O 被围绕」，而是反向标记「哪些 O 安全」\n- 一次 DFS 把整片连通区域染色，比逐个判断更高效\n- 用 `'S'` 中间态保留信息，避免改回去再判断"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[X,X,X,X],[X,X,X,X],[X,X,X,X],[X,O,X,X]]", result = "[[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"O\",\"X\",\"X\"]]", highlightedIndices = [15] }
+
+[algorithm.summary]
+timeComplexity = "O(m*n)"
+spaceComplexity = "O(m*n)  # 最坏递归栈"
+approach = "边界 DFS 反向标记"
+keyInsight = "只翻转不与边界连通的 O；从边界 O 出发 DFS 标记所有安全 O，再统一翻转"

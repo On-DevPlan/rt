@@ -1,0 +1,177 @@
+[algorithm]
+id = "unique-paths-ii"
+title = "不同路径 II"
+titleEn = "Unique Paths II"
+difficulty = "medium"
+tags = ["array", "dynamic-programming", "matrix"]
+testCase = "obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]"
+expectedOutput = "2"
+
+# ── Step 0: 理解问题 ──────────────────────────────────────────
+[[algorithm.steps]]
+id = 0
+title = "理解问题"
+titleEn = "Understand the Problem"
+code = """# 63. 不同路径 II
+# 机器人从网格左上角到右下角，只能向下或向右移动
+# 网格中有障碍物（1表示障碍，0表示空地）
+# 求不同路径的数量
+#
+# 关键约束:
+#   起点或终点是障碍物则直接返回 0
+#   障碍物位置无法通过，路径数为 0
+#   动态规划：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+#
+# 示例:
+#   obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+#   结果: 2"""
+explanation = "**问题分析**\n\n在一个 `m×n` 网格中，机器人从左上角 `(0,0)` 到右下角 `(m-1,n-1)`，只能**向下或向右**移动。\n\n网格中有障碍物（`1` 表示障碍，`0` 表示空地）。障碍物位置无法通过。\n\n**示例分析**（3×3 网格，中心有障碍）：\n\n```\n[0, 0, 0]\n[0, 1, 0]  ← 中间是障碍\n[0, 0, 0]\n\n可行路径只有 2 条：\n1. 右→右→下→下\n2. 下→下→右→右\n```\n\n| 方法 | 时间 | 空间 |\n|------|------|------|\n| 递归（带记忆化） | O(mn) | O(mn) |\n| **动态规划（原地修改）** | **O(mn)** | **O(1)** |\n\n> 用网格本身作为 DP 数组，原地修改，节省空间。"
+visualizationType = "intro"
+
+# ── Step 1: 函数签名与边界检查 ────────────────────────────────
+[[algorithm.steps]]
+id = 1
+title = "函数签名与边界"
+titleEn = "Signature and Boundaries"
+code = """# 63. 不同路径 II
+# 机器人从网格左上角到右下角，只能向下或向右移动
+# 网格中有障碍物（1表示障碍，0表示空地）
+# 求不同路径的数量
+#
+# 关键约束:
+#   起点或终点是障碍物则直接返回 0
+#   障碍物位置无法通过，路径数为 0
+#   动态规划：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+#
+# 示例:
+#   obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+#   结果: 2
+
+from typing import List
+
+def uniquePathsWithObstacles(obstacleGrid: List[List[int]]) -> int:
+    \"\"\"返回不同路径数\"\"\"
+    m, n = len(obstacleGrid), len(obstacleGrid[0])
+    if obstacleGrid[0][0] == 1 or obstacleGrid[m - 1][n - 1] == 1:
+        return 0
+    obstacleGrid[0][0] = 1"""
+explanation = "**第 1 步：边界检查与初始化**\n\n首先检查起点和终点：\n- 如果 `obstacleGrid[0][0] == 1`（起点障碍）→ 直接返回 `0`\n- 如果 `obstacleGrid[m-1][n-1] == 1`（终点障碍）→ 直接返回 `0`\n\n然后初始化起点：`obstacleGrid[0][0] = 1`\n\n**为什么起点设为 1？**\n\n`obstacleGrid[i][j]` 将存储到达该位置的路径数。起点只有一种方式到达（原地），所以设为 `1`。"
+visualizationType = "code-only"
+
+# ── Step 2: 第一行初始化 ────────────────────────────────────────
+[[algorithm.steps]]
+id = 2
+title = "初始化第一行"
+titleEn = "Initialize First Row"
+code = """# 63. 不同路径 II
+# 机器人从网格左上角到右下角，只能向下或向右移动
+# 网格中有障碍物（1表示障碍，0表示空地）
+# 求不同路径的数量
+#
+# 关键约束:
+#   起点或终点是障碍物则直接返回 0
+#   障碍物位置无法通过，路径数为 0
+#   动态规划：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+#
+# 示例:
+#   obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+#   结果: 2
+
+from typing import List
+
+def uniquePathsWithObstacles(obstacleGrid: List[List[int]]) -> int:
+    \"\"\"返回不同路径数\"\"\"
+    m, n = len(obstacleGrid), len(obstacleGrid[0])
+    if obstacleGrid[0][0] == 1 or obstacleGrid[m - 1][n - 1] == 1:
+        return 0
+    obstacleGrid[0][0] = 1
+    for j in range(1, n):
+        obstacleGrid[0][j] = obstacleGrid[0][j - 1] if obstacleGrid[0][j] == 0 else 0"""
+explanation = "**第 2 步：初始化第一行**\n\n第一行只能从左边过来，所以：\n\n```python\nobstacleGrid[0][j] = obstacleGrid[0][j - 1]  # 如果当前格不是障碍\nobstacleGrid[0][j] = 0                      # 如果当前格是障碍\n```\n\n**执行逻辑**\n\n| 当前格状态 | 路径数 |\n|------------|--------|\n| 空地 (`0`) | 继承左边格的路径数 |\n| 障碍 (`1`) | `0`（无法到达）|\n\n> 一旦遇到障碍，该位置及之后的位置都变成 `0`，因为无法跨越障碍。"
+visualizationType = "code-only"
+
+# ── Step 3: 初始化第一列与双层循环 ────────────────────────────
+[[algorithm.steps]]
+id = 3
+title = "初始化第一列与遍历"
+titleEn = "Init First Column and Loop"
+code = """# 63. 不同路径 II
+# 机器人从网格左上角到右下角，只能向下或向右移动
+# 网格中有障碍物（1表示障碍，0表示空地）
+# 求不同路径的数量
+#
+# 关键约束:
+#   起点或终点是障碍物则直接返回 0
+#   障碍物位置无法通过，路径数为 0
+#   动态规划：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+#
+# 示例:
+#   obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+#   结果: 2
+
+from typing import List
+
+def uniquePathsWithObstacles(obstacleGrid: List[List[int]]) -> int:
+    \"\"\"返回不同路径数\"\"\"
+    m, n = len(obstacleGrid), len(obstacleGrid[0])
+    if obstacleGrid[0][0] == 1 or obstacleGrid[m - 1][n - 1] == 1:
+        return 0
+    obstacleGrid[0][0] = 1
+    for j in range(1, n):
+        obstacleGrid[0][j] = obstacleGrid[0][j - 1] if obstacleGrid[0][j] == 0 else 0
+    for i in range(1, m):
+        obstacleGrid[i][0] = obstacleGrid[i - 1][0] if obstacleGrid[i][0] == 0 else 0
+        for j in range(1, n):
+            if obstacleGrid[i][j] == 0:
+                obstacleGrid[i][j] = obstacleGrid[i - 1][j] + obstacleGrid[i][j - 1]
+            else:
+                obstacleGrid[i][j] = 0"""
+explanation = "**第 3 步：初始化第一列与核心 DP 循环**\n\n**第一列初始化**（与第一行类似）：\n\n```python\nobstacleGrid[i][0] = obstacleGrid[i - 1][0]  # 如果当前格不是障碍\nobstacleGrid[i][0] = 0                      # 如果当前格是障碍\n```\n\n**双层循环核心逻辑**\n\n对于每个格 `(i, j)`（`i>0` 且 `j>0`）：\n\n| 当前格状态 | 路径数计算 |\n|------------|-----------|\n| 空地 (`0`) | `dp[i][j] = dp[i-1][j] + dp[i][j-1]` |\n| 障碍 (`1`) | `dp[i][j] = 0` |\n\n> 因为只能从**上方**或**左方**到达，所以路径数是两者之和。"
+visualizationType = "code-only"
+
+# ── Step 4: 完成 ────────────────────────────────────────────────
+[[algorithm.steps]]
+id = 4
+title = "完成"
+titleEn = "Complete"
+code = """# 63. 不同路径 II
+# 机器人从网格左上角到右下角，只能向下或向右移动
+# 网格中有障碍物（1表示障碍，0表示空地）
+# 求不同路径的数量
+#
+# 关键约束:
+#   起点或终点是障碍物则直接返回 0
+#   障碍物位置无法通过，路径数为 0
+#   动态规划：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+#
+# 示例:
+#   obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+#   结果: 2
+
+from typing import List
+
+def uniquePathsWithObstacles(obstacleGrid: List[List[int]]) -> int:
+    \"\"\"返回不同路径数\"\"\"
+    m, n = len(obstacleGrid), len(obstacleGrid[0])
+    if obstacleGrid[0][0] == 1 or obstacleGrid[m - 1][n - 1] == 1:
+        return 0
+    obstacleGrid[0][0] = 1
+    for j in range(1, n):
+        obstacleGrid[0][j] = obstacleGrid[0][j - 1] if obstacleGrid[0][j] == 0 else 0
+    for i in range(1, m):
+        obstacleGrid[i][0] = obstacleGrid[i - 1][0] if obstacleGrid[i][0] == 0 else 0
+        for j in range(1, n):
+            if obstacleGrid[i][j] == 0:
+                obstacleGrid[i][j] = obstacleGrid[i - 1][j] + obstacleGrid[i][j - 1]
+            else:
+                obstacleGrid[i][j] = 0
+    return obstacleGrid[m - 1][n - 1]"""
+explanation = "**最终结果**\n\n✅ 动态规划完成\n\n```\n输入: [[0,0,0],[0,1,0],[0,0,0]]\n输出: 2\n```\n\n**执行过程（示例）：**\n\n```\n初始:      第一行:    第一列:    完成后:\n[0,0,0]    [1,1,1]    [1,1,1]    [1, 1, 1]\n[0,1,0] →  [0,1,0] →  [1,1,0] →  [1, 0, 1]\n[0,0,0]    [0,0,0]    [1,0,0]    [1, 1, 2]\n                                  ↑\n                              结果 = 2\n```\n\n**算法复杂度**\n\n| 指标 | 值 |\n|------|------|\n| 时间复杂度 | O(m×n) — 遍历每个格 |\n| 空间复杂度 | O(1) — 原地修改 |\n\n**核心思想**\n\n- 障碍物位置的路径数始终为 `0`\n- 空地位置路径数 = 上方路径数 + 左方路径数\n- 直接在原网格上修改，无需额外 DP 数组"
+visualizationType = "result"
+visualizationData = { mapContents = "{}", arrayState = "[[0, 0, 0], [0, 1, 0], [0, 0, 0]]", result = "2", highlightedIndices = [0, 0] }
+
+[algorithm.summary]
+timeComplexity = "O(m×n)"
+spaceComplexity = "O(1)  # 原地修改"
+approach = "动态规划（原地修改）"
+keyInsight = "障碍物位置 dp=0；否则 dp[i][j] = dp[i-1][j] + dp[i][j-1]；直接在 grid 上修改"
