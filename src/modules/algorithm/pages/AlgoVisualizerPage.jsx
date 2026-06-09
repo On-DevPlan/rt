@@ -159,7 +159,7 @@ function computeLineDiff(prevCode, currentCode) {
   // 1. Common prefix
   let i = 0
   while (i < minLen && prevLines[i] === currLines[i]) {
-    result.push({ type: 'same', text: prevLines[i] })
+    result.push({ type: 'same', text: prevLines[i], lineIdx: i })
     i++
   }
 
@@ -171,19 +171,19 @@ function computeLineDiff(prevCode, currentCode) {
     c--
   }
 
-  // 3. Removed lines (between prefix and suffix in old)
+  // 3. Removed lines — no current-code line index
   for (let j = i; j <= p; j++) {
-    result.push({ type: 'del', text: prevLines[j] })
+    result.push({ type: 'del', text: prevLines[j], lineIdx: -1 })
   }
 
-  // 4. Added lines (between prefix and suffix in new)
+  // 4. Added lines — track actual line index in current code
   for (let j = i; j <= c; j++) {
-    result.push({ type: 'add', text: currLines[j] })
+    result.push({ type: 'add', text: currLines[j], lineIdx: j })
   }
 
-  // 5. Common suffix
-  for (let j = p + 1; j < prevLines.length; j++) {
-    result.push({ type: 'same', text: prevLines[j] })
+  // 5. Common suffix — map to current-code line index
+  for (let j = p + 1, k = c + 1; j < prevLines.length; j++, k++) {
+    result.push({ type: 'same', text: prevLines[j], lineIdx: k })
   }
 
   return result
@@ -344,8 +344,8 @@ function CodeDisplay({ code, prevCode, codeHtml, onAnimationDone }) {
                 <span className={styles.lineNumber}>{idx + 1}</span>
                 <span className={gutterCls}>{gutter}</span>
                 <span className={styles.lineContent}>
-                  {isReady && codeHtml && codeHtml[idx]
-                    ? <span dangerouslySetInnerHTML={{ __html: codeHtml[idx] || '&nbsp;' }} />
+                  {isReady && codeHtml && entry.lineIdx >= 0 && codeHtml[entry.lineIdx]
+                    ? <span dangerouslySetInnerHTML={{ __html: codeHtml[entry.lineIdx] }} />
                     : <span>{displayText || <span className={styles.emptyLine}>&nbsp;</span>}</span>}
                   {showCursor && <span className={styles.typeCursor}>|</span>}
                 </span>
