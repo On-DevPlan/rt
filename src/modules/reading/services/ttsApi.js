@@ -14,7 +14,7 @@ const API_BASE = '/api/tts'
 export async function fetchWithTiming(text, options = {}) {
   const { voice = 'en-US-AndrewNeural', rate = '+0%', pitch = '+0Hz' } = options
 
-  const response = await fetch(`${API_BASE}/tts_with_timing`, {
+  const response = await fetch(`${API_BASE}/with-timing`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voice, rate, pitch }),
