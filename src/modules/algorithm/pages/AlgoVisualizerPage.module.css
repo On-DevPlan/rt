@@ -933,6 +933,18 @@
   display: block;
 }
 
+/* ─── Python Syntax Highlighting Tokens ────────────────────────────────────── */
+
+:global(.tokenKeyword)  { color: #00f0ff; }
+:global(.tokenBuiltin)  { color: #a78bfa; }
+:global(.tokenFunction) { color: #ffd93d; }
+:global(.tokenString)   { color: #00ff87; }
+:global(.tokenComment)  { color: #8b949e; font-style: italic; }
+:global(.tokenNumber)   { color: #ffd93d; }
+:global(.tokenDecorator){ color: #ff6b9d; font-style: italic; }
+:global(.tokenSelf)     { color: #ff6b9d; }
+:global(.tokenOperator) { color: #c9d1d9; }
+
 /* ─── Animations ──────────────────────────────────────────────────────────── */
 
 @keyframes fadeSlideIn {
