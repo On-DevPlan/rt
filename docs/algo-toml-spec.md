@@ -124,7 +124,7 @@ src/modules/algorithm/data/    ← 生成的 JSON，前端自动发现
 | `title` | `string` | **是** | — | 中文步骤名，4-8 字 |
 | `titleEn` | `string` | 否 | `""` | 英文步骤名 |
 | `code` | `string` | **是** | — | **MUST** 包含上一步所有代码行 + 新增行 |
-| `explanation` | `string` | **是** | — | Markdown 格式，支持表格/代码块 |
+| `explanation` | `string` | **是** | — | GFM Markdown（[marked](https://marked.js.org/) 解析），支持表格/代码块/引用/列表/粗体/行内代码等完整规范 |
 | `visualizationType` | `string` | 否 | `"code-only"` | 见 §3.2 |
 | `visualizationData` | `table` | 否 | `{}` | 字段由 visualizationType 决定，见 §3.3 |
 
@@ -284,7 +284,28 @@ visualizationData = { "mapContents" = "{}" }                   # ❌ 不需要�
 | 3 | 按需选择 | + 核心逻辑 |
 | 4 | `result` | 完整代码 |
 
-### ⚠️ 规则 6：TOML 字符串中的引号
+### ⚠️ 规则 6：`explanation` 使用完整 GFM Markdown
+
+`explanation` 字段使用 [marked](https://marked.js.org/) 解析，支持 **完整 GitHub Flavored Markdown**：
+
+| 语法 | 说明 | 示例 |
+|------|------|------|
+| `**粗体**` | 强调 | `**重要提示**` |
+| `` `代码` `` | 行内代码 | `` 使用 `dict.get()` 方法 `` |
+| ` ``` ` 代码块 | 多行代码（可指定语言） | ` ```python ` + 代码 + ` ``` ` |
+| `> 引用` | 引用块 | `> 注意边界条件` |
+| `- 列表` | 无序列表 | `- 第一步\n- 第二步` |
+| `1. 列表` | 有序列表 | `1. 初始化\n2. 遍历` |
+| `\| 表格 \|` | 表格 | 标准 GFM 表格语法 |
+| 空行分段 | 段落分隔 | 连续两个换行 |
+| `` ~~删除线~~ `` | 删除线 | `~~已废弃~~` |
+| `` `[链接](url)` `` | 链接 | `[LeetCode](https://leetcode.com)` |
+| `` `![图片](url)` `` | 图片 | 少用 |
+
+> 不再有 Markdown 子集限制。所有标准 GFM 语法均可使用。
+> 建议保持说明简洁，适度使用表格和代码块提高可读性。
+
+### ⚠️ 规则 7：TOML 字符串中的引号
 
 TOML 的 `"""` 字符串中，如果内容包含连续 3-4 个 `"`，需要转义：
 
@@ -325,7 +346,7 @@ explanation = """他说 \"你好\""""  # ✅ 或者转义
 | `visualizationData` 字段名加引号 | 不是标准 TOML 内联表语法 | 字段名不加引号 |
 | 编写超长 explanation（超过 200 字） | 步骤说明过长，阅读体验差 | 保持简洁，用表格/列表分段 |
 | 步骤数过多（> 8 步） | 用户失去耐心 | 控制在 4-6 步 |
-| 使用非标准 Markdown 语法（如 `[toc]`、脚注） | `mdToHtml` 不支持 | 只使用支持的子集：粗体、行内代码、代码块、表格、引用、列表 |
+| `explanation` 过于冗长（整段无分段） | 阅读困难，用户失去耐心 | 用空行分段，适当使用表格/列表/代码块组织内容 |
 | `mapContents` 中箭头格式错误（如用 `->` 而不是 `→`） | 前端解析错误 | 用 `→`（`→`），如 `"{2 → 0}"` |
 
 ---
