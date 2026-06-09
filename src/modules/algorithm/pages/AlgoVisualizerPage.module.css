@@ -1,17 +1,17 @@
 /* ─── Theme Variables ────────────────────────────────────────────────────── */
 
 :root {
-  --algo-bg: #0a0e1a;
-  --algo-surface: #111827;
-  --algo-surface2: #1a2332;
-  --algo-border: #1e293b;
-  --algo-text: #e2e8f0;
-  --algo-textDim: #64748b;
+  --algo-bg: #181818;
+  --algo-surface: #181818;
+  --algo-surface2: #1a1a1a;
+  --algo-border: #333333;
+  --algo-text: #d4d4d4;
+  --algo-textDim: #888888;
   --algo-cyan: #00f0ff;
   --algo-pink: #ff6b9d;
   --algo-green: #00ff87;
   --algo-amber: #ffd93d;
-  --algo-codeBg: #0d1117;
+  --algo-codeBg: #1f1f1f;
 }
 
 /* ─── Page Layout ────────────────────────────────────────────────────────── */
@@ -238,7 +238,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background: #161b22;
+  background: var(--algo-codeBg);
   border-bottom: 1px solid var(--algo-border);
 }
 
@@ -377,7 +377,7 @@
 .lineContent {
   flex: 1;
   white-space: pre;
-  color: #c9d1d9;
+  color: #d4d4d4;
 }
 
 .emptyLine {
@@ -724,7 +724,7 @@
 .explanationContent {
   font-size: 13px;
   line-height: 1.8;
-  color: #c9d1d9;
+  color: #d4d4d4;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -760,7 +760,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: #c9d1d9;
+  color: #d4d4d4;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -803,7 +803,7 @@
 .explanationContent td {
   padding: 6px 10px;
   border: 1px solid var(--algo-border);
-  color: #c9d1d9;
+  color: #d4d4d4;
 }
 
 /* ─── Bottom Bar ──────────────────────────────────────────────────────────── */
@@ -990,7 +990,7 @@
 :global(.tokenNumber)   { color: #ffd93d; }
 :global(.tokenDecorator){ color: #ff6b9d; font-style: italic; }
 :global(.tokenSelf)     { color: #ff6b9d; }
-:global(.tokenOperator) { color: #c9d1d9; }
+:global(.tokenOperator) { color: #d4d4d4; }
 
 /* ─── Animations ──────────────────────────────────────────────────────────── */
 
