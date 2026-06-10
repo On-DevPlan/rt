@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import { marked } from 'marked'
 import styles from './AlgoVisualizerPage.module.css'
@@ -447,13 +448,45 @@ export default function AlgoVisualizerPage() {
   const stepRef = useRef(currentStep)
   stepRef.current = currentStep
 
-  // When category changes, auto-select first algorithm in that category
+  // Read slug from URL
+  const { slug } = useParams()
+
+  // Sync URL slug → category + algorithm selection
   useEffect(() => {
+    if (!slug) {
+      // No slug in URL — use defaults
+      const firstCat = groupedIndex[0]
+      if (firstCat) {
+        setSelectedCategory(firstCat.id)
+        setCurrentAlgoId(firstCat.algorithms[0]?.id || '')
+      }
+      return
+    }
+    // Find algorithm by slug across all categories
+    for (const cat of groupedIndex) {
+      const algo = cat.algorithms.find(a => a.id === slug)
+      if (algo) {
+        setSelectedCategory(cat.id)
+        setCurrentAlgoId(algo.id)
+        return
+      }
+    }
+    // Slug not found — fall back to default
+    const firstCat = groupedIndex[0]
+    if (firstCat) {
+      setSelectedCategory(firstCat.id)
+      setCurrentAlgoId(firstCat.algorithms[0]?.id || '')
+    }
+  }, [slug])
+
+  // When category changes, auto-select first algorithm in that category (only if not from URL)
+  useEffect(() => {
+    if (slug) return // Don't auto-switch when URL controls selection
     const cat = groupedIndex.find(g => g.id === selectedCategory)
     if (cat && cat.algorithms.length > 0) {
       setCurrentAlgoId(cat.algorithms[0].id)
     }
-  }, [selectedCategory])
+  }, [selectedCategory, slug])
 
   // Load algorithm data when selection changes
   useEffect(() => {

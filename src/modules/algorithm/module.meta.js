@@ -10,7 +10,7 @@ export default defineModule({
     definePage({
       id: 'algo-visualizer',
       title: '算法可视化',
-      route: '/algo/visualizer',
+      route: '/algo/visualizer/:slug',
       entry: './pages/AlgoVisualizerPage.jsx',
       summary: 'LeetCode 算法从 0 到 1 的逐步构建动画，左屏算法过程，右屏思路解析，渐入效果播放。',
       order: 0,
