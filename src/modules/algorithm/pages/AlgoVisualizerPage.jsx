@@ -266,7 +266,7 @@ function CodeDisplay({ code, prevCode, codeHtml, onAnimationDone }) {
             const isCurrent = idx === animState.diffIndex
             const isFuture = idx > animState.diffIndex && entry.type !== 'same'
             const isAnimating = isCurrent && (animState.phase === 'typing' || animState.phase === 'deleting')
-            const isReady = isPast || (isCurrent && animState.phase === 'same') || (isPast && animState.phase === 'done') || (entry.type === 'add' && isPast)
+            const isReady = isPast || (isCurrent && animState.phase === 'same') || (isPast && animState.phase === 'done') || (entry.type === 'add' && isPast) || (animState.phase === 'done' && entry.type === 'add')
 
             // Determine display text
             let displayText
