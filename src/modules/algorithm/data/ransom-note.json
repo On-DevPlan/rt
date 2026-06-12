@@ -31,7 +31,7 @@
         "<span class=\"tokenComment\">#   ransomNote = &quot;aa&quot;,  magazine = &quot;aab&quot; -&gt; true</span>",
         "<span class=\"tokenComment\">#   ransomNote = &quot;aab&quot;, magazine = &quot;baa&quot; -&gt; true</span>"
       ],
-      "explanation": "**问题分析**\n\n判断 `ransomNote` 中的每个字符能否在 `magazine` 中找到对应字符，且 `magazine` 中每个字符只能被使用一次。\n\n**核心思路：字符计数**\n\n- 用哈希表统计 `magazine` 中每个字符的出现次数\n- 遍历 `ransomNote`，每用掉一个字符就把对应计数减 1\n- 若任何字符的计数被减到 0 之前就耗尽，则返回 `false`\n\n> 本题天然适合哈希表（Counter）—— 字符集是 26 个小写英文字母，理论上也可以用长度为 26 的数组实现，空间 O(1)。",
+      "explanation": "**问题重述** — 给定赎金信字符串 ransomNote 和杂志字符串 magazine，判断 ransomNote 能否由 magazine 中的字符构成（每个字符只能使用一次）。\n\n**输入与输出**\n- 输入：ransomNote（赎金信内容），magazine（杂志内容）\n- 输出：bool — ransomNote 能否由 magazine 的字符构成\n- 边界情况：ransomNote 为空字符串时直接返回 true；magazine 为空但 ransomNote 非空时返回 false；区分大小写，每个字符只能使用一次\n\n**示例走查**（testCase: `ransomNote = \"aab\", magazine = \"baa\"`，expectedOutput: `true`）\n- 统计 magazine 中各字符：`Counter({'a': 2, 'b': 1})`\n- 遍历 ransomNote 的第一个字符 'a'：cnt['a']=2 > 0，扣减后变为 1\n- 遍历 ransomNote 的第二个字符 'a'：cnt['a']=1 > 0，扣减后变为 0\n- 遍历 ransomNote 的第三个字符 'b'：cnt['b']=1 > 0，扣减后变为 0\n- 所有字符都能被满足，最终返回 `true`\n- 若 ransomNote = \"aac\"，第三步检查 cnt['c']=0，直接返回 `false`\n\n**关键洞察**\n- 用 `Counter` 统计 magazine 的字符频率，缺失的键返回 0 而非抛出 KeyError\n- 一旦某字符 cnt[c] == 0 时又需要使用，立即返回 false（无需等到遍历完）\n- 本题字符集仅为 26 个小写字母，也可以用长度为 26 的数组代替 Counter，空间同样 O(1)\n\n**方法预览**\n- 数据结构：哈希表（Counter）或长度为 26 的数组\n- 时间复杂度：O(m + n)，m = len(ransomNote)，n = len(magazine)\n- 空间复杂度：O(1)（数组方案，字符集大小固定）",
       "visualizationType": "intro",
       "visualizationData": {}
     },

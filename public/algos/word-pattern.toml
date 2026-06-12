@@ -21,7 +21,7 @@ code = """# 单词规律 (lc290)
 #   pattern = "abba", s = "dog cat cat dog"   → true
 #   pattern = "abba", s = "dog cat cat fish"  → false
 #   pattern = "aaaa", s = "dog cat cat dog"   → false"""
-explanation = "**问题分析**\n\n- `pattern` 是字符序列，`s` 是空格分隔的单词序列\n- 要求字符 ↔ 单词的**一一对应（双射）**：\n  - 不同字符必须映射到不同单词\n  - 同一字符必须映射到同一单词\n\n**与 lc205「同构字符串」完全相同**，只是把字符换成单词、字符串换成 `s.split()`。\n\n> 仅当 `len(pattern) == len(words)` 时才可能匹配，因此首先做长度检查。"
+explanation = "**问题重述**\n\n给定一个模式字符串 `pattern` 和一个由空格分隔的字符串 `s`，判断 `s` 中的单词是否按照 `pattern` 中字符的相同规律排列。换句话说，`pattern` 中的每个字符必须与 `s` 中的一个单词形成**一一对应（双射）**关系。\n\n**输入与输出**\n\n- **输入**：`pattern = \"abba\"`，`s = \"dog cat cat dog\"`。\n- **输出**：`true`，因为 `a → dog`、`b → cat`，字符与单词双向唯一对应。\n- **反例**：`pattern = \"abba\"`，`s = \"dog cat cat fish\"` 应返回 `false`（同一字符 `a` 映射到了不同单词）。\n- **反例**：`pattern = \"aaaa\"`，`s = \"dog cat cat dog\"` 也应返回 `false`（同一字符映射到了不同单词）。\n- **边界情况**：`pattern` 长度与 `s` 拆分后的单词数不等时，直接返回 `false`。\n\n**示例走查**\n\n以 `pattern = \"abba\"`，`s = \"dog cat cat dog\"` 为例：\n\n1. 将 `s` 按空格拆分为单词列表 `[\"dog\", \"cat\", \"cat\", \"dog\"]`，长度与 `pattern` 相同（4）。\n2. 逐位配对：\n   - `a → dog`：首次出现，建立映射。\n   - `b → cat`：首次出现，建立映射。\n   - `b → cat`：`b` 已映射为 `cat`，一致。\n   - `a → dog`：`a` 已映射为 `dog`，一致。\n3. 全程无冲突，返回 `true`。\n\n**关键洞察**\n\n- 单向映射（只记录 `字符 → 单词`）会漏掉「不同字符映射到同一单词」的情况，例如 `pattern = \"ab\"`，`s = \"dog dog\"`。\n- 必须同时维护 `字符 → 单词` 和 `单词 → 字符` 两个映射，才能确保真正的双射关系。\n\n**方法预览**\n\n| 项目 | 说明 |\n|------|------|\n| 数据结构 | 两个哈希表（字典） |\n| 时间复杂度 | O(n)，n 为 `pattern` 长度 |\n| 空间复杂度 | O(n)，存储双向映射 |\n| 关键操作 | 拆词后同步检查 `p2w[p] == w` 且 `w2p[w] == p` |"
 visualizationType = "intro"
 
 # ── Step 1: 函数签名 ──────────────────────────────────────────

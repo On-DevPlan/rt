@@ -36,7 +36,7 @@
         "<span class=\"tokenComment\">#   - addWord: 沿字符链向下走，不存在就创建节点</span>",
         "<span class=\"tokenComment\">#   - search:  遇普通字符直接定位，遇 &#x27;.&#x27; 递归遍历所有子树</span>"
       ],
-      "explanation": "**问题分析**\n\n设计一个 `WordDictionary` 类，支持两种操作：\n\n| 操作 | 说明 |\n|------|------|\n| `addWord(word)` | 将单词加入字典 |\n| `search(word)` | 查询单词是否存在；`'.'` 匹配任意小写字符 |\n\n**核心难点**：`search` 中的 `'.'` 是通配符，需要能匹配多种可能。\n\n**解法选择**\n\n| 数据结构 | search 时间 | 说明 |\n|----------|------------|------|\n| 哈希集合 | O(n·L) 每次扫一遍所有单词 | 简单但低效 |\n| **Trie + DFS** | **O(L)** 最好 / O(26^D·L) 最坏 | 高效、支持通配符 |\n\n> D = `word` 中 `'.'` 的个数。最坏情况下需遍历所有子树。",
+      "explanation": "**问题重述** — 设计一个 `WordDictionary` 类，支持 `addWord` 添加单词和 `search` 搜索单词，其中 `search` 中的 `.` 可匹配任意单个小写字符。\n\n**输入与输出**\n- `addWord(word)`：无返回值，将 word 插入字典\n- `search(word)`：返回 `bool`，`.` 匹配任意单字符\n- 边界：空字符串搜索返回 `false`\n\n**示例走查**\n测试用例：依次执行\n```\naddWord(\"bad\")\naddWord(\"dad\")\naddWord(\"mad\")\nsearch(\"pad\")   → \"pad\" 未添加 → false\nsearch(\"bad\")   → \"bad\" 存在 → true\nsearch(\".ad\")    → \".\" 匹配 b/d/m，均可走到 ad → true\nsearch(\"b..\")   → \"b\" + \".\" + \".\" 匹配 \"bad\" → true\n```\n最终输出：`[null,null,null,null,false,true,true,true]`\n\n**关键洞察**\n- `.` 通配符无法用普通哈希查找，必须尝试所有可能的字符分支\n- Trie 树天然适合前缀/通配搜索，配合 DFS 递归遍历所有子树\n- `is_end` 标记必须在完全匹配长度时才检查，避免前缀误判\n\n**方法预览**\nTrie（前缀树）+ DFS 递归\n| 操作 | 时间复杂度 |\n|------|-----------|\n| addWord | O(L)，L = 单词长度 |\n| search | O(L) ~ O(26^D · L)，D = `.` 个数 |\n| 总空间 | O(n · L)，n 个单词平均长 L |",
       "visualizationType": "intro",
       "visualizationData": {}
     },

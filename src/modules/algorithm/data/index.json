@@ -163,16 +163,6 @@
     "dataFile": "linked-list-cycle.json"
   },
   {
-    "id": "longest-common-prefix",
-    "title": "最长公共前缀",
-    "titleEn": "Longest Common Prefix",
-    "difficulty": "easy",
-    "tags": [
-      "string"
-    ],
-    "dataFile": "longest-common-prefix.json"
-  },
-  {
     "id": "majority-element",
     "title": "多数元素",
     "titleEn": "Majority Element",

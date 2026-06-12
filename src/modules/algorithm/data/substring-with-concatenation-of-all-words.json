@@ -34,7 +34,7 @@
         "<span class=\"tokenComment\">#   s[9:15] = &quot;foobar&quot; → &quot;foo&quot; + &quot;bar&quot; ✓</span>",
         "<span class=\"tokenComment\">#   结果: [0, 9]</span>"
       ],
-      "explanation": "**问题分析**\n\n给定字符串 `s` 和等长单词数组 `words`，要求找出 `s` 中**所有**由 `words` 全部单词恰好拼接一次的子串起始下标。\n\n| 符号 | 含义 |\n|------|------|\n| `n` | 字符串 s 的长度 |\n| `L` | 单个单词长度（`len(words[0])`） |\n| `k` | 单词个数（`len(words)`） |\n| `m` | words 总字符数（`k * L`） |\n\n**朴素思路 vs 滑动窗口**\n\n| 方法 | 思路 | 时间 |\n|------|------|------|\n| 朴素枚举 | 每个起点截取 `m` 字符，切词比较 | O(n·m) |\n| **滑动窗口** | **按偏移量分组并滑动比较** | **O(n·L)** |\n\n> 关键洞察：按 `offset ∈ [0, L)` 分 `L` 组独立滑动窗口，每组窗口内比较 O(m) 字符，总计 O(n·L)。",
+      "explanation": "**问题重述**\n\n给定字符串 `s` 和等长单词数组 `words`，找出 `s` 中恰好由 `words` 全部单词拼接一次的子串起始下标。\n\n**输入与输出**\n\n- 输入：字符串 `s`、单词数组 `words`（所有单词长度相同为 `L`）\n- 输出：所有合法子串起始下标的列表\n- 边界：`s` 或 `words` 为空时返回 `[]`\n\n**示例走查**\n\n```\ns = \"barfoothefoobarman\", words = [\"foo\",\"bar\"]\nL = 3, k = 2, m = k * L = 6\n```\n\n按偏移量分组（`offset ∈ [0, 3)`）：\n\n- offset=0 组：`s[0:6]=\"barfoo\"` → 拼接顺序 `bar+foo` ✓，起始下标 0\n- offset=0 组：`s[6:12]=\"thefoo\"` → 含未知单词 ✗\n- offset=0 组：`s[9:15]=\"foobar\"` → 拼接顺序 `foo+bar` ✓，起始下标 9\n\nexpectedOutput = `[0, 9]`\n\n**关键洞察**\n\n按 `offset ∈ [0, L)` 分 `L` 组独立滑动窗口，每组按步长 `m` 推进，保证窗口内恰好能切出 `k` 个单词。\n\n**方法预览**\n\n滑动窗口 + 词频哈希表（Counter）：按偏移量分组，每组独立维护窗口内词频并与 `need` 对比。\n\n| 指标 | 复杂度 |\n|------|--------|\n| 时间 | O(n·L) |\n| 空间 | O(m)（m = k·L） |",
       "visualizationType": "intro",
       "visualizationData": {}
     },

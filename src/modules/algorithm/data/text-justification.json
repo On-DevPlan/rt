@@ -33,7 +33,7 @@
         "<span class=\"tokenComment\">#   &quot;example  of text&quot;</span>",
         "<span class=\"tokenComment\">#   &quot;justification.  &quot; </span>"
       ],
-      "explanation": "**问题分析**\n\n给定一个单词数组和一个最大行宽，需要把单词按行排版，每行恰好填满。\n\n**三条核心规则**\n\n1. **每行恰好 `maxWidth` 个字符**（包括单词和空格）\n2. **非最后一行**：在单词之间插入空格，**尽量均分**，剩余的空格**从左到右依次多分一个**\n3. **最后一行**：**左对齐**，单词之间只放一个空格，行末用空格补齐\n\n**示例**\n\n```text\nwords = [\"This\",\"is\",\"an\",\"example\",\"of\",\"text\",\"justification.\"]\nmaxWidth = 16\n```\n\n| 行 | 内容 | 长度 |\n|----|------|------|\n| 1 | `\"This    is    an\"` | 16 |\n| 2 | `\"example  of text\"` | 16 |\n| 3 | `\"justification.  \"` | 16（最后一行，左对齐） |\n\n> 第 3 行末尾的两个空格就是「左对齐 + 行末补齐」的直接体现。",
+      "explanation": "**问题重述**\n\n给定单词数组和最大行宽 `maxWidth`，将单词重新排版成多行，每行恰好 `maxWidth` 个字符。\n\n**输入与输出**\n\n- 输入：单词数组 `words`、整数 `maxWidth`\n- 输出：排版后的字符串数组（每行一个字符串）\n- 边界：空数组返回 `[]`\n\n**示例走查**\n\n```\nwords = [\"This\",\"is\",\"an\",\"example\",\"of\",\"text\",\"justification.\"]\nmaxWidth = 16\n```\n\n按规则排版三行：\n\n- 第1行（非最后一行，均分空格）：`\"This    is    an\"` — 16字符，`This`与`is`间5空格，`is`与`an`间4空格\n- 第2行（非最后一行，均分空格）：`\"example  of text\"` — 16字符，`example`与`of`间2空格，`of`与`text`间1空格\n- 第3行（最后一行，左对齐）：`\"justification.  \"` — 16字符，行末补2空格\n\nexpectedOutput = `[\"This    is    an\",\"example  of text\",\"justification.  \"]`\n\n**关键洞察**\n\n非最后一行：空格总数 `spaces = maxWidth - sum(word_len)`，分配到 `gaps = word_count-1` 个间隙；用 `divmod(spaces, gaps)` 得到均分基数 `k` 和余数 `r`，前 `r` 个间隙多 1 空格。\n\n**方法预览**\n\n双指针贪心选词（每行尽量装满）+ divmod 均分空格。\n\n| 指标 | 复杂度 |\n|------|--------|\n| 时间 | O(n) |\n| 空间 | O(n) |",
       "visualizationType": "intro",
       "visualizationData": {}
     },

@@ -24,7 +24,7 @@ code = """# 139. 单词拆分
 # 示例:
 #   s = \"leetcode\", wordDict = [\"leet\",\"code\"]
 #   结果: true（\"leet\" + \"code\"）"""
-explanation = "**问题分析**\n\n给定字符串 `s = \"leetcode\"` 和字典 `wordDict = [\"leet\", \"code\"]`，需要判断 `s` 能否被拆分成字典中的单词。\n\n**关键思路：动态规划**\n\n定义 `dp[i]` 表示 `s[0:i]`（前 i 个字符）能否被拆分。\n\n| 方法 | 思路 |\n|------|------|\n| 暴力枚举 | 尝试所有拆分组合，指数时间复杂度 |\n| **动态规划** | **利用子问题重叠，线性时间求解** |\n\n> 核心思想：`dp[i] = true` 当且仅当存在 `j < i` 使得 `dp[j] = true` 且 `s[j:i]` 在字典中。"
+explanation = "**问题重述** — 给定字符串 `s` 和单词字典 `wordDict`，判断 `s` 能否被拆分为一个或多个字典中的单词（字典中单词可重复使用）。\n\n**输入与输出**\n- 输入：`s = \"leetcode\"`，`wordDict = [\"leet\", \"code\"]`\n- 输出：`true`（因为 `\"leet\" + \"code\"` 可完整覆盖 `s`）\n- 边界：单词可重复使用；必须完全覆盖 `s`；不考虑单词顺序\n\n**示例走查**\n```\ntestCase: s = \"leetcode\", wordDict = [\"leet\", \"code\"]\nexpectedOutput: true\n\n拆分推导:\n  \"leet\" (长度4) + \"code\" (长度4) = \"leetcode\" (长度8) ✓\n  dp[0]=T（空字符串可拆分）\n  dp[4]=T（\"leet\" 在字典中）\n  dp[8]=T（dp[4]=T 且 \"code\" 在字典中）\n  最终 dp[8]=true → true ✓\n```\n\n**关键洞察**\n- 核心问题：字符串前缀能否拆分？这是一个**有重叠子问题**的构造，天然适合 DP\n- 状态定义：`dp[i]` = `s[0:i]` 能否拆分（空字符串 `dp[0]=true` 为 base case）\n- 转移：`dp[i] = true` 当且仅当存在 `j < i` 使得 `dp[j]=true` 且 `s[j:i]` 在字典中\n- 朴素枚举所有切分组合是指数级；DP 将切分问题转化为线性扫描\n\n**方法预览**\n- 算法：动态规划（自底向上填表）\n- 数据结构：`dp` 布尔数组（长度 `n+1`），`set` 存字典（O(1) 查找）\n- 复杂度：时间 O(n²)，空间 O(n)"
 visualizationType = "intro"
 
 # ── Step 1: 函数签名和初始化 ───────────────────────────────────
