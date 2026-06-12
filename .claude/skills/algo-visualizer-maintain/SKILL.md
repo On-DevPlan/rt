@@ -153,13 +153,18 @@ pnpm run build
 CSS 变量在 `AlgoVisualizerPage.module.css` 的 `:root` 中定义：
 
 ```css
---algo-bg: #0a0e1a;        /* 主背景（深海军蓝） */
---algo-surface: #111827;   /* 面板背景 */
+--algo-bg: #181818;        /* 主背景（深灰黑） */
+--algo-surface: #181818;   /* 面板背景（同主背景） */
+--algo-surface2: #1a1a1a;  /* 次级面板（略浅） */
 --algo-cyan: #00f0ff;      /* 主色调（关键字、高亮） */
 --algo-pink: #ff6b9d;      /* 副色调（装饰器、self） */
 --algo-green: #00ff87;     /* 成功/字符串 */
 --algo-amber: #ffd93d;     /* 函数名/数字 */
 ```
+
+**字体大小**（`AlgoVisualizerPage.module.css`）：
+- 代码区：`font-size: 19px`（`.codeBlock`）
+- 行号：`font-size: 15px`（`.lineNumber`）
 
 语法高亮 token 类用 `:global()` 定义，Pygments 在 build 时生成同名 class：
 
@@ -185,10 +190,42 @@ CSS 变量在 `AlgoVisualizerPage.module.css` 的 `:root` 中定义：
 | GBK 编码的 Windows 终端运行 python 脚本 | UnicodeEncodeError | 设置 `PYTHONIOENCODING=utf-8` 或 `sys.stdout.reconfigure()` |
 | 用 `fadeKey` + React `key` 强制组件重建实现步骤切换 | 面板卸载重建导致刷新闪烁 + CSS remount 动画重播 | 移除 fadeKey，组件保持挂载，让 diff 引擎自然响应 prop 变化 |
 | 步骤切换后 'same' 行先渲染纯文本，动画开始后才切 HTML | 纯文本→语法高亮的渲染切换导致闪烁 | `'same'` 行不受动画状态控制，始终直接渲染语法高亮 HTML |
+| 右侧/下方面板缺 `flex: 1` | 面板只占内容宽度，剩余空白 | 必须加 `flex: 1` |
+| 水平分隔条拖动方向符号写反 | 向下拖分隔条，可视区反而变大 | `startPx - dy`（分隔条在可视区上方） |
+| 拖动时全局 `cursor: col-resize` | 水平分隔条鼠标指针也变成左右拖动 | 用 `.page.dragging .leftPanel { cursor: col-resize }` 精准设置，不要用 `.page.dragging *` 全局通配 |
+| `_audit.cjs` 不在 `scripts/` 目录运行 | 路径解析错误，报告找不到文件 | 必须 `cd scripts && node _audit.cjs` |
+
+## 可拖拽面板布局
+
+AlgoVisualizerPage 支持两个维度的拖拽调整：
+
+```
+┌─────────────────┬─┬─────────────────┐
+│   代码区 (flex:1) │ │                 │
+├───────────────── ║ ├─────────────────┤
+│ 可视化区 (height) ║ │   右侧说明面板   │
+│  ↑ 水平分隔条可拖拽│ │   (flex:1)     │
+└─────────────────┴─┴─────────────────┘
+          ↑ 垂直分隔条可拖拽
+```
+
+**CSS 关键规则**：
+
+| 面板 | 必需属性 | 说明 |
+|------|---------|------|
+| 左/上面板 | `width: N%`（JS 控制） | 不要写死 flex 数字 |
+| 右/下面板 | `flex: 1` | 自动填满剩余空间（易遗漏！） |
+| 分隔条 | `flex-shrink: 0` | 防止被压缩 |
+
+**拖拽方向公式**：
+- 水平分隔条（上下调整）：`startPx - dy`（向下拖 dy>0 → 可视区减小）
+- 垂直分隔条（左右调整）：`startPct + (dx / containerW) * 100`
 
 ## 待办
 
 - [x] **算法列表切换**：顶栏 dropdown + `import.meta.glob` 动态加载，新增 TOML 文件后自动发现
+- [x] **可拖拽面板布局**：左侧代码/可视区、左右侧面板均支持拖拽调整大小（垂直+水平双分隔条）
+- [x] **代码区字体增大**：代码 17px、行号 14px
 - [ ] **自适应动画速度**：当前固定 32ms/字符，短行过快长行过慢，应基于行长度动态调整
 - [ ] **可视化数据自动化**：`visualizationData` 已手动维护，应用 Python 运行测试 case 自动生成
 - [ ] **复杂 diff 增强**：当前前缀/后缀算法不支持行内修改检测，可用 Myers diff 改进

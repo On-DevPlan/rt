@@ -150,6 +150,7 @@ const startDragH = useCallback((e) => {
 | 左侧宽度用 `flex: 3` 写死 | 无法实现 JS 精确控制宽度 | 用 `width: ${leftWidthPct}%` |
 | 拖动时不移除全局事件监听 | 多次拖动后事件堆积，拖动飘移 | `mouseup` 时必须 `removeEventListener` |
 | 同时监听 `mousemove` 和 `mouseup` 不做清理 | 页面跳转后监听器仍在，内存泄漏 | 用 `onUp` 函数统一清理 |
+| 拖动时全局 `cursor: col-resize` | 水平分隔条鼠标指针也变成左右拖动 | 用 `.page.dragging .leftPanel { cursor: col-resize }` 精准设置，不要用 `.page.dragging *` 全局通配 |
 
 ## 成功标准检查清单
 
