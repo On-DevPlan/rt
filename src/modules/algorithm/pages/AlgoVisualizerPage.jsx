@@ -444,9 +444,17 @@ export default function AlgoVisualizerPage() {
   const [playSpeed, setPlaySpeed] = useState(3500)
   const [direction, setDirection] = useState('forward')
   const [animDone, setAnimDone] = useState(false)
+
+  // Panel sizes (controlled by drag)
+  const [leftWidthPct, setLeftWidthPct] = useState(62)   // left panel width %
+  const [vizHeightPx, setVizHeightPx] = useState(220)    // viz section height px
+  const [isDraggingH, setIsDraggingH] = useState(false)   // horizontal splitter dragging
+  const [isDraggingV, setIsDraggingV] = useState(false)   // vertical splitter dragging
+
   const playRef = useRef(null)
   const stepRef = useRef(currentStep)
   stepRef.current = currentStep
+  const pageRef = useRef(null)
 
   // Read slug from URL
   const { slug } = useParams()
@@ -546,6 +554,57 @@ export default function AlgoVisualizerPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [currentStep, totalSteps, isPlaying, hasNext, hasPrev, handleStepChange])
 
+  // ─── Panel Resize Handlers ───────────────────────────────────────────────
+  // Left/Right split (vertical splitter)
+  const startDragV = useCallback((e) => {
+    e.preventDefault()
+    setIsDraggingV(true)
+    if (pageRef.current) pageRef.current.classList.add(styles.dragging)
+    const startX = e.clientX
+    const startPct = leftWidthPct
+    const containerW = pageRef.current.getBoundingClientRect().width
+
+    const onMove = (me) => {
+      const dx = me.clientX - startX
+      const dxPct = (dx / containerW) * 100
+      const newPct = Math.min(80, Math.max(20, startPct + dxPct))
+      setLeftWidthPct(newPct)
+    }
+    const onUp = () => {
+      setIsDraggingV(false)
+      if (pageRef.current) pageRef.current.classList.remove(styles.dragging)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [leftWidthPct])
+
+  // Top/Bottom split within left panel (horizontal splitter)
+  const startDragH = useCallback((e) => {
+    e.preventDefault()
+    setIsDraggingH(true)
+    if (pageRef.current) pageRef.current.classList.add(styles.dragging)
+    const startY = e.clientY
+    const startPx = vizHeightPx
+    const leftPanel = pageRef.current?.querySelector('[data-left-panel]')
+    const leftH = leftPanel?.getBoundingClientRect().height || 0
+
+    const onMove = (me) => {
+      const dy = me.clientY - startY
+      const newPx = Math.min(leftH - 120, Math.max(100, startPx + dy))
+      setVizHeightPx(newPx)
+    }
+    const onUp = () => {
+      setIsDraggingH(false)
+      if (pageRef.current) pageRef.current.classList.remove(styles.dragging)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [vizHeightPx])
+
   const goTo = useCallback((idx) => {
     if (idx < 0 || idx >= totalSteps) return
     handleStepChange(idx)
@@ -596,7 +655,7 @@ export default function AlgoVisualizerPage() {
   const step = steps[currentStep]
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
       {/* Top Navigation Bar */}
       <header className={styles.topBar}>
         <div className={styles.topLeft}>
@@ -654,7 +713,11 @@ export default function AlgoVisualizerPage() {
       ) : (
         <div className={styles.mainContent}>
           {/* Left Panel */}
-          <div className={styles.leftPanel}>
+          <div
+            className={styles.leftPanel}
+            data-left-panel
+            style={{ width: `${leftWidthPct}%` }}
+          >
             <div className={styles.codeSection}>
               <CodeDisplay
                 code={step?.code || ''}
@@ -663,10 +726,23 @@ export default function AlgoVisualizerPage() {
                 onAnimationDone={handleAnimDone}
               />
             </div>
-            <div className={styles.vizSection}>
+
+            {/* Horizontal splitter — drag to resize code/viz split */}
+            <div
+              className={`${styles.splitH} ${isDraggingH ? styles.dragging : ''}`}
+              onMouseDown={startDragH}
+            />
+
+            <div className={styles.vizSection} style={{ height: vizHeightPx }}>
               <AlgorithmVisualization step={step} />
             </div>
           </div>
+
+          {/* Vertical splitter — drag to resize left/right split */}
+          <div
+            className={`${styles.splitV} ${isDraggingV ? styles.dragging : ''}`}
+            onMouseDown={startDragV}
+          />
 
           {/* Right Panel */}
           <div className={styles.rightPanel}>

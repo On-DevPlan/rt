@@ -194,6 +194,7 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  user-select: none;
 }
 
 /* Loading / placeholder state */
@@ -215,11 +216,11 @@
 /* ─── Left Panel ──────────────────────────────────────────────────────────── */
 
 .leftPanel {
-  flex: 3;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid var(--algo-border);
+  min-width: 300px;
 }
 
 .codeSection {
@@ -227,6 +228,9 @@
   min-height: 0;
   padding: 20px 24px;
   background: var(--algo-codeBg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .vizSection {
@@ -234,7 +238,7 @@
   padding: 16px 20px;
   background: var(--algo-surface);
   border-top: 1px solid var(--algo-border);
-  min-height: 160px;
+  min-height: 100px;
   display: flex;
   align-items: center;
 }
@@ -242,13 +246,12 @@
 /* ─── Right Panel ──────────────────────────────────────────────────────────── */
 
 .rightPanel {
-  flex: 2;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   background: var(--algo-surface);
   padding: 28px 24px;
-  min-width: 320px;
+  min-width: 280px;
 }
 
 /* ─── Code Display (Git Diff + Typewriter) ──────────────────────────────────── */
@@ -1066,4 +1069,75 @@
 .codeBlock::-webkit-scrollbar-thumb {
   background: var(--algo-border);
   border-radius: 2px;
+}
+
+/* ─── Resizable Splitters ─────────────────────────────────────────────────── */
+
+.splitV {
+  width: 5px;
+  background: var(--algo-border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s;
+  border-radius: 3px;
+  margin: 0 2px;
+}
+.splitV::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 32px;
+  background: var(--algo-textDim);
+  border-radius: 2px;
+  opacity: 0.4;
+}
+.splitV:hover,
+.splitV.dragging {
+  background: var(--algo-cyan);
+}
+.splitV:hover::after,
+.splitV.dragging::after {
+  opacity: 0.8;
+  background: var(--algo-bg);
+}
+
+.splitH {
+  height: 5px;
+  background: var(--algo-border);
+  cursor: row-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s;
+  border-radius: 3px;
+  margin: 2px 0;
+}
+.splitH::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 3px;
+  width: 32px;
+  background: var(--algo-textDim);
+  border-radius: 2px;
+  opacity: 0.4;
+}
+.splitH:hover,
+.splitH.dragging {
+  background: var(--algo-cyan);
+}
+.splitH:hover::after,
+.splitH.dragging::after {
+  opacity: 0.8;
+  background: var(--algo-bg);
+}
+
+/* Drag cursor override while dragging globally */
+.page.dragging * {
+  cursor: col-resize !important;
 }
