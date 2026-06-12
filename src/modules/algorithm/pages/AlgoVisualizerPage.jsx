@@ -592,7 +592,7 @@ export default function AlgoVisualizerPage() {
 
     const onMove = (me) => {
       const dy = me.clientY - startY
-      const newPx = Math.min(leftH - 120, Math.max(100, startPx + dy))
+      const newPx = Math.min(leftH - 120, Math.max(100, startPx - dy))
       setVizHeightPx(newPx)
     }
     const onUp = () => {
