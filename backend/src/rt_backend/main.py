@@ -70,6 +70,9 @@ def create_app() -> FastAPI:
     from .sicau_timetable.router import build_router as _build_sicau
     app.include_router(_build_sicau(_http_dep, settings))
 
+    from .bilibili_history.router import build_router as _build_bili
+    app.include_router(_build_bili(_http_dep))
+
     return app
 
 
