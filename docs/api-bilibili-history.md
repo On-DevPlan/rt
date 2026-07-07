@@ -12,19 +12,19 @@
 
 ### Header
 
-| 字段 | 值 |
-|------|------|
+| 字段             | 值                   |
+| ---------------- | -------------------- |
 | `Content-Type` | `application/json` |
 
 ### Body
 
-| 字段 | 类型 | 必填 | 默认 | 说明 |
-|------|------|------|------|------|
-| `sessdata` | string | ✅ | — | B 站登录 cookie 中的 `SESSDATA` 值（**URL 编码后的原值**） |
-| `extra_cookies` | string | ❌ | `null` | 其他 B 站 cookie，例如 `buvid3=xxx; bili_jct=yyy; DedeUserID=zzz`。模块会自动去掉 `SESSDATA=xxx` 段防止覆盖 |
-| `days` | int | ❌ | `7` | 取最近几天的记录。范围 `[1, 90]` |
-| `business` | string | ❌ | `"all"` | 业务类型筛选：`all` / `archive` / `live` / `article` |
-| `max_pages` | int | ❌ | `10` | 最多翻多少页（单页 30 条）。范围 `[1, 30]` |
+| 字段              | 类型   | 必填 | 默认      | 说明                                                                                                           |
+| ----------------- | ------ | ---- | --------- | -------------------------------------------------------------------------------------------------------------- |
+| `sessdata`      | string | ✅   | —        | B 站登录 cookie 中的`SESSDATA` 值（**URL 编码后的原值**）                                              |
+| `extra_cookies` | string | ❌   | `null`  | 其他 B 站 cookie，例如`buvid3=xxx; bili_jct=yyy; DedeUserID=zzz`。模块会自动去掉 `SESSDATA=xxx` 段防止覆盖 |
+| `days`          | int    | ❌   | `7`     | 取最近几天的记录。范围`[1, 90]`                                                                              |
+| `business`      | string | ❌   | `"all"` | 业务类型筛选：`all` / `archive` / `live` / `article`                                                   |
+| `max_pages`     | int    | ❌   | `10`    | 最多翻多少页（单页 30 条）。范围`[1, 30]`                                                                    |
 
 ### 示例
 
@@ -83,34 +83,34 @@ curl -X POST http://localhost:8000/api/bilibili/history/recent \
 
 ### 字段说明
 
-| 字段 | 说明 |
-|------|------|
-| `sessdata_masked` | 入参 SESSDATA 的脱敏形式（前 4 + `***` + 后 4），**用于回显**。原始 token 不会出现在响应里 |
-| `since_ts` / `since_iso` | 时间窗口起点（UTC） |
-| `until_ts` / `until_iso` | 时间窗口终点（UTC） |
-| `total` | 返回的条目数（已按 `view_at >= since_ts` 过滤） |
-| `page_count` | 实际调用的 B 站分页数（可能小于 `max_pages`——遇到截止时间或无更多数据会提前停止） |
-| `items[].view_at` | 观看时间（Unix 秒） |
-| `items[].view_at_iso` | 观看时间 ISO8601 |
-| `items[].bvid` | 稿件 BV 号（仅 `archive`） |
-| `items[].aid` | 稿件 avid（仅 `archive`） |
-| `items[].tag_name` | 子分区名（**用于 tag 统计**） |
-| `items[].business` | `archive` / `pgc` / `live` / `article` / `article-list` |
-| `items[].progress` | 观看进度（秒） |
-| `items[].duration` | 视频总时长（秒） |
-| `items[].is_fav` | `0` = 未收藏 / `1` = 已收藏 |
-| `items[].dt` | 观看平台代码：`1/3/5/7` 手机端 / `2` web 端 / `4/6` pad / `9` 智能音箱 / `33` TV 端 / `0` 其他 |
+| 字段                         | 说明                                                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `sessdata_masked`          | 入参 SESSDATA 的脱敏形式（前 4 +`***` + 后 4），**用于回显**。原始 token 不会出现在响应里          |
+| `since_ts` / `since_iso` | 时间窗口起点（UTC）                                                                                        |
+| `until_ts` / `until_iso` | 时间窗口终点（UTC）                                                                                        |
+| `total`                    | 返回的条目数（已按`view_at >= since_ts` 过滤）                                                           |
+| `page_count`               | 实际调用的 B 站分页数（可能小于`max_pages`——遇到截止时间或无更多数据会提前停止）                       |
+| `items[].view_at`          | 观看时间（Unix 秒）                                                                                        |
+| `items[].view_at_iso`      | 观看时间 ISO8601                                                                                           |
+| `items[].bvid`             | 稿件 BV 号（仅`archive`）                                                                                |
+| `items[].aid`              | 稿件 avid（仅`archive`）                                                                                 |
+| `items[].tag_name`         | 子分区名（**用于 tag 统计**）                                                                        |
+| `items[].business`         | `archive` / `pgc` / `live` / `article` / `article-list`                                          |
+| `items[].progress`         | 观看进度（秒）                                                                                             |
+| `items[].duration`         | 视频总时长（秒）                                                                                           |
+| `items[].is_fav`           | `0` = 未收藏 / `1` = 已收藏                                                                            |
+| `items[].dt`               | 观看平台代码：`1/3/5/7` 手机端 / `2` web 端 / `4/6` pad / `9` 智能音箱 / `33` TV 端 / `0` 其他 |
 
 ---
 
 ## 3. 错误码
 
-| HTTP | 触发条件 | 响应示例 |
-|------|----------|----------|
-| **401** | B 站返回 `code = -101`（SESSDATA 无效/过期） | `{"detail": "SESSDATA 无效或已过期（-101）"}` |
+| HTTP          | 触发条件                                      | 响应示例                                                                                       |
+| ------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **401** | B 站返回`code = -101`（SESSDATA 无效/过期） | `{"detail": "SESSDATA 无效或已过期（-101）"}`                                                |
 | **422** | 请求体参数校验失败（缺字段、`days` 越界等） | `{"detail": [{"loc": ["body", "days"], "msg": "Input should be less than or equal to 90"}]}` |
-| **502** | B 站返回非 0 code / 非 200 状态码 / 网络错误 | `{"detail": "B 站返回错误：code=xxx, message=yyy"}` |
-| **500** | 未预期错误 | `{"detail": "未预期错误：xxx"}` |
+| **502** | B 站返回非 0 code / 非 200 状态码 / 网络错误  | `{"detail": "B 站返回错误：code=xxx, message=yyy"}`                                          |
+| **500** | 未预期错误                                    | `{"detail": "未预期错误：xxx"}`                                                              |
 
 ---
 
@@ -237,12 +237,12 @@ uv run pytest tests/test_bilibili_history_router.py -v
 
 ## 8. 相关文件
 
-| 文件 | 作用 |
-|------|------|
-| `backend/src/rt_backend/bilibili_history/schemas.py` | Pydantic 模型 |
-| `backend/src/rt_backend/bilibili_history/service.py` | 翻页 + 过滤 + 脱敏逻辑 |
-| `backend/src/rt_backend/bilibili_history/router.py` | FastAPI 路由 |
-| `backend/src/rt_backend/main.py` | 第 73-74 行挂载路由 |
-| `backend/tests/test_bilibili_history_router.py` | 单元测试（用 respx 拦截 HTTP） |
-| `scripts/_bili_smoke.py` | 真实 cookie 烟测 |
-| `.claude/repo/bilibili-API-collect/docs/historytoview/history.md` | 上游 API 文档参考 |
+| 文件                                                                | 作用                           |
+| ------------------------------------------------------------------- | ------------------------------ |
+| `backend/src/rt_backend/bilibili_history/schemas.py`              | Pydantic 模型                  |
+| `backend/src/rt_backend/bilibili_history/service.py`              | 翻页 + 过滤 + 脱敏逻辑         |
+| `backend/src/rt_backend/bilibili_history/router.py`               | FastAPI 路由                   |
+| `backend/src/rt_backend/main.py`                                  | 第 73-74 行挂载路由            |
+| `backend/tests/test_bilibili_history_router.py`                   | 单元测试（用 respx 拦截 HTTP） |
+| `scripts/_bili_smoke.py`                                          | 真实 cookie 烟测               |
+| `.claude/repo/bilibili-API-collect/docs/historytoview/history.md` | 上游 API 文档参考              |

@@ -1,8 +1,9 @@
+ 
+
 ---
 name: dev-workflow
 description: Use when making code changes in this RT project, before committing, or when verifying module registration
 ---
-
 # RT Development Workflow
 
 ## Critical Rule
@@ -10,6 +11,7 @@ description: Use when making code changes in this RT project, before committing,
 **Every code change MUST be followed by `pnpm run build` to verify compilation.**
 
 This applies to:
+
 - Module creation (new `module.meta.js`)
 - Page/Widget creation
 - CSS changes
@@ -33,6 +35,7 @@ src/modules/<module-id>/
 ### 2. Register Module
 
 In `module.meta.js`, use correct import path:
+
 ```js
 // CORRECT
 import { defineModule, definePage } from '../../framework/schema.js'
@@ -48,6 +51,7 @@ pnpm run build
 ```
 
 If build fails:
+
 - Check import paths
 - Verify all dependencies are installed (`@xyflow/react` etc)
 - Check for typos in module meta
@@ -55,11 +59,11 @@ If build fails:
 
 ### 4. Common Build Errors
 
-| Error | Fix |
-|-------|-----|
-| Failed to resolve import "xxui" | Use `../../framework/schema.js` |
-| Failed to resolve import "antd" | Don't use antd (not installed) or install it first |
-| Module not found | Verify `module.meta.js` exists and path is correct |
+| Error                           | Fix                                                 |
+| ------------------------------- | --------------------------------------------------- |
+| Failed to resolve import "xxui" | Use`../../framework/schema.js`                    |
+| Failed to resolve import "antd" | Don't use antd (not installed) or install it first  |
+| Module not found                | Verify`module.meta.js` exists and path is correct |
 
 ## Module Meta Import Paths
 
@@ -79,6 +83,7 @@ import { defineModule, definePage } from '../../framework/schema.js'
 ## CSS Module Rule
 
 When adding new CSS classes to `module.css` files:
+
 - Use camelCase naming: `.lineActive`, `.progressTrack`
 - Verify DOM structure matches CSS selector paths
 - Test with inline styles first if CSS doesn't apply
