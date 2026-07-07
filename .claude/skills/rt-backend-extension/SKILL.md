@@ -1,6 +1,6 @@
 ---
 name: rt-backend-extension
-description: 当用户要在 rt 项目中扩展 FastAPI 后端（加新功能模块、新接口、共享资源、新配置项）或修改 Nginx 配置（反代、CORS、HTTPS、WebSocket、限流）时触发此 skill。仅适用于 D:\code\a_js\proj\rt 的 rt_backend + Docker + nginx 架构。
+description: 当用户要在 rt 项目中扩展 FastAPI 后端（加新功能模块、新接口、共享资源、新配置项）、修改 Nginx 配置（反代、CORS、HTTPS、WebSocket、限流），或调用 B 站相关 API（历史记录、tag 统计、收藏夹、登录态）时触发此 skill。仅适用于 D:\code\a_js\proj\rt 的 rt_backend + Docker + nginx 架构。
 ---
 
 # rt 后端扩展 + Nginx 使用指南
@@ -257,3 +257,45 @@ docker exec -it rt_app tail -f /var/log/backend.err.log
 | 缓存路径硬编码 `./tts_cache.db` | 容器重启数据丢 | 通过 `Settings` 注入，可挂卷 |
 | nginx 改了没 reload | 旧配置生效 | `docker exec rt_app nginx -s reload` 或重启容器 |
 | description 写成内容总结 | skill 不会被触发 | description 必须是触发场景描述 |
+| 把第三方 cookie/token 硬编码到 git 跟踪的脚本 | 凭证泄露 | 用 `os.environ.get()` + 文档说明，不写进文件 |
+| SKILL.md 膨胀到 300+ 行不拆 ref | 主文档臃肿，触发时加载慢 | 按 key_board_3 拆到 `references/<topic>.md`，主文档留锚点 + 索引表 |
+| 拆出 ref 但不写加载引导 | ref 文档成为孤儿，模型不知道何时读 | 末尾加 ref 索引表，标注"何时读这个 ref" |
+
+---
+
+## 五、内置功能模块速查
+
+按"已有模块能直接复用/参考"的维度速查（每个模块都遵循上面的 feature 目录 + `build_router` 工厂模式）：
+
+### 1. `tts/` — Edge TTS 文本转语音
+
+- 路由：`POST /api/tts`（流式 mp3）/ `POST /api/tts/with-timing`（带词级时间戳 + base64）/ `GET /api/tts/voices`
+- 依赖：lifespan 初始化 `TTSCache`（SQLite），按 `tts_cache_db_path` 配置
+- 参考点：streaming + cache + 多 endpoint 共享同一个 cache
+
+### 2. `sicau_timetable/` — SICAU 教务系统课表
+
+- 路由：`POST /api/sicau/timetable`（学号+密码 → 课表 DSL）
+- 依赖：复用 `HttpClientHolder`，登录态 cookie 保持在 client 上
+- 参考点：登录态保持 + 翻页/多步请求 + 复杂 HTML 解析（GBK 编码）
+- 路由工厂签名：`build_router(http_provider, settings)` — 需要 settings 时这么写
+
+### 3. `bilibili_history/` — B 站最近观看记录 ⭐
+
+→ 详见 [[bilibili-module]]（独立 ref，含路由/参数/设计/扩展方向）
+
+一句话：在 `bilibili_history/` feature 目录加 `service.py` + `router.py`，`POST /api/bilibili/history/recent` 入参 `{sessdata, extra_cookies?, days?, business?, max_pages?}`，上游是 `api.bilibili.com/x/web-interface/history/cursor`（只需 cookie 鉴权，不需要 WBI 签名）。
+
+### 4. 鉴权模式
+
+当前所有路由**无后端鉴权**——按设计是单机自用工具。如果是 `bilibili_history` 这类需要用户提供第三方凭证的接口，**部署时务必加一层调用方鉴权**（JWT、API key、或放在只监听 `127.0.0.1` 的 nginx 后）。
+
+---
+
+## 六、Reference 索引（按需加载）
+
+> 何时读 ref：用户明确提到 ref 涵盖的主题时，**优先加载对应 ref**，不要靠主 SKILL.md 的简短摘要去硬答。
+
+| ref | 何时读取 | 路径 |
+|---|---|---|
+| [[bilibili-module]] | 用户要扩展/调试 B 站 API（历史记录、tag 统计、收藏夹、UP 主接口、WBI 签名） | `references/bilibili-module.md` |
