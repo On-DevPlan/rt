@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import styles from './ProTablePage.module.css'
 
 /* ── Mock data ── */
@@ -57,8 +56,6 @@ const DENSITY_ICON = {
 }
 
 export default function ProTablePage() {
-  useDocumentTitle('ProTable 案例')
-
   /* ── Search state ── */
   const [searchForm, setSearchForm] = useState({ name: '', status: '', type: '', dateRange: '' })
   const [appliedSearch, setAppliedSearch] = useState({ name: '', status: '', type: '', dateRange: '' })

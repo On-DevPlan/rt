@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import styles from './EnrollmentPage.module.css'
 
 const INITIAL_PARTICIPANTS = [
@@ -35,8 +34,6 @@ function Avatar({ name, gender }) {
 }
 
 export default function EnrollmentPage() {
-  useDocumentTitle('报名管理')
-
   const [participants, setParticipants] = useState(INITIAL_PARTICIPANTS)
   const [showSuccess, setShowSuccess] = useState(false)
   const [lastSubmitted, setLastSubmitted] = useState('')

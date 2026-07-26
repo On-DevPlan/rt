@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import styles from './AdminPage.module.css'
 
 const MOCK_DATA = [
@@ -26,8 +25,6 @@ const STATUS_MAP = {
 const CAPACITY = 30
 
 export default function AdminPage() {
-  useDocumentTitle('报名管理后台')
-
   const [participants, setParticipants] = useState(MOCK_DATA)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')

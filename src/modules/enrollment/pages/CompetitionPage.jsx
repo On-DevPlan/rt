@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import styles from './CompetitionPage.module.css'
 
 const COMPETITION = {
@@ -228,8 +227,6 @@ const PRIZE_RANK_CLASS = {
 }
 
 export default function CompetitionPage() {
-  useDocumentTitle('赛事报名')
-
   const [activeTab, setActiveTab] = useState('rules')
   const [registered, setRegistered] = useState(COMPETITION.registered)
   const [showSuccess, setShowSuccess] = useState(false)

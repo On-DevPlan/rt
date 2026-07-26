@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import styles from './ParallaxShowcasePage.module.css'
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max)
@@ -10,7 +9,6 @@ function progress(scrollY, start, end) {
 }
 
 export default function ParallaxShowcasePage() {
-  useDocumentTitle('Parallax Showcase')
   const containerRef = useRef(null)
   const [scrollY, setScrollY] = useState(0)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { useDocumentTitle } from '../../../framework/hooks/useDocumentTitle.js'
 import { marked } from 'marked'
 import styles from './AlgoVisualizerPage.module.css'
 
