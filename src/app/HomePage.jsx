@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { registry } from '../framework/registry.js'
+import { getShowcasePages, registry } from '../framework/registry.js'
 import { useDocumentTitle } from '../framework/hooks/useDocumentTitle.js'
 
 function ShowcaseCard({ page }) {
@@ -37,7 +37,7 @@ function ShowcaseCard({ page }) {
 export default function HomePage() {
   useDocumentTitle('Components')
 
-  const showcasePages = registry.pages.filter((page) => !page.internal && page.showcase !== false)
+  const showcasePages = getShowcasePages()
   const moduleCount = new Set(showcasePages.map((page) => page.moduleId)).size
 
   return (
@@ -57,8 +57,8 @@ export default function HomePage() {
             <span>modules</span>
           </div>
           <div className="home-stat-chip">
-            <strong>81</strong>
-            <span>port</span>
+            <strong>{registry.stats.widgetCount}</strong>
+            <span>widgets</span>
           </div>
         </div>
       </section>
