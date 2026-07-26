@@ -8,7 +8,7 @@
     "backend": "cd backend && uv run uvicorn rt_backend.main:app --reload --port 8080",
     "tts": "pnpm backend",
     "dev": "vite --host 0.0.0.0 --port 81",
-    "dev:all": "npx concurrently \"pnpm backend\" \"pnpm dev\"",
+    "dev:all": "concurrently \"pnpm backend\" \"pnpm dev\"",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4181",
     "parse:algos": "python3 scripts/parse_algo.py",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.0",
+    "concurrently": "^10.0.4",
     "vite": "^7.2.4"
   }
 }
