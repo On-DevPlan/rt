@@ -5,9 +5,9 @@ description: Use when the user asks to run the superpowers workflow end-to-end w
 
 # Auto Superpowers
 
-Drive the full superpowers pipeline (brainstorm → spec → plan → subagent execution → finish) with **a single user checkpoint at the start**. After the user approves the aligned requirements, proceed without pausing until the branch is finished or a true blocker is reached.
+Drive the full superpowers pipeline (brainstorm → branch → spec → plan → subagent execution → finish) with **a single user checkpoint at the start**. After the user approves the aligned requirements, proceed without pausing until the branch is finished or a true blocker is reached.
 
-**REQUIRED BACKGROUND:** You MUST understand `superpowers:using-superpowers`, `superpowers:brainstorming`, `superpowers:writing-plans`, `superpowers:subagent-driven-development`, and `superpowers:finishing-a-development-branch` before using this skill. This skill orchestrates them; it does not redefine them.
+**REQUIRED BACKGROUND:** You MUST understand `superpowers:using-superpowers`, `superpowers:brainstorming`, `superpowers:writing-plans`, `superpowers:using-git-worktrees`, `superpowers:subagent-driven-development`, and `superpowers:finishing-a-development-branch` before using this skill. This skill orchestrates them; it does not redefine them.
 
 ## When to Use
 
@@ -20,29 +20,36 @@ Drive the full superpowers pipeline (brainstorm → spec → plan → subagent e
 - Task is trivial enough that brainstorming/spec is overkill — go straight to TDD
 - User wants to drive each step themselves — use the individual superpowers skills
 - Spec or plan requires human policy judgment the AI cannot make (legal, business, security review) — confirm before proceeding past brainstorming
+- Repository has no git history or no remote — branch creation will fail; surface this to the user before Phase 2
 
 ## The Pipeline (in order)
 
 ```dot
 digraph auto_superpowers {
     rankdir=TB;
-    "Brainstorm with user" [shape=box];
+    "Phase 1: Brainstorm with user" [shape=box];
     "User approves aligned requirements?" [shape=diamond];
     "STOP — user did not approve" [shape=box style=filled fillcolor=lightpink];
-    "Write spec (brainstorm skill)" [shape=box];
-    "Write plan (writing-plans skill)" [shape=box];
-    "Subagent execution (subagent-driven-development)" [shape=box];
+    "Phase 2: Create feat/xxx branch (worktree)" [shape=box];
+    "Branch created?" [shape=diamond];
+    "STOP — branch creation failed" [shape=box style=filled fillcolor=lightpink];
+    "Phase 3: Write spec (brainstorm skill)" [shape=box];
+    "Phase 4: Write plan (writing-plans skill)" [shape=box];
+    "Phase 5: Subagent execution (subagent-driven-development)" [shape=box];
     "Final review clean?" [shape=diamond];
-    "Finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
+    "Phase 6: Finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
-    "Brainstorm with user" -> "User approves aligned requirements?";
+    "Phase 1: Brainstorm with user" -> "User approves aligned requirements?";
     "User approves aligned requirements?" -> "STOP — user did not approve" [label="no"];
-    "User approves aligned requirements?" -> "Write spec (brainstorm skill)" [label="yes"];
-    "Write spec (brainstorm skill)" -> "Write plan (writing-plans skill)";
-    "Write plan (writing-plans skill)" -> "Subagent execution (subagent-driven-development)";
-    "Subagent execution (subagent-driven-development)" -> "Final review clean?";
-    "Final review clean?" -> "Finishing-a-development-branch" [label="yes"];
-    "Final review clean?" -> "Subagent execution (subagent-driven-development)" [label="no — residual load-bearing findings"];
+    "User approves aligned requirements?" -> "Phase 2: Create feat/xxx branch (worktree)" [label="yes"];
+    "Phase 2: Create feat/xxx branch (worktree)" -> "Branch created?";
+    "Branch created?" -> "STOP — branch creation failed" [label="no"];
+    "Branch created?" -> "Phase 3: Write spec (brainstorm skill)" [label="yes"];
+    "Phase 3: Write spec (brainstorm skill)" -> "Phase 4: Write plan (writing-plans skill)";
+    "Phase 4: Write plan (writing-plans skill)" -> "Phase 5: Subagent execution (subagent-driven-development)";
+    "Phase 5: Subagent execution (subagent-driven-development)" -> "Final review clean?";
+    "Final review clean?" -> "Phase 6: Finishing-a-development-branch" [label="yes"];
+    "Final review clean?" -> "Phase 5: Subagent execution (subagent-driven-development)" [label="no — residual load-bearing findings"];
 }
 ```
 
@@ -53,7 +60,7 @@ Invoke `superpowers:brainstorming`. Follow it exactly: explore project context, 
 **Stop here. Present the aligned requirements to the user.** This is the *only* phase where confirmation is required.
 
 Ask explicitly:
-> "Requirements aligned. Spec draft is at `<path>`. Approve to proceed with auto-mode (plan → subagent execution → finish, no further checkpoints)?"
+> "Requirements aligned. Spec draft is at `<path>`. Approve to proceed with auto-mode (create `feat/xxx` branch → write plan → subagent execution → finish, no further checkpoints)?"
 
 - **If approved** → continue to Phase 2 immediately, do not wait.
 - **If changes requested** → revise the spec, ask again.
@@ -61,17 +68,45 @@ Ask explicitly:
 
 **Critical:** This is the gate. Do not skip it. Do not ask the user to review the spec file path or any intermediate artifact — they will see the result, not the docs, in auto-mode.
 
-## Phase 2 — Write Plan (auto-advance)
+## Phase 2 — Create Feature Branch (auto-advance)
 
-The user has approved. Invoke `superpowers:writing-plans`. Produce a detailed implementation plan with tasks, Global Constraints, file paths, and tests.
+The user has approved. Before any plan or spec code lands, isolate the work on a dedicated branch.
 
-Do **not** ask the user to read or approve the plan. Continue to Phase 3.
+**Branch naming:** `feat/<kebab-case-slug>` derived from the user's task. Examples:
+- "添加用户登录" → `feat/user-login`
+- "重构算法可视化" → `feat/algorithm-visualizer-refactor`
 
-If the writing-plans skill surfaces a conflict with the spec (e.g., a constraint that contradicts an earlier design decision), surface it to the user with both texts side-by-side and wait for resolution — this is a true blocker, not a checkpoint.
+**How to create it:**
 
-## Phase 3 — Subagent Execution (auto-advance)
+1. Invoke `superpowers:using-git-worktrees`.
+2. Base branch = the current default branch (usually `main` or `master`). Verify with `git symbolic-ref refs/remotes/origin/HEAD` or `git remote show origin` if uncertain.
+3. Branch name = `feat/<slug>` (kebab-case, lowercase, no spaces, ASCII letters/digits/hyphens only).
+4. The worktree's directory is your working area for Phases 3–6. Stay in it.
+5. Push the empty branch to origin (`git push -u origin feat/<slug>`) so the remote has a reference.
 
-Invoke `superpowers:subagent-driven-development`. Execute every task in the plan using fresh implementer subagents, task reviews, and the final whole-branch review.
+**If branch creation fails** (uncommitted changes blocking checkout, dirty state, name conflict, no remote, etc.):
+
+- Surface the failure to the user with the exact error and a recommended fix. Do not silently continue on `main`. This is a structural stop, not a checkpoint.
+
+Do **not** ask the user to name the branch — derive it from the task. Do not ask which base branch — pick the default branch.
+
+## Phase 3 — Write Spec (auto-advance)
+
+Continue with the spec doc that brainstorming was producing. Commit it to the new branch inside the worktree. Do **not** ask the user to read or approve the spec. Continue to Phase 4.
+
+If the brainstorming skill's spec-writing surfaces a conflict with the original design (e.g., a constraint that contradicts an earlier decision), surface it to the user with both texts side-by-side and wait for resolution — this is a true blocker, not a checkpoint.
+
+## Phase 4 — Write Plan (auto-advance)
+
+Invoke `superpowers:writing-plans`. Produce a detailed implementation plan with tasks, Global Constraints, file paths, and tests. Commit the plan to the branch.
+
+Do **not** ask the user to read or approve the plan. Continue to Phase 5.
+
+If the writing-plans skill surfaces a conflict with the spec, surface it to the user with both texts side-by-side and wait for resolution — this is a true blocker, not a checkpoint.
+
+## Phase 5 — Subagent Execution (auto-advance)
+
+Invoke `superpowers:subagent-driven-development`. Execute every task in the plan using fresh implementer subagents, task reviews, and the final whole-branch review. All commits land on the `feat/<slug>` branch.
 
 Do **not** pause to ask "should I continue?" between tasks. The skill's normal "Continuous execution" rule applies — execute all tasks without stopping.
 
@@ -85,11 +120,11 @@ Any of the above → stop and report to user with: blocker description, relevant
 
 Do not stop for: progress updates, "looking good so far" summaries, or non-load-bearing parked findings.
 
-## Phase 4 — Finalize (auto-advance)
+## Phase 6 — Finalize (auto-advance)
 
 When the final whole-branch review is clean, invoke `superpowers:finishing-a-development-branch`. Present the branch state to the user.
 
-The final whole-branch review happens inside Phase 3, not here. Phase 4 only handles integration decisions (merge / PR / keep working) — surface them in one message, do not ask serially.
+The final whole-branch review happens inside Phase 5, not here. Phase 6 only handles integration decisions (merge / PR / keep working) — surface them in one message, do not ask serially.
 
 ## Rationalization Guards (DO NOT)
 
