@@ -136,10 +136,15 @@ The final whole-branch review happens inside Phase 5, not here. Phase 6 only han
 | "Final review found minors, let me ask user" | Park with rulings per subagent-driven-development. Continue. |
 | "I'll just summarize progress" | Progress summaries are noise in auto-mode. The ledger carries the record. |
 | "The user might want to change their mind" | They had the checkpoint. They approved. Honor the approval. |
+| "Branch name should be confirmed with user" | Derive `feat/<slug>` from the task. If unsure, pick the obvious one — user can rename later. |
+| "Just commit on main, branch is overhead" | Branch is isolation. No new feature lands on `main` without explicit user action. |
+| "Branch failed, let me retry on main instead" | Surface the failure. Don't degrade silently to working on the default branch. |
+| "Worktree is overkill for a small change" | The worktree IS the isolated workspace that subagent-driven-development needs. |
 
 ## Red Flags — STOP and surface to user
 
 - **Phase 1 alignment not approved** — never proceed past brainstorming
+- **Branch creation failed** in Phase 2 — dirty tree, no remote, name conflict, or base branch unknown. Surface the error.
 - **Spec/plan conflict discovered mid-execution** — present both texts, ask which governs
 - **Implementer reports BLOCKED** on a non-mechanical issue (missing info, plan defect)
 - **Load-bearing finding at the breaker cap** — structural failure that would propagate
@@ -153,18 +158,24 @@ If none of those trigger, **continue silently**. No intermediate confirmation. N
 |---------|-----|
 | Asking for confirmation after Phase 1 spec write | Phase 1 alignment *is* the checkpoint. Stop only there. |
 | Treating "auto" as "skip brainstorming" | Brainstorming IS the alignment phase. It is included. |
+| Skipping the feature branch | Branch creation is mandatory. Worktree-isolated, `feat/<slug>` named. |
+| Naming branch with spaces or Chinese chars | Use ASCII kebab-case: `feat/user-login`, not `feat/用户登录` |
 | Letting the implementer subagent inherit session context | subagent-driven-development enforces fresh-context-per-task. Do not paste session history into dispatches. |
 | Pausing at final-review residuals | Park minors with rulings per subagent-driven-development. Only stop on load-bearing findings. |
 | Re-asking the user after they approved | If they said "go" at the alignment checkpoint, they meant "go all the way". |
+| Working on `main` after Phase 2 | All Phase 3–6 work must happen on the `feat/<slug>` branch inside the worktree. |
+| Forgetting to push the branch | Push with `-u` after creation so the remote has it before final review. |
 
 ## Quick Reference
 
 | Phase | Skill to invoke | User confirmation? |
 |-------|----------------|--------------------|
 | 1. Brainstorm + alignment | `superpowers:brainstorming` | **YES — only checkpoint** |
-| 2. Write plan | `superpowers:writing-plans` | No |
-| 3. Execute | `superpowers:subagent-driven-development` | No (only on true blockers) |
-| 4. Finalize | `superpowers:finishing-a-development-branch` | No (present options) |
+| 2. Create `feat/<slug>` branch | `superpowers:using-git-worktrees` | No (only on branch failure) |
+| 3. Write spec | (continuing from Phase 1, on the branch) | No |
+| 4. Write plan | `superpowers:writing-plans` | No |
+| 5. Execute on branch | `superpowers:subagent-driven-development` | No (only on true blockers) |
+| 6. Finalize | `superpowers:finishing-a-development-branch` | No (present options) |
 
 ## Invocation
 
@@ -172,4 +183,4 @@ If none of those trigger, **continue silently**. No intermediate confirmation. N
 /auto-superpowers <task description>
 ```
 
-The skill reads the task description as the initial prompt for brainstorming. If no task description is given, ask the user what they want to build before invoking Phase 1.
+The skill reads the task description as the initial prompt for brainstorming, and derives the `feat/<slug>` branch name from it. If no task description is given, ask the user what they want to build before invoking Phase 1.
