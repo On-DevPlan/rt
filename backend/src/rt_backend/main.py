@@ -73,6 +73,9 @@ def create_app() -> FastAPI:
     from .bilibili_history.router import build_router as _build_bili
     app.include_router(_build_bili(_http_dep))
 
+    from .tetris_ai.router import build_router as _build_tetris
+    app.include_router(_build_tetris())
+
     return app
 
 
