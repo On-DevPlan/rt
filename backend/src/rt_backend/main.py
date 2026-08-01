@@ -76,6 +76,9 @@ def create_app() -> FastAPI:
     from .tetris_ai.router import build_router as _build_tetris
     app.include_router(_build_tetris())
 
+    from .gomoku_ai.router import build_router as _build_gomoku
+    app.include_router(_build_gomoku())
+
     return app
 
 
