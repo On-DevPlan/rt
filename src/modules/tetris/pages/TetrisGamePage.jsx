@@ -3,7 +3,6 @@ import styles from './TetrisGamePage.module.css'
 import {
   COLS,
   ROWS,
-  PIECE_TYPES,
   PIECES,
   boardToAscii,
   createBag,
@@ -11,7 +10,6 @@ import {
   hardDrop,
   lockPiece,
   pieceCells,
-  pieceWidth,
   spawnPiece,
   tryMove,
   tryRotate
@@ -79,11 +77,15 @@ function buildFinalBoardWithPiece(board, piece) {
 export default function TetrisGamePage() {
   const [board, setBoard] = useState(emptyBoard)
   const [piece, setPiece] = useState(null)
-  const [nextQueue, setNextQueue] = useState(() => ['I', 'O']) // seed for the first frame
+  const [nextQueue, setNextQueue] = useState(() => ['I', 'O'])
   const [score, setScore] = useState(0)
   const [lines, setLines] = useState(0)
   const [gameOver, setGameOver] = useState(false)
-  const [hint, setHint] = useState(null) // {moves, cells, score, cleared}
+  // `hint` is the *last* successful response. We keep it across requests so the
+  // side panel never unmounts; only its contents swap in. A fresh request bumps
+  // `hintRequestId` and a transient `hintError` / `hintLoading` reflect status.
+  const [hint, setHint] = useState(null)
+  const [hintRequestId, setHintRequestId] = useState(0)
   const [hintError, setHintError] = useState(null)
   const [hintLoading, setHintLoading] = useState(false)
   const [autohint, setAutohint] = useState(true)
@@ -91,6 +93,9 @@ export default function TetrisGamePage() {
   const [elapsedMs, setElapsedMs] = useState(null)
 
   const bagRef = useRef(createBag())
+  // Mirror of `nextQueue` so refreshHint can read it without depending on it
+  // (which would otherwise rebuild the callback on every new piece).
+  const nextQueueRef = useRef(['I', 'O'])
   const tickRef = useRef(null)
   const lastTickRef = useRef(0)
   const softDropRef = useRef(false)
@@ -126,7 +131,9 @@ export default function TetrisGamePage() {
   useEffect(() => {
     const first = startNewPiece(emptyBoard())
     setPiece(first)
-    setNextQueue(bagRef.current.peek(3))
+    const queue = bagRef.current.peek(3)
+    nextQueueRef.current = queue
+    setNextQueue(queue)
     // We deliberately skip collision-check on the very first spawn by passing
     // an empty board; the next user-driven spawn will be checked properly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,27 +144,44 @@ export default function TetrisGamePage() {
   const refreshHint = useCallback(
     async (currentBoard, currentPiece) => {
       if (!currentPiece) return
+      const reqId = hintRequestId + 1
+      setHintRequestId(reqId)
       setHintLoading(true)
       setHintError(null)
       try {
         const result = await fetchNextMove({
           board: boardToAscii(currentBoard),
           piece: currentPiece.type,
-          next_piece: nextQueue[0],
+          next_piece: nextQueueRef.current[0],
           current_x: currentPiece.x,
           current_rotation: currentPiece.rotation
         })
-        setHint(result)
-        setElapsedMs(result.elapsed_ms)
+        // Guard against stale responses: only apply if no newer request fired.
+        setHintRequestId((latest) => {
+          if (latest === reqId) {
+            setHint(result)
+            setElapsedMs(result.elapsed_ms)
+          }
+          return latest
+        })
       } catch (e) {
-        setHint(null)
-        setHintError(e.status === 409 ? '棋盘已满，无可落点' : e.message)
+        setHintRequestId((latest) => {
+          if (latest === reqId) {
+            setHintError(e.status === 409 ? '棋盘已满，无可落点' : e.message)
+          }
+          return latest
+        })
       } finally {
-        setHintLoading(false)
+        setHintRequestId((latest) => {
+          if (latest === reqId) setHintLoading(false)
+          return latest
+        })
       }
     },
-    [nextQueue]
-  )
+    // Stable callback — reads nextQueue via ref, so the autohint effect doesn't
+    // tear down and remount the side panel every time the queue advances.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  [])
 
   // Re-query the AI whenever a new piece is spawned (and autohint is on).
   useEffect(() => {
@@ -205,7 +229,9 @@ export default function TetrisGamePage() {
       }
       const fresh = startNewPiece(after)
       setPiece(fresh)
-      setNextQueue(bagRef.current.peek(3))
+      const queue = bagRef.current.peek(3)
+      nextQueueRef.current = queue
+      setNextQueue(queue)
     },
     [board, startNewPiece]
   )
@@ -307,7 +333,9 @@ export default function TetrisGamePage() {
     setBoard(emptyBoard())
     const p = startNewPiece(emptyBoard())
     setPiece(p)
-    setNextQueue(bagRef.current.peek(3))
+    const queue = bagRef.current.peek(3)
+    nextQueueRef.current = queue
+    setNextQueue(queue)
     setScore(0)
     setLines(0)
     setGameOver(false)
@@ -399,12 +427,12 @@ export default function TetrisGamePage() {
                 <span className="metric-value">{lines}</span>
                 <span className={styles.metricLabel}>消行</span>
               </div>
-              {elapsedMs != null && (
-                <div>
-                  <span className="metric-value">{elapsedMs} ms</span>
-                  <span className={styles.metricLabel}>AI 耗时</span>
-                </div>
-              )}
+              <div>
+                <span className="metric-value">
+                  {elapsedMs == null ? '—' : `${elapsedMs} ms`}
+                </span>
+                <span className={styles.metricLabel}>AI 耗时</span>
+              </div>
             </div>
           </section>
 
@@ -419,36 +447,47 @@ export default function TetrisGamePage() {
 
           <section className="panel">
             <h3>AI 最佳落法</h3>
-            {hintError ? (
-              <p className={styles.errorText}>{hintError}</p>
-            ) : hintLoading ? (
-              <p className={styles.dimText}>计算中…</p>
-            ) : hint ? (
-              <div className={styles.hintBody}>
-                <div className={styles.hintRow}>
-                  <span className="tag">旋转</span>
-                  <span className={styles.hintValue}>{hint.rotation}</span>
-                  <span className="tag">x</span>
-                  <span className={styles.hintValue}>{hint.target_x}</span>
-                </div>
-                <div className={styles.hintRow}>
-                  <span className="tag">评分</span>
-                  <span className={styles.hintValue}>{hint.score.toFixed(2)}</span>
-                  <span className="tag">消行</span>
-                  <span className={styles.hintValue}>{hint.cleared_lines}</span>
-                </div>
-                <ol className={styles.moveList}>
-                  {hint.moves.map((m, i) => (
-                    <li key={i}>{moveLabel(m)}</li>
-                  ))}
-                </ol>
-                <button type="button" className={styles.button} onClick={playHint}>
-                  一键执行 (G)
-                </button>
-              </div>
-            ) : (
-              <p className={styles.dimText}>等待新方块…</p>
-            )}
+            {/* Always render the same DOM shape so the card frame never
+                remounts. Empty / loading / error / hint are just style swaps
+                on the same inner container. */}
+            <div className={styles.hintBody}>
+              {hintError ? (
+                <p className={styles.errorText}>{hintError}</p>
+              ) : hintLoading && !hint ? (
+                <p className={styles.dimText}>计算中…</p>
+              ) : hint ? (
+                <>
+                  <div className={styles.hintRow}>
+                    <span className="tag">旋转</span>
+                    <span className={styles.hintValue}>{hint.rotation}</span>
+                    <span className="tag">x</span>
+                    <span className={styles.hintValue}>{hint.target_x}</span>
+                    {hintLoading && <span className={styles.dimText}> · 计算中…</span>}
+                  </div>
+                  <div className={styles.hintRow}>
+                    <span className="tag">评分</span>
+                    <span className={styles.hintValue}>{hint.score.toFixed(2)}</span>
+                    <span className="tag">消行</span>
+                    <span className={styles.hintValue}>{hint.cleared_lines}</span>
+                  </div>
+                  <ol className={styles.moveList}>
+                    {hint.moves.map((m, i) => (
+                      <li key={i}>{moveLabel(m)}</li>
+                    ))}
+                  </ol>
+                  <button
+                    type="button"
+                    className={styles.button}
+                    onClick={playHint}
+                    disabled={hintLoading}
+                  >
+                    一键执行 (G)
+                  </button>
+                </>
+              ) : (
+                <p className={styles.dimText}>等待新方块…</p>
+              )}
+            </div>
           </section>
 
           <section className="tip-card">
