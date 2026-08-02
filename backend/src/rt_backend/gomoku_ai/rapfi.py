@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import sys
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -118,39 +117,8 @@ def _reset_state_for_tests() -> None:
 
 # --- subprocess driver ----------------------------------------------------
 
-async def _read_move(stdout: asyncio.StreamReader) -> Tuple[int, int]:
-    while True:
-        raw = await stdout.readline()
-        if not raw:
-            raise RapfiUnavailable("rapfi closed stdout without a move")
-        text = raw.decode("utf-8", "replace").strip()
-        mv = parse_gomocup_move(text)
-        if mv is not None:
-            return mv
-
-
-async def _reap(proc: asyncio.subprocess.Process) -> None:
-    """END the engine and reap it, killing on timeout."""
-    try:
-        proc.stdin.write(b"END\n")
-        await proc.stdin.drain()
-    except Exception:
-        pass
-    try:
-        await asyncio.wait_for(proc.wait(), timeout=2.0)
-    except asyncio.TimeoutError:
-        proc.kill()
-        await proc.wait()
-
-
 async def _compute_move_inner(board, to_move, timeout_s):
     cmd = get_rapfi_command()
-    # Rapfi block-buffers stdout when it's a pipe; without line buffering the
-    # move line only arrives when the process exits, so reading it live times
-    # out. stdbuf (coreutils, in the Debian base) forces line-buffered stdout/
-    # stderr. Skip on Windows (dev/mock tests use python, which flushes itself).
-    if sys.platform != "win32":
-        cmd = ["stdbuf", "-oL", "-eL"] + cmd
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -162,19 +130,36 @@ async def _compute_move_inner(board, to_move, timeout_s):
     except (FileNotFoundError, PermissionError) as e:
         raise RapfiUnavailable(f"cannot launch rapfi: {e}")
 
-    assert proc.stdin is not None and proc.stdout is not None
-    try:
-        w = proc.stdin.write
-        w(b"START 15\n")
-        w(b"BOARD\n")
-        for line in board_to_gomocup_lines(board, to_move):
-            w(line.encode() + b"\n")
-        w(b"DONE\n")
-        await proc.stdin.drain()
+    protocol = "START 15\nBOARD\n"
+    for line in board_to_gomocup_lines(board, to_move):
+        protocol += line + "\n"
+    protocol += "DONE\n"
 
-        row, col = await asyncio.wait_for(_read_move(proc.stdout), timeout=timeout_s)
-    finally:
-        await _reap(proc)
+    # Send the whole protocol plus END, then read ALL output until the process
+    # exits. Rapfi block-buffers stdout when piped and only flushes on exit, so
+    # a live readline() never sees the move (this was the timeout root cause —
+    # confirmed by engine-debug Pass 2 which uses communicate() and succeeds).
+    # communicate() + END forces the flush; then parse the move from the full
+    # captured output.
+    try:
+        stdout, _stderr = await asyncio.wait_for(
+            proc.communicate(input=(protocol + "END\n").encode()),
+            timeout=timeout_s,
+        )
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        raise RapfiUnavailable("rapfi did not respond within timeout")
+
+    row: int | None = None
+    col: int | None = None
+    for line in stdout.decode("utf-8", "replace").splitlines():
+        mv = parse_gomocup_move(line.strip())
+        if mv is not None:
+            row, col = mv
+            break
+    if row is None or col is None:
+        raise RapfiUnavailable("no move line in rapfi output")
 
     return RapfiMove(
         row=row,
