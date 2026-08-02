@@ -37,7 +37,7 @@ def _board_with_one_stone():
 def test_rapfi_path_sets_engine_label(client, monkeypatch):
     monkeypatch.setattr(gomoku_router, "is_rapfi_available", _avail_true)
 
-    async def fake_compute(board, to_move, time_turn_ms, *, timeout_s):
+    async def fake_compute(board, to_move, *, timeout_s):
         return RapfiMove(row=7, col=8, score=0, winning=False, blocks=False)
 
     monkeypatch.setattr(gomoku_router, "compute_move", fake_compute)
@@ -68,7 +68,7 @@ def test_fallback_when_rapfi_unavailable(client, monkeypatch):
 def test_fallback_when_rapfi_raises(client, monkeypatch):
     monkeypatch.setattr(gomoku_router, "is_rapfi_available", _avail_true)
 
-    async def boom(board, to_move, time_turn_ms, *, timeout_s):
+    async def boom(board, to_move, *, timeout_s):
         raise rapfi.RapfiUnavailable("simulated")
 
     monkeypatch.setattr(gomoku_router, "compute_move", boom)
@@ -80,12 +80,14 @@ def test_fallback_when_rapfi_raises(client, monkeypatch):
     assert r.json()["engine"] == "python-fallback"
 
 
-def test_strength_maps_to_time_turn(client, monkeypatch):
+def test_strength_maps_to_timeout(client, monkeypatch):
+    """Each strength tier must give Rapfi a proportional subprocess timeout
+    (time_turn/1000 + 3s slack)."""
     seen = {}
     monkeypatch.setattr(gomoku_router, "is_rapfi_available", _avail_true)
 
-    async def capture(board, to_move, time_turn_ms, *, timeout_s):
-        seen["t"] = time_turn_ms
+    async def capture(board, to_move, *, timeout_s):
+        seen["t"] = timeout_s
         return RapfiMove(row=7, col=8, score=0, winning=False, blocks=False)
 
     monkeypatch.setattr(gomoku_router, "compute_move", capture)
@@ -93,4 +95,5 @@ def test_strength_maps_to_time_turn(client, monkeypatch):
         "/api/gomoku/next-move",
         json={"board": _board_with_one_stone(), "to_move": 2, "strength": 3, "top_k": 1},
     )
-    assert seen["t"] == 5000  # strong tier
+    # strong: 5s + 3s slack = 8s
+    assert seen["t"] == 8.0

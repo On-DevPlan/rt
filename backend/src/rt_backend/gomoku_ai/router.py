@@ -50,9 +50,11 @@ def build_router() -> APIRouter:
         Returns (move, engine_label)."""
         time_turn = _time_by_strength()[strength]
         if await is_rapfi_available():
+            # Rapfi's bare piskvork protocol is more robust than INFO commands.
+            # The per-move time is bounded by our subprocess timeout.
             timeout = time_turn / 1000.0 + 3.0
             try:
-                mv = await compute_move(board, to_move, time_turn, timeout_s=timeout)
+                mv = await compute_move(board, to_move, timeout_s=timeout)
                 return mv, "rapfi"
             except RapfiUnavailable as e:
                 log.warning("rapfi compute_move failed, falling back: %s", e)

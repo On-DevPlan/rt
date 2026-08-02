@@ -160,7 +160,7 @@ async def test_compute_move_round_trip_returns_parsed_move(tmp_path, monkeypatch
     _patch_cmd(monkeypatch, _write_mock(tmp_path, NORMAL_MOCK))
     board = [[0] * 15 for _ in range(15)]
     board[7][7] = 1
-    mv = await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=5.0)
+    mv = await rapfi.compute_move(board, to_move=2, timeout_s=5.0)
     assert isinstance(mv, RapfiMove)
     assert (mv.row, mv.col) == (3, 3)
     assert mv.winning is False
@@ -174,7 +174,7 @@ async def test_compute_move_marks_winning(tmp_path, monkeypatch):
     board = [[0] * 15 for _ in range(15)]
     for c in range(5, 9):       # black four in a row, col 5..8 at row 7
         board[7][c] = 1
-    mv = await rapfi.compute_move(board, to_move=1, time_turn_ms=500, timeout_s=5.0)
+    mv = await rapfi.compute_move(board, to_move=1, timeout_s=5.0)
     assert (mv.row, mv.col) == (7, 9)
     assert mv.winning is True
 
@@ -184,7 +184,7 @@ async def test_compute_move_timeout_raises_unavailable(tmp_path, monkeypatch):
     board = [[0] * 15 for _ in range(15)]
     board[7][7] = 1
     with pytest.raises(RapfiUnavailable):
-        await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=0.5)
+        await rapfi.compute_move(board, to_move=2, timeout_s=0.5)
 
 
 async def test_compute_move_no_move_line_raises_unavailable(tmp_path, monkeypatch):
@@ -192,7 +192,7 @@ async def test_compute_move_no_move_line_raises_unavailable(tmp_path, monkeypatc
     board = [[0] * 15 for _ in range(15)]
     board[7][7] = 1
     with pytest.raises(RapfiUnavailable):
-        await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=3.0)
+        await rapfi.compute_move(board, to_move=2, timeout_s=3.0)
 
 
 async def test_circuit_breaker_trips_after_three_failures(tmp_path, monkeypatch):
@@ -201,7 +201,7 @@ async def test_circuit_breaker_trips_after_three_failures(tmp_path, monkeypatch)
     board[7][7] = 1
     for _ in range(3):
         with pytest.raises(RapfiUnavailable):
-            await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=1.0)
+            await rapfi.compute_move(board, to_move=2, timeout_s=1.0)
     assert rapfi._disabled is True
     assert rapfi._fail_count >= 3
 
@@ -210,7 +210,7 @@ async def test_success_resets_failure_counter(tmp_path, monkeypatch):
     _patch_cmd(monkeypatch, _write_mock(tmp_path, NORMAL_MOCK))
     board = [[0] * 15 for _ in range(15)]
     board[7][7] = 1
-    await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=5.0)
+    await rapfi.compute_move(board, to_move=2, timeout_s=5.0)
     assert rapfi._fail_count == 0
 
 

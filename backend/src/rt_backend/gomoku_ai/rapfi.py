@@ -139,8 +139,7 @@ async def _reap(proc: asyncio.subprocess.Process) -> None:
         await proc.wait()
 
 
-async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
-    s = get_settings()
+async def _compute_move_inner(board, to_move, timeout_s):
     cmd = get_rapfi_command()
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -157,10 +156,6 @@ async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
     try:
         w = proc.stdin.write
         w(b"START 15\n")
-        w(f"INFO time_turn {time_turn_ms}\n".encode())
-        w(f"INFO max_memory {s.rapfi_max_memory_mb}\n".encode())
-        w(f"INFO number_of_threads {s.rapfi_threads}\n".encode())
-        w(f"INFO max_node {s.rapfi_max_node}\n".encode())
         w(b"BOARD\n")
         for line in board_to_gomocup_lines(board, to_move):
             w(line.encode() + b"\n")
@@ -180,14 +175,17 @@ async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
     )
 
 
-async def compute_move(board, to_move, time_turn_ms, *, timeout_s: float) -> RapfiMove:
+async def compute_move(board, to_move, *, timeout_s: float) -> RapfiMove:
     """Run one Rapfi subprocess, set the full board via BOARD, return its move.
 
     Any failure (launch error, timeout, no move line) is recorded against the
-    circuit breaker and re-raised as RapfiUnavailable.
+    circuit breaker and re-raised as RapfiUnavailable. We deliberately don't
+    send piskvork INFO commands (time_turn / max_memory / threads / max_node):
+    Rapfi's per-move time default works fine for our 0.5/2/5s tiers, and the
+    bare protocol is more robust.
     """
     try:
-        mv = await _compute_move_inner(board, to_move, time_turn_ms, timeout_s)
+        mv = await _compute_move_inner(board, to_move, timeout_s)
     except RapfiUnavailable:
         _record_failure()
         raise
@@ -214,7 +212,7 @@ async def _probe() -> bool:
     board = [[0] * SIZE for _ in range(SIZE)]
     board[SIZE // 2][SIZE // 2] = 1
     try:
-        await compute_move(board, to_move=2, time_turn_ms=200, timeout_s=4.0)
+        await compute_move(board, to_move=2, timeout_s=4.0)
         return True
     except RapfiUnavailable:
         return False
