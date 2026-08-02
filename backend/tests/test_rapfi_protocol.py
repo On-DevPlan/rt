@@ -226,7 +226,7 @@ def main():
         if not line:
             return
         c = line.strip()
-        if c.startswith('INFO time_turn'):
+        if c.startswith('INFO timeout_turn'):
             tt = c.split()[-1]
         elif c == 'BOARD':
             while True:

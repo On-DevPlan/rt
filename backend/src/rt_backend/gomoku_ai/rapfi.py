@@ -132,9 +132,12 @@ async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
 
     protocol = "START 15\n"
     if time_turn_ms:
-        # Gomocup INFO time_turn is in milliseconds (confirmed in Rapfi
-        # core/time.h: `using Time = int64_t` + "steady clock, in milliseconds").
-        protocol += f"INFO time_turn {time_turn_ms}\n"
+        # Rapfi's piskvork INFO parser uses TIMEOUT_TURN (not the Gomocup
+        # standard time_turn) — see gomocup.cpp getOption(). Value is
+        # milliseconds (core/time.h: Time = int64_t). Setting turnTime makes
+        # Rapfi search up to ~this long per move; without it Rapfi uses its
+        # default and returns almost instantly.
+        protocol += f"INFO timeout_turn {time_turn_ms}\n"
     protocol += "BOARD\n"
     for line in board_to_gomocup_lines(board, to_move):
         protocol += line + "\n"
