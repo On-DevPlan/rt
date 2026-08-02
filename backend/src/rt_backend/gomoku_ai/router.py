@@ -216,10 +216,18 @@ def build_router() -> APIRouter:
 
         # --- Pass 3: real _probe() ---
         probe_ok: bool | None = None
+        probe_error: str | None = None
+        probe_move = None
         try:
-            probe_ok = bool(await _probe())
+            from .rapfi import compute_move as _compute_move
+            board = [[0] * 15 for _ in range(15)]
+            board[7][7] = 1
+            probe_move = await _compute_move(board, to_move=2, timeout_s=4.0)
+            probe_ok = True
         except Exception as e:
-            stderr_chunks.append(f"probe error: {type(e).__name__}: {e}")
+            probe_ok = False
+            probe_error = f"{type(e).__name__}: {e}"
+            stderr_chunks.append(f"compute_move error: {probe_error}")
             stderr_chunks.append(traceback.format_exc())
 
         try:
@@ -233,7 +241,9 @@ def build_router() -> APIRouter:
             binary_exists=binary_on_disk,
             cwd=model_dir,
             listing=listing,
-            stdout=stdout_chunks[:80] + ["--- protocol pass (START/BOARD/DONE/END, no INFO) ---"] + protocol_output[:60],
+            stdout=stdout_chunks[:80] + ["--- protocol pass (START/BOARD/DONE/END, no INFO) ---"] + protocol_output[:60] + [
+                f"--- compute_move probe: ok={probe_ok} move={probe_move} error={probe_error} ---"
+            ],
             stderr=stderr_chunks,
             exit_code=rc,
             timed_out=timed_out,
