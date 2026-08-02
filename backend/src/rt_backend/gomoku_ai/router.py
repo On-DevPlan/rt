@@ -124,17 +124,16 @@ def build_router() -> APIRouter:
           - binary_exists: whether /opt/rapfi/pbrain-Rapfi is on disk
           - listing: contents of /opt/rapfi (first 60 entries)
           - cwd: the cwd Rapfi is spawned with
-          - last_stderr: up to 4 KB of stderr from the probe
-          - last_stdout: up to 4 KB of stdout from the probe (excluding
-                          'INFO'/'DEBUG'/'MESSAGE' noise that the protocol loop
-                          didn't consume)
+          - last_stderr: stderr from the probe (and any exceptions)
+          - last_stdout: stdout (minus INFO/DEBUG noise)
           - timed_out / exit_code: probe outcome
         """
         import os
+        import traceback
 
-        from .rapfi import _binary_exists, _probe, _reset_state_for_tests
+        from .rapfi import _probe, _reset_state_for_tests
 
-        _reset_state_for_tests()  # allow re-probe even if previously disabled
+        _reset_state_for_tests()  # re-probe even if previously disabled
 
         bin_path = get_rapfi_command()[0]
         model_dir = get_model_dir()
@@ -144,8 +143,6 @@ def build_router() -> APIRouter:
         except OSError as e:
             listing = [f"<listdir error: {e}>"]
 
-        # Run the probe and capture stderr/stdout directly so we can see what
-        # Rapfi actually prints on startup (e.g. "failed to load model ...").
         stderr_chunks: list[str] = []
         stdout_chunks: list[str] = []
         rc: int | None = None
@@ -159,7 +156,7 @@ def build_router() -> APIRouter:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            assert proc.stdin and proc.stdout and proc.stderr
+            assert proc.stdin is not None and proc.stdout is not None and proc.stderr is not None
             proc.stdin.write(b"START 15\nBOARD\n7,7,1\nDONE\nEND\n")
             await proc.stdin.drain()
             try:
@@ -173,7 +170,6 @@ def build_router() -> APIRouter:
                 timed_out = True
             else:
                 stderr_chunks.append(stderr.decode("utf-8", "replace"))
-                # filter stdout to non-noise lines so we can see move/error
                 for line in stdout.decode("utf-8", "replace").splitlines():
                     s = line.strip()
                     if not s:
@@ -185,14 +181,20 @@ def build_router() -> APIRouter:
             stderr_chunks.append(f"FileNotFoundError: {e}")
         except Exception as e:
             stderr_chunks.append(f"spawn error: {type(e).__name__}: {e}")
+            stderr_chunks.append(traceback.format_exc())
 
-        # Also try a normal probe (so we know whether the probe would succeed
-        # under the current setup):
         probe_ok: bool | None = None
         try:
             probe_ok = bool(await _probe())
         except Exception as e:
             stderr_chunks.append(f"probe error: {type(e).__name__}: {e}")
+            stderr_chunks.append(traceback.format_exc())
+
+        try:
+            rap_avail = bool(await is_rapfi_available())
+        except Exception as e:
+            stderr_chunks.append(f"is_rapfi_available error: {type(e).__name__}: {e}")
+            rap_avail = False
 
         return EngineDebugOut(
             binary_path=bin_path,
@@ -204,7 +206,7 @@ def build_router() -> APIRouter:
             exit_code=rc,
             timed_out=timed_out,
             probe_ok=probe_ok,
-            rapfi_available=await is_rapfi_available(),
+            rapfi_available=rap_avail,
         )
 
     return router
