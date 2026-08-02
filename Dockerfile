@@ -19,8 +19,9 @@ RUN mkdir -p build/avx2 && cd build/avx2 \
     && cmake --build . -j"$(nproc)"
 # Assemble engine dir: binary + config + all NNUE/classical weights flat
 # (Rapfi auto-loads weights from the directory containing the executable).
+# CMake target outputs "pbrain-rapfi" (Gomocup convention, confirmed by CI build log).
 RUN mkdir -p /out \
-    && cp build/avx2/Rapfi /out/pbrain-Rapfi \
+    && cp build/avx2/pbrain-rapfi /out/pbrain-Rapfi \
     && chmod +x /out/pbrain-Rapfi \
     && cp /src/rapfi/Networks/config-example/config.toml /out/config.toml \
     && cp /src/rapfi/Networks/mix9svq/*.bin.lz4 /out/ \
