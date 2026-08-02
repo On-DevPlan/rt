@@ -7,6 +7,7 @@ otherwise. See docs/superpowers/specs/2026-08-02-gomoku-rapfi-engine-design.md.
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -88,6 +89,7 @@ def parse_gomocup_move(text: str) -> Optional[Tuple[int, int]]:
 _disabled: bool = False
 _fail_count: int = 0
 _FAIL_THRESHOLD = 3
+_availability: Optional[bool] = None
 
 
 def _record_failure() -> None:
@@ -104,9 +106,10 @@ def _record_success() -> None:
 
 
 def _reset_state_for_tests() -> None:
-    global _disabled, _fail_count
+    global _disabled, _fail_count, _availability
     _disabled = False
     _fail_count = 0
+    _availability = None
 
 
 # --- subprocess driver ----------------------------------------------------
@@ -193,3 +196,43 @@ async def compute_move(board, to_move, time_turn_ms, *, timeout_s: float) -> Rap
         raise RapfiUnavailable(str(e)) from e
     _record_success()
     return mv
+
+
+# --- availability probe ---------------------------------------------------
+
+def _binary_exists() -> bool:
+    path = get_rapfi_command()[0]
+    return os.path.isfile(path)
+
+
+async def _probe() -> bool:
+    """Run one trivial round-trip on a near-empty board. True if Rapfi
+    returns a sane move, False on any RapfiUnavailable (incl. missing binary).
+    """
+    if not _binary_exists():
+        return False
+    board = [[0] * SIZE for _ in range(SIZE)]
+    board[SIZE // 2][SIZE // 2] = 1
+    try:
+        await compute_move(board, to_move=2, time_turn_ms=200, timeout_s=4.0)
+        return True
+    except RapfiUnavailable:
+        return False
+
+
+async def is_rapfi_available() -> bool:
+    """True iff Rapfi is usable. Lazy: probes once on first call and caches.
+
+    Must be awaited — the router calls it inside the async endpoint, so the
+    probe runs on the request's own event loop. The circuit breaker
+    (``_disabled``) can still force False at runtime.
+    """
+    global _availability
+    if _disabled:
+        return False
+    if _availability is None:
+        try:
+            _availability = await _probe()
+        except Exception:
+            _availability = False
+    return bool(_availability)

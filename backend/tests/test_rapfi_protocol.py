@@ -212,3 +212,28 @@ async def test_success_resets_failure_counter(tmp_path, monkeypatch):
     board[7][7] = 1
     await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=5.0)
     assert rapfi._fail_count == 0
+
+
+# --- availability probe ---------------------------------------------------
+
+async def test_probe_unavailable_when_binary_missing(monkeypatch):
+    monkeypatch.setattr(rapfi, "get_rapfi_command",
+                        lambda: ["/nonexistent/path/pbrain-Rapfi"])
+    monkeypatch.setattr(rapfi, "get_model_dir", lambda: "/tmp")
+    rapfi._reset_state_for_tests()
+    assert await rapfi.is_rapfi_available() is False
+
+
+async def test_probe_unavailable_when_circuit_open(monkeypatch):
+    rapfi._disabled = True
+    monkeypatch.setattr(rapfi, "get_rapfi_command",
+                        lambda: [sys.executable, "does-not-matter"])
+    assert await rapfi.is_rapfi_available() is False
+
+
+async def test_probe_available_when_mock_responds(tmp_path, monkeypatch):
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, NORMAL_MOCK))
+    rapfi._reset_state_for_tests()
+    assert await rapfi.is_rapfi_available() is True
+    # cached: second call does not re-probe
+    assert await rapfi.is_rapfi_available() is True
