@@ -6,7 +6,7 @@ import logging
 import time
 from typing import List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from .board import SIZE, has_any_stone
 from .rapfi import (
@@ -126,7 +126,7 @@ def build_router() -> APIRouter:
         )
 
     @router.get("/engine-debug", response_model=EngineDebugOut)
-    async def engine_debug():
+    async def engine_debug(request: Request):
         """Probe Rapfi and return its stdout/stderr verbatim.
 
         Three passes:
@@ -134,15 +134,25 @@ def build_router() -> APIRouter:
           2. Spawn and do the minimal piskvork protocol (START + BOARD + DONE
              + END) WITHOUT INFO commands — to isolate whether INFO is the
              problem.
-          3. Run the real _probe() (which sends START + INFO*4 + BOARD + DONE)
-             to reproduce the production probe path.
+          3. Run the real compute_move with an optional ``?time_turn_ms=`` to
+             confirm the time-budget wait actually sleeps.
+
+        ``has_search_wait`` reports whether the deployed rapfi module has the
+        ``_search_wait`` (time-budget) logic — a deployed-code version marker.
         """
         import os
+        import time as _time
         import traceback
 
         from .rapfi import _probe, _reset_state_for_tests
+        import rt_backend.gomoku_ai.rapfi as _rapfi_mod
 
+        has_search_wait = hasattr(_rapfi_mod, "_search_wait")
         _reset_state_for_tests()
+        try:
+            q_time_turn = int(request.query_params.get("time_turn_ms", ""))
+        except ValueError:
+            q_time_turn = None
 
         bin_path = get_rapfi_command()[0]
         model_dir = get_model_dir()
@@ -216,15 +226,20 @@ def build_router() -> APIRouter:
             protocol_output.append(f"protocol pass error: {type(e).__name__}: {e}")
             protocol_output.append(traceback.format_exc())
 
-        # --- Pass 3: real _probe() ---
+        # --- Pass 3: real compute_move (with optional time_turn_ms) ---
         probe_ok: bool | None = None
         probe_error: str | None = None
         probe_move = None
+        probe_elapsed_ms: float | None = None
         try:
             from .rapfi import compute_move as _compute_move
             board = [[0] * 15 for _ in range(15)]
             board[7][7] = 1
-            probe_move = await _compute_move(board, to_move=2, timeout_s=4.0)
+            t0 = _time.perf_counter()
+            probe_move = await _compute_move(
+                board, to_move=2, time_turn_ms=q_time_turn, timeout_s=9.0
+            )
+            probe_elapsed_ms = round((_time.perf_counter() - t0) * 1000, 1)
             probe_ok = True
         except Exception as e:
             probe_ok = False
@@ -244,7 +259,8 @@ def build_router() -> APIRouter:
             cwd=model_dir,
             listing=listing,
             stdout=stdout_chunks[:80] + ["--- protocol pass (START/BOARD/DONE/END, no INFO) ---"] + protocol_output[:60] + [
-                f"--- compute_move probe: ok={probe_ok} move={probe_move} error={probe_error} ---"
+                f"--- compute_move probe: ok={probe_ok} move={probe_move} elapsed_ms={probe_elapsed_ms} "
+                f"time_turn_ms={q_time_turn} has_search_wait={has_search_wait} error={probe_error} ---"
             ],
             stderr=stderr_chunks,
             exit_code=rc,
