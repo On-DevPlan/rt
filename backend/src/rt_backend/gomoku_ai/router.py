@@ -9,7 +9,13 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 
 from .board import SIZE, has_any_stone
-from .rapfi import RapfiUnavailable, compute_move, is_rapfi_available
+from .rapfi import (
+    RapfiUnavailable,
+    compute_move,
+    get_model_dir,
+    get_rapfi_command,
+    is_rapfi_available,
+)
 from .schemas import EngineDebugOut, MoveOut, NextMoveRequest, NextMoveResponse
 from .service import Move, best_move, top_moves
 
