@@ -125,19 +125,20 @@ def build_router() -> APIRouter:
     async def engine_debug():
         """Probe Rapfi and return its stdout/stderr verbatim.
 
-        Rapfi prints any startup error to stderr (e.g. failed to load
-        weights) and then exits; the piskvork protocol only starts after
-        the config/model load succeeds. So to see the real error we
-        spawn Rapfi with NO stdin input, read stderr/stdout for 3 s, then
-        kill the process. We also try a second spawn WITH the proper
-        protocol to confirm whether a full round-trip would succeed.
+        Three passes:
+          1. Spawn with no stdin, read startup output (catches load errors).
+          2. Spawn and do the minimal piskvork protocol (START + BOARD + DONE
+             + END) WITHOUT INFO commands — to isolate whether INFO is the
+             problem.
+          3. Run the real _probe() (which sends START + INFO*4 + BOARD + DONE)
+             to reproduce the production probe path.
         """
         import os
         import traceback
 
         from .rapfi import _probe, _reset_state_for_tests
 
-        _reset_state_for_tests()  # re-probe even if previously disabled
+        _reset_state_for_tests()
 
         bin_path = get_rapfi_command()[0]
         model_dir = get_model_dir()
@@ -151,8 +152,9 @@ def build_router() -> APIRouter:
         stdout_chunks: list[str] = []
         rc: int | None = None
         timed_out = False
+        protocol_output: list[str] = []  # raw lines from pass 2
 
-        # --- Pass 1: spawn with NO stdin, just read Rapfi's startup output ---
+        # --- Pass 1: spawn with no stdin, read startup output ---
         try:
             cmd = get_rapfi_command()
             proc = await asyncio.create_subprocess_exec(
@@ -169,8 +171,6 @@ def build_router() -> APIRouter:
                 )
                 rc = proc.returncode
             except asyncio.TimeoutError:
-                # Rapfi is alive (waiting for stdin) — kill it. The fact that
-                # it didn't error on startup is itself useful info.
                 proc.kill()
                 await proc.wait()
                 timed_out = True
@@ -183,6 +183,36 @@ def build_router() -> APIRouter:
             stderr_chunks.append(f"spawn error: {type(e).__name__}: {e}")
             stderr_chunks.append(traceback.format_exc())
 
+        # --- Pass 2: minimal piskvork protocol (no INFO) ---
+        try:
+            cmd = get_rapfi_command()
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=model_dir,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            assert proc.stdin is not None and proc.stdout is not None and proc.stderr is not None
+            proc.stdin.write(b"START 15\n")
+            proc.stdin.write(b"BOARD\n")
+            proc.stdin.write(b"7,7,1\n")
+            proc.stdin.write(b"DONE\n")
+            await proc.stdin.drain()
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(b"END\n"), timeout=5.0
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+            for line in (stdout + stderr).decode("utf-8", "replace").splitlines():
+                protocol_output.append(line)
+        except Exception as e:
+            protocol_output.append(f"protocol pass error: {type(e).__name__}: {e}")
+            protocol_output.append(traceback.format_exc())
+
+        # --- Pass 3: real _probe() ---
         probe_ok: bool | None = None
         try:
             probe_ok = bool(await _probe())
@@ -201,7 +231,7 @@ def build_router() -> APIRouter:
             binary_exists=binary_on_disk,
             cwd=model_dir,
             listing=listing,
-            stdout=stdout_chunks[:80],
+            stdout=stdout_chunks[:80] + ["--- protocol pass (START/BOARD/DONE/END, no INFO) ---"] + protocol_output[:60],
             stderr=stderr_chunks,
             exit_code=rc,
             timed_out=timed_out,
