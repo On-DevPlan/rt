@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sys
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -141,6 +142,12 @@ async def _reap(proc: asyncio.subprocess.Process) -> None:
 
 async def _compute_move_inner(board, to_move, timeout_s):
     cmd = get_rapfi_command()
+    # Rapfi block-buffers stdout when it's a pipe; without line buffering the
+    # move line only arrives when the process exits, so reading it live times
+    # out. stdbuf (coreutils, in the Debian base) forces line-buffered stdout/
+    # stderr. Skip on Windows (dev/mock tests use python, which flushes itself).
+    if sys.platform != "win32":
+        cmd = ["stdbuf", "-oL", "-eL"] + cmd
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
