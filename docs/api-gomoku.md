@@ -69,7 +69,8 @@ Content-Type: application/json
 | `best.winning`            | `bool`      | 该落子是否直接连五获胜。                                                           |
 | `best.blocks`             | `bool`      | 该落子是否用于封堵对方即将成五的威胁（必应手）。                                   |
 | `top_moves`               | `MoveOut[]` | 长度等于`top_k` 的候选列表（空棋盘会以天元补齐到 `top_k`，保证返回结构稳定）。 |
-| `elapsed_ms`              | `float`     | 后端计算耗时（毫秒），通常 < 5 ms。                                                |
+| `elapsed_ms`              | `float`     | 后端计算耗时（毫秒）。内置评估通常 < 5 ms；Rapfi 视思考时间更长。                |
+| `engine`                  | `string`    | 实际落子引擎：`"rapfi"`（Gomocup Rapfi）或 `"python-fallback"`（内置评估，Rapfi 不可用时回退）。 |
 
 ## 错误码
 
@@ -104,6 +105,11 @@ curl -s -X POST http://localhost:8080/api/gomoku/next-move \
 3. **判胜**：后端只给落点，**不判胜负**。客户端落子后自行检测连五，决定是否结束游戏。
 
 ## 算法概述（简述）
+
+> **落子引擎**：默认使用 [Rapfi](https://github.com/dhbloo/rapfi)（Gomocup 冠军引擎，每请求一个子进程 + Gomocup `BOARD` 协议）。
+> `strength` 映射 Rapfi 思考时间 `time_turn`：弱 0.5s / 中 2s / 强 5s。当 Rapfi 二进制缺失或启动自检失败时，
+> 自动回退到下方的内置棋型评估引擎；响应 `engine` 字段标注实际所用引擎，永不抛 500。
+> 下方"着点生成 / 静态评估 / 两轮搜索 / 必应手"描述的是**回退引擎**的逻辑。
 
 - **着点生成**：空棋盘 → 天元；否则只取距已有棋子 2 格内的空位。
 - **静态评估**：按四个方向统计 `(连子数, 开放端数)`，查表加分。活三 = 50、冲四 = 1000、活四 = 10000、连五 = 100000；并叠加对方在该格威胁的一半。

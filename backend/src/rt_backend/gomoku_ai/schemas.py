@@ -45,3 +45,4 @@ class NextMoveResponse(BaseModel):
     best: MoveOut
     top_moves: List[MoveOut]
     elapsed_ms: float
+    engine: str = "rapfi"
