@@ -20,14 +20,15 @@ RUN mkdir -p build/avx2 && cd build/avx2 \
 # Assemble engine dir: binary + config + all NNUE/classical weights flat
 # (Rapfi auto-loads weights from the directory containing the executable).
 # CMake target outputs "pbrain-rapfi" (Gomocup convention, confirmed by CI build log).
-# config.toml's `binary_file` references classical/model210901.bin — copy both
-# classical models (model220723 too) so the config matches what's on disk.
+# Use gomocalc-classical220723.toml (binary_file=model220723.bin, min_version 0,41,1)
+# because the default config.toml references model210901.bin which Rapfi 250615
+# rejects as an outdated model format. classical220723 is the newest classical
+# model in rapfi-networks; 250615 (ver 0,43,2) satisfies its min_version.
 RUN mkdir -p /out \
     && cp build/avx2/pbrain-rapfi /out/pbrain-Rapfi \
     && chmod +x /out/pbrain-Rapfi \
-    && cp /src/rapfi/Networks/config-example/config.toml /out/config.toml \
+    && cp /src/rapfi/Networks/config-example/gomocalc-classical220723.toml /out/config.toml \
     && cp /src/rapfi/Networks/mix9svq/*.bin.lz4 /out/ \
-    && cp /src/rapfi/Networks/classical/model210901.bin /out/ \
     && cp /src/rapfi/Networks/classical/model220723.bin /out/
 
 # Stage 1: build the React frontend
