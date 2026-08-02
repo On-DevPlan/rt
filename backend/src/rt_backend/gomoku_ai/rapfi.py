@@ -117,7 +117,7 @@ def _reset_state_for_tests() -> None:
 
 # --- subprocess driver ----------------------------------------------------
 
-async def _compute_move_inner(board, to_move, timeout_s):
+async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
     cmd = get_rapfi_command()
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -130,7 +130,12 @@ async def _compute_move_inner(board, to_move, timeout_s):
     except (FileNotFoundError, PermissionError) as e:
         raise RapfiUnavailable(f"cannot launch rapfi: {e}")
 
-    protocol = "START 15\nBOARD\n"
+    protocol = "START 15\n"
+    if time_turn_ms:
+        # Gomocup INFO time_turn is in milliseconds (confirmed in Rapfi
+        # core/time.h: `using Time = int64_t` + "steady clock, in milliseconds").
+        protocol += f"INFO time_turn {time_turn_ms}\n"
+    protocol += "BOARD\n"
     for line in board_to_gomocup_lines(board, to_move):
         protocol += line + "\n"
     protocol += "DONE\n"
@@ -170,17 +175,19 @@ async def _compute_move_inner(board, to_move, timeout_s):
     )
 
 
-async def compute_move(board, to_move, *, timeout_s: float) -> RapfiMove:
+async def compute_move(board, to_move, *, time_turn_ms: int | None = None, timeout_s: float) -> RapfiMove:
     """Run one Rapfi subprocess, set the full board via BOARD, return its move.
 
+    ``time_turn_ms`` optionally sets Rapfi's per-move think time (Gomocup
+    ``INFO time_turn``, milliseconds) — this is how strength tiers 1/2/3 map to
+    500/2000/5000 ms. ``timeout_s`` is the wall-clock cap for the whole
+    subprocess round-trip.
+
     Any failure (launch error, timeout, no move line) is recorded against the
-    circuit breaker and re-raised as RapfiUnavailable. We deliberately don't
-    send piskvork INFO commands (time_turn / max_memory / threads / max_node):
-    Rapfi's per-move time default works fine for our 0.5/2/5s tiers, and the
-    bare protocol is more robust.
+    circuit breaker and re-raised as RapfiUnavailable.
     """
     try:
-        mv = await _compute_move_inner(board, to_move, timeout_s)
+        mv = await _compute_move_inner(board, to_move, time_turn_ms, timeout_s)
     except RapfiUnavailable:
         _record_failure()
         raise

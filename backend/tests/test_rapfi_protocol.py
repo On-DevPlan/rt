@@ -217,6 +217,57 @@ async def test_success_resets_failure_counter(tmp_path, monkeypatch):
     assert rapfi._fail_count == 0
 
 
+TIME_MOCK = """\
+import sys
+def main():
+    tt = 'none'
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            return
+        c = line.strip()
+        if c.startswith('INFO time_turn'):
+            tt = c.split()[-1]
+        elif c == 'BOARD':
+            while True:
+                l = sys.stdin.readline()
+                if not l or l.strip() == 'DONE':
+                    break
+            open(sys.argv[1], 'w').write(tt)
+            print('3,3', flush=True)
+        elif c == 'END':
+            return
+main()
+"""
+
+
+def _patch_cmd_with_arg(monkeypatch, mock_path, arg):
+    monkeypatch.setattr(rapfi, "get_rapfi_command",
+                        lambda: [sys.executable, str(mock_path), str(arg)])
+    monkeypatch.setattr(rapfi, "get_model_dir", lambda: str(mock_path.parent))
+
+
+async def test_compute_move_sends_info_time_turn(tmp_path, monkeypatch):
+    capture = tmp_path / "tt.txt"
+    p = _write_mock(tmp_path, TIME_MOCK)
+    _patch_cmd_with_arg(monkeypatch, p, capture)
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    mv = await rapfi.compute_move(board, to_move=2, time_turn_ms=5000, timeout_s=5.0)
+    assert (mv.row, mv.col) == (3, 3)
+    assert capture.read_text() == "5000"
+
+
+async def test_compute_move_without_time_turn_sends_none(tmp_path, monkeypatch):
+    capture = tmp_path / "tt.txt"
+    p = _write_mock(tmp_path, TIME_MOCK)
+    _patch_cmd_with_arg(monkeypatch, p, capture)
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    await rapfi.compute_move(board, to_move=2, timeout_s=5.0)
+    assert capture.read_text() == "none"
+
+
 # --- availability probe ---------------------------------------------------
 
 async def test_probe_unavailable_when_binary_missing(monkeypatch):
