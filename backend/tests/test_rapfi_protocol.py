@@ -62,3 +62,153 @@ def test_parse_move_rejects_non_move_lines():
 def test_parse_move_rejects_out_of_range():
     assert parse_gomocup_move("20,3") is None
     assert parse_gomocup_move("-1,3") is None
+
+
+# --- subprocess driver (mock binary) --------------------------------------
+# Mock pbrain scripts: read commands on stdin line-by-line, answer on stdout.
+# Using print(..., flush=True) avoids newline-escaping inside the heredoc.
+
+NORMAL_MOCK = """\
+import sys
+def main():
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            return
+        c = line.strip()
+        if c.startswith('START'):
+            print('OK', flush=True)
+        elif c.startswith('INFO'):
+            pass
+        elif c == 'BOARD':
+            n = 0
+            while True:
+                l = sys.stdin.readline()
+                if not l or l.strip() == 'DONE':
+                    break
+                n += 1
+            print('DEBUG saw %d stones' % n, flush=True)
+            print('3,3', flush=True)   # x=col=3, y=row=3 -> (row=3,col=3)
+        elif c == 'END':
+            return
+main()
+"""
+
+HANG_MOCK = """\
+import sys, time
+def main():
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            return
+        c = line.strip()
+        if c.startswith('START'):
+            print('OK', flush=True)
+        elif c == 'BOARD':
+            while True:
+                l = sys.stdin.readline()
+                if not l or l.strip() == 'DONE':
+                    break
+            time.sleep(30)   # never answer
+        elif c == 'END':
+            return
+main()
+"""
+
+GARBAGE_MOCK = """\
+import sys
+def main():
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            return
+        c = line.strip()
+        if c.startswith('START'):
+            print('OK', flush=True)
+        elif c == 'BOARD':
+            while True:
+                l = sys.stdin.readline()
+                if not l or l.strip() == 'DONE':
+                    break
+            print('ERROR no weights', flush=True)
+            return
+        elif c == 'END':
+            return
+main()
+"""
+
+
+def _write_mock(tmp_path, body: str):
+    p = tmp_path / "mock_pbrain.py"
+    p.write_text(body, encoding="utf-8")
+    return p
+
+
+@pytest.fixture(autouse=True)
+def _reset_rapfi_state():
+    rapfi._reset_state_for_tests()
+    yield
+    rapfi._reset_state_for_tests()
+
+
+def _patch_cmd(monkeypatch, mock_path):
+    monkeypatch.setattr(rapfi, "get_rapfi_command", lambda: [sys.executable, str(mock_path)])
+    monkeypatch.setattr(rapfi, "get_model_dir", lambda: str(mock_path.parent))
+
+
+async def test_compute_move_round_trip_returns_parsed_move(tmp_path, monkeypatch):
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, NORMAL_MOCK))
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    mv = await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=5.0)
+    assert isinstance(mv, RapfiMove)
+    assert (mv.row, mv.col) == (3, 3)
+    assert mv.winning is False
+    assert mv.blocks is False
+
+
+async def test_compute_move_marks_winning(tmp_path, monkeypatch):
+    # Mock reports a move at (row=7, col=9) -> Gomocup "x,y" = "9,7".
+    winning_mock = NORMAL_MOCK.replace("3,3", "9,7")
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, winning_mock))
+    board = [[0] * 15 for _ in range(15)]
+    for c in range(5, 9):       # black four in a row, col 5..8 at row 7
+        board[7][c] = 1
+    mv = await rapfi.compute_move(board, to_move=1, time_turn_ms=500, timeout_s=5.0)
+    assert (mv.row, mv.col) == (7, 9)
+    assert mv.winning is True
+
+
+async def test_compute_move_timeout_raises_unavailable(tmp_path, monkeypatch):
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, HANG_MOCK))
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    with pytest.raises(RapfiUnavailable):
+        await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=0.5)
+
+
+async def test_compute_move_no_move_line_raises_unavailable(tmp_path, monkeypatch):
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, GARBAGE_MOCK))
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    with pytest.raises(RapfiUnavailable):
+        await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=3.0)
+
+
+async def test_circuit_breaker_trips_after_three_failures(tmp_path, monkeypatch):
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, GARBAGE_MOCK))
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    for _ in range(3):
+        with pytest.raises(RapfiUnavailable):
+            await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=1.0)
+    assert rapfi._disabled is True
+    assert rapfi._fail_count >= 3
+
+
+async def test_success_resets_failure_counter(tmp_path, monkeypatch):
+    _patch_cmd(monkeypatch, _write_mock(tmp_path, NORMAL_MOCK))
+    board = [[0] * 15 for _ in range(15)]
+    board[7][7] = 1
+    await rapfi.compute_move(board, to_move=2, time_turn_ms=500, timeout_s=5.0)
+    assert rapfi._fail_count == 0
