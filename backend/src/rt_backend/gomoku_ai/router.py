@@ -123,16 +123,14 @@ def build_router() -> APIRouter:
 
     @router.get("/engine-debug", response_model=EngineDebugOut)
     async def engine_debug():
-        """Probe Rapfi directly and return its stdout/stderr verbatim.
+        """Probe Rapfi and return its stdout/stderr verbatim.
 
-        Lets us diagnose why Rapfi isn't loading on the server (the
-        production /api/gomoku/next-move silently falls back). Returns:
-          - binary_exists: whether /opt/rapfi/pbrain-Rapfi is on disk
-          - listing: contents of /opt/rapfi (first 60 entries)
-          - cwd: the cwd Rapfi is spawned with
-          - last_stderr: stderr from the probe (and any exceptions)
-          - last_stdout: stdout (minus INFO/DEBUG noise)
-          - timed_out / exit_code: probe outcome
+        Rapfi prints any startup error to stderr (e.g. failed to load
+        weights) and then exits; the piskvork protocol only starts after
+        the config/model load succeeds. So to see the real error we
+        spawn Rapfi with NO stdin input, read stderr/stdout for 3 s, then
+        kill the process. We also try a second spawn WITH the proper
+        protocol to confirm whether a full round-trip would succeed.
         """
         import os
         import traceback
@@ -153,36 +151,32 @@ def build_router() -> APIRouter:
         stdout_chunks: list[str] = []
         rc: int | None = None
         timed_out = False
+
+        # --- Pass 1: spawn with NO stdin, just read Rapfi's startup output ---
         try:
             cmd = get_rapfi_command()
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=model_dir,
-                stdin=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            assert proc.stdin is not None and proc.stdout is not None and proc.stderr is not None
-            proc.stdin.write(b"START 15\nBOARD\n7,7,1\nDONE\nEND\n")
-            await proc.stdin.drain()
+            assert proc.stdout is not None and proc.stderr is not None
             try:
                 stdout, stderr = await asyncio.wait_for(
-                    proc.communicate(), timeout=8.0
+                    proc.communicate(), timeout=3.0
                 )
                 rc = proc.returncode
             except asyncio.TimeoutError:
+                # Rapfi is alive (waiting for stdin) — kill it. The fact that
+                # it didn't error on startup is itself useful info.
                 proc.kill()
                 await proc.wait()
                 timed_out = True
-            else:
-                stderr_chunks.append(stderr.decode("utf-8", "replace"))
-                for line in stdout.decode("utf-8", "replace").splitlines():
-                    s = line.strip()
-                    if not s:
-                        continue
-                    if s.startswith(("INFO", "DEBUG", "MESSAGE", "UNKNOWN")):
-                        continue
-                    stdout_chunks.append(s)
+                rc = proc.returncode
+            stdout_chunks.append(stdout.decode("utf-8", "replace"))
+            stderr_chunks.append(stderr.decode("utf-8", "replace"))
         except FileNotFoundError as e:
             stderr_chunks.append(f"FileNotFoundError: {e}")
         except Exception as e:
