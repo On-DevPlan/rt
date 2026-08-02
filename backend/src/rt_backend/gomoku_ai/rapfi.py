@@ -48,18 +48,21 @@ def get_model_dir() -> str:
 def board_to_gomocup_lines(board: List[List[int]], to_move: int) -> List[str]:
     """Encode the board as Gomocup BOARD-command stone lines.
 
-    Each line is ``"<col>,<row>,<color>"`` where ``to_move`` becomes color 1
-    (the side Rapfi plays) and the opponent becomes color 2. Empty cells are
-    skipped. Order is irrelevant.
+    Piskvork convention: black (value 1) is always color 1 (the first player)
+    and white (value 2) is color 2. Rapfi plays whichever side is to move
+    (determined by stone-count parity), which equals ``to_move`` for any legal
+    position. (A relative ``to_move -> color 1`` encoding is wrong: for
+    ``to_move=2`` it would put color 1 *behind* on stones, which Rapfi rejects
+    as an illegal position and never answers — verified via engine-debug, where
+    sending ``7,7,2`` for a black stone times out but ``7,7,1`` replies.)
     """
-    opp = 3 - to_move
     lines: List[str] = []
     for r in range(SIZE):
         for c in range(SIZE):
             v = board[r][c]
-            if v == to_move:
+            if v == 1:
                 lines.append(f"{c},{r},1")
-            elif v == opp:
+            elif v == 2:
                 lines.append(f"{c},{r},2")
     return lines
 

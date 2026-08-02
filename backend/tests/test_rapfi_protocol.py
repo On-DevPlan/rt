@@ -29,17 +29,20 @@ def test_encode_to_move_becomes_color_one():
     board[7][7] = 1   # black
     board[7][8] = 2   # white
     lines = board_to_gomocup_lines(board, to_move=1)  # engine = black
-    assert "7,7,1" in lines      # black -> color 1
+    assert "7,7,1" in lines      # black -> color 1 (first player)
     assert "8,7,2" in lines      # x=col=8, y=row=7, white -> color 2
 
 
-def test_encode_to_move_white_swaps_colors():
+def test_encode_is_fixed_black_color1_white_color2():
+    """Piskvork colors are fixed (black=1, white=2), independent of to_move.
+    A to_move-relative encoding would put color 1 behind on stones for
+    to_move=2, which Rapfi rejects as illegal and never answers."""
     board = [[0] * 15 for _ in range(15)]
-    board[7][7] = 1
-    board[7][8] = 2
+    board[7][7] = 1   # black
+    board[7][8] = 2   # white
     lines = board_to_gomocup_lines(board, to_move=2)  # engine = white
-    assert "8,7,1" in lines      # white -> color 1
-    assert "7,7,2" in lines      # black -> color 2
+    assert "7,7,1" in lines      # black still color 1
+    assert "8,7,2" in lines      # white still color 2
 
 
 def test_encode_skips_empty_cells():
