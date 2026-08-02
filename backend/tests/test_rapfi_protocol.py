@@ -157,6 +157,8 @@ def _reset_rapfi_state():
 def _patch_cmd(monkeypatch, mock_path):
     monkeypatch.setattr(rapfi, "get_rapfi_command", lambda: [sys.executable, str(mock_path)])
     monkeypatch.setattr(rapfi, "get_model_dir", lambda: str(mock_path.parent))
+    # The mock answers instantly; skip the real time-budget wait.
+    monkeypatch.setattr(rapfi, "_search_wait", lambda _seconds: asyncio.sleep(0))
 
 
 async def test_compute_move_round_trip_returns_parsed_move(tmp_path, monkeypatch):
@@ -245,6 +247,7 @@ def _patch_cmd_with_arg(monkeypatch, mock_path, arg):
     monkeypatch.setattr(rapfi, "get_rapfi_command",
                         lambda: [sys.executable, str(mock_path), str(arg)])
     monkeypatch.setattr(rapfi, "get_model_dir", lambda: str(mock_path.parent))
+    monkeypatch.setattr(rapfi, "_search_wait", lambda _seconds: asyncio.sleep(0))
 
 
 async def test_compute_move_sends_info_time_turn(tmp_path, monkeypatch):

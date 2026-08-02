@@ -117,6 +117,15 @@ def _reset_state_for_tests() -> None:
 
 # --- subprocess driver ----------------------------------------------------
 
+async def _search_wait(seconds: float) -> None:
+    """Let Rapfi use its time budget before we END it. Rapfi only flushes
+    stdout at exit, and END triggers stopThinking() — so if we END right after
+    DONE the search is truncated to the partial best move (~300ms regardless of
+    budget). Waiting ~budget first lets the search run to its time budget, then
+    END flushes the full-budget move. Tests monkeypatch this to run instantly."""
+    await asyncio.sleep(seconds)
+
+
 async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
     cmd = get_rapfi_command()
     try:
@@ -133,26 +142,31 @@ async def _compute_move_inner(board, to_move, time_turn_ms, timeout_s):
     protocol = "START 15\n"
     if time_turn_ms:
         # Rapfi's piskvork INFO parser uses TIMEOUT_TURN (not the Gomocup
-        # standard time_turn) — see gomocup.cpp getOption(). Value is
-        # milliseconds (core/time.h: Time = int64_t). Setting turnTime makes
-        # Rapfi search up to ~this long per move; without it Rapfi uses its
-        # default and returns almost instantly.
+        # standard time_turn) — see gomocup.cpp getOption(). Milliseconds
+        # (core/time.h: Time = int64_t).
         protocol += f"INFO timeout_turn {time_turn_ms}\n"
     protocol += "BOARD\n"
     for line in board_to_gomocup_lines(board, to_move):
         protocol += line + "\n"
     protocol += "DONE\n"
 
-    # Send the whole protocol plus END, then read ALL output until the process
-    # exits. Rapfi block-buffers stdout when piped and only flushes on exit, so
-    # a live readline() never sees the move (this was the timeout root cause —
-    # confirmed by engine-debug Pass 2 which uses communicate() and succeeds).
-    # communicate() + END forces the flush; then parse the move from the full
-    # captured output.
+    comm_timeout = 1.5
     try:
+        proc.stdin.write(protocol.encode())
+        await proc.stdin.drain()
+
+        # Wait for Rapfi to use its time budget, then END to flush + exit.
+        wait_s = (time_turn_ms / 1000.0 + 0.5) if time_turn_ms else 0.2
+        wait_s = min(wait_s, max(0.1, timeout_s - comm_timeout - 0.5))
+        await _search_wait(wait_s)
+
+        try:
+            proc.stdin.write(b"END\n")
+            await proc.stdin.drain()
+        except Exception:
+            pass
         stdout, _stderr = await asyncio.wait_for(
-            proc.communicate(input=(protocol + "END\n").encode()),
-            timeout=timeout_s,
+            proc.communicate(), timeout=comm_timeout
         )
     except asyncio.TimeoutError:
         proc.kill()
