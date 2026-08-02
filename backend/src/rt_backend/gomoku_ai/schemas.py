@@ -46,3 +46,24 @@ class NextMoveResponse(BaseModel):
     top_moves: List[MoveOut]
     elapsed_ms: float
     engine: str = "rapfi"
+
+
+class EngineDebugOut(BaseModel):
+    """Diagnostic payload returned by GET /api/gomoku/engine-debug.
+
+    Lets us see WHY Rapfi isn't loading on the server (the production
+    next-move endpoint silently falls back to Python). Includes the raw
+    stdout/stderr from a /opt/rapfi/pbrain-Rapfi subprocess probe so the
+    actual Rapfi error message is visible from outside the container.
+    """
+
+    binary_path: str
+    binary_exists: bool
+    cwd: str
+    listing: List[str]
+    stdout: List[str]
+    stderr: List[str]
+    exit_code: int | None
+    timed_out: bool
+    probe_ok: bool | None
+    rapfi_available: bool

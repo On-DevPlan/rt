@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import List
 
@@ -9,8 +10,10 @@ from fastapi import APIRouter, HTTPException
 
 from .board import SIZE, has_any_stone
 from .rapfi import RapfiUnavailable, compute_move, is_rapfi_available
-from .schemas import MoveOut, NextMoveRequest, NextMoveResponse
+from .schemas import EngineDebugOut, MoveOut, NextMoveRequest, NextMoveResponse
 from .service import Move, best_move, top_moves
+
+log = logging.getLogger(__name__)
 
 
 def _to_row_col(move: Move) -> MoveOut:
@@ -45,8 +48,8 @@ def build_router() -> APIRouter:
             try:
                 mv = await compute_move(board, to_move, time_turn, timeout_s=timeout)
                 return mv, "rapfi"
-            except RapfiUnavailable:
-                pass
+            except RapfiUnavailable as e:
+                log.warning("rapfi compute_move failed, falling back: %s", e)
         mv = await asyncio.to_thread(best_move, board, to_move, strength=strength)
         return mv, "python-fallback"
 
@@ -110,6 +113,98 @@ def build_router() -> APIRouter:
             top_moves=[_to_row_col(m) for m in alts],
             elapsed_ms=round((time.perf_counter() - started) * 1000, 3),
             engine=engine,
+        )
+
+    @router.get("/engine-debug", response_model=EngineDebugOut)
+    async def engine_debug():
+        """Probe Rapfi directly and return its stdout/stderr verbatim.
+
+        Lets us diagnose why Rapfi isn't loading on the server (the
+        production /api/gomoku/next-move silently falls back). Returns:
+          - binary_exists: whether /opt/rapfi/pbrain-Rapfi is on disk
+          - listing: contents of /opt/rapfi (first 60 entries)
+          - cwd: the cwd Rapfi is spawned with
+          - last_stderr: up to 4 KB of stderr from the probe
+          - last_stdout: up to 4 KB of stdout from the probe (excluding
+                          'INFO'/'DEBUG'/'MESSAGE' noise that the protocol loop
+                          didn't consume)
+          - timed_out / exit_code: probe outcome
+        """
+        import os
+
+        from .rapfi import _binary_exists, _probe, _reset_state_for_tests
+
+        _reset_state_for_tests()  # allow re-probe even if previously disabled
+
+        bin_path = get_rapfi_command()[0]
+        model_dir = get_model_dir()
+        binary_on_disk = os.path.isfile(bin_path)
+        try:
+            listing = sorted(os.listdir(model_dir))[:60]
+        except OSError as e:
+            listing = [f"<listdir error: {e}>"]
+
+        # Run the probe and capture stderr/stdout directly so we can see what
+        # Rapfi actually prints on startup (e.g. "failed to load model ...").
+        stderr_chunks: list[str] = []
+        stdout_chunks: list[str] = []
+        rc: int | None = None
+        timed_out = False
+        try:
+            cmd = get_rapfi_command()
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=model_dir,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            assert proc.stdin and proc.stdout and proc.stderr
+            proc.stdin.write(b"START 15\nBOARD\n7,7,1\nDONE\nEND\n")
+            await proc.stdin.drain()
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(), timeout=8.0
+                )
+                rc = proc.returncode
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                timed_out = True
+            else:
+                stderr_chunks.append(stderr.decode("utf-8", "replace"))
+                # filter stdout to non-noise lines so we can see move/error
+                for line in stdout.decode("utf-8", "replace").splitlines():
+                    s = line.strip()
+                    if not s:
+                        continue
+                    if s.startswith(("INFO", "DEBUG", "MESSAGE", "UNKNOWN")):
+                        continue
+                    stdout_chunks.append(s)
+        except FileNotFoundError as e:
+            stderr_chunks.append(f"FileNotFoundError: {e}")
+        except Exception as e:
+            stderr_chunks.append(f"spawn error: {type(e).__name__}: {e}")
+
+        # Also try a normal probe (so we know whether the probe would succeed
+        # under the current setup):
+        probe_ok: bool | None = None
+        try:
+            probe_ok = bool(await _probe())
+        except Exception as e:
+            stderr_chunks.append(f"probe error: {type(e).__name__}: {e}")
+
+        return EngineDebugOut(
+            binary_path=bin_path,
+            binary_exists=binary_on_disk,
+            cwd=model_dir,
+            listing=listing,
+            stdout=stdout_chunks[:80],
+            stderr=stderr_chunks,
+            exit_code=rc,
+            timed_out=timed_out,
+            probe_ok=probe_ok,
+            rapfi_available=await is_rapfi_available(),
         )
 
     return router
