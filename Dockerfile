@@ -51,7 +51,7 @@ COPY supervisord.conf /etc/supervisord.conf
 COPY backend/ /app/backend/
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx supervisor ca-certificates curl \
+    nginx supervisor ca-certificates curl libatomic1 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/log /var/run \
     && rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default 2>/dev/null || true
