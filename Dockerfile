@@ -17,19 +17,49 @@ RUN mkdir -p build/avx2 && cd build/avx2 \
         -DCMAKE_BUILD_TYPE=Release \
         -DUSE_SSE=ON -DUSE_AVX2=ON -DUSE_AVX512=OFF -DUSE_BMI2=OFF -DUSE_VNNI=OFF \
     && cmake --build . -j"$(nproc)"
-# Assemble engine dir: binary + config + all NNUE/classical weights flat
+# Assemble engine dir: binary + config + NNUE weights flat
 # (Rapfi auto-loads weights from the directory containing the executable).
 # CMake target outputs "pbrain-rapfi" (Gomocup convention, confirmed by CI build log).
-# Use gomocalc-classical220723.toml (binary_file=model220723.bin, min_version 0,41,1)
-# because the default config.toml references model210901.bin which Rapfi 250615
-# rejects as an outdated model format. classical220723 is the newest classical
-# model in rapfi-networks; 250615 (ver 0,43,2) satisfies its min_version.
+#
+# The bundled rapfi-networks configs all reference classical binary_file models
+# (model210901.bin / model220723.bin) that Rapfi 250615 (ver 0,43,2) rejects
+# as an outdated format. The modern Rapfi path is NNUE-only: drop binary_file
+# and use the inline eval tables + mix9svq NNUE weights. This config is
+# written inline here (rather than copied + sed-patched) so it's the only
+# source of truth and the version match is explicit.
 RUN mkdir -p /out \
     && cp build/avx2/pbrain-rapfi /out/pbrain-Rapfi \
     && chmod +x /out/pbrain-Rapfi \
-    && cp /src/rapfi/Networks/config-example/gomocalc-classical220723.toml /out/config.toml \
     && cp /src/rapfi/Networks/mix9svq/*.bin.lz4 /out/ \
-    && cp /src/rapfi/Networks/classical/model220723.bin /out/
+    && cat > /out/config.toml <<'RAPFI_CONFIG'
+[requirement]
+min_version = [0,43,1]
+
+[general]
+reload_config_each_move = false
+clear_hash_after_config_loaded = false
+default_thread_num = 1
+message_mode = "normal"
+coord_conversion_mode = "none"
+default_candidate_range = "square3_line4"
+memory_reserved_mb = 0
+default_tt_size_kb = 32768
+
+[model]
+
+[model.evaluator]
+type = "mix9svq"
+draw_black_winrate = 0.5
+draw_ratio = 1.0
+
+[[model.evaluator.weights]]
+weight_file = "mix9svqstandard_bs15.bin.lz4"
+[[model.evaluator.weights]]
+weight_file = "mix9svqfreestyle_bsmix.bin.lz4"
+[[model.evaluator.weights]]
+weight_file_black = "mix9svqrenju_bs15_black.bin.lz4"
+weight_file_white = "mix9svqrenju_bs15_white.bin.lz4"
+RAPFI_CONFIG
 
 # Stage 1: build the React frontend
 FROM node:20-alpine AS frontend
