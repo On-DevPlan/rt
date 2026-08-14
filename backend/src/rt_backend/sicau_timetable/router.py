@@ -1,4 +1,5 @@
 """SICAU jiaowu timetable HTTP endpoints."""
+import logging
 from typing import Callable
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,6 +13,8 @@ from .service import (
     SicauError,
     fetch_timetable_dsl,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def build_router(
@@ -37,7 +40,11 @@ def build_router(
         except SicauError as e:
             raise HTTPException(status_code=502, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            # Log full traceback to container stderr (supervisord -> /var/log/backend.err.log)
+            # and surface a non-empty detail so the frontend can show something useful.
+            # repr() avoids the empty `str(httpx.TimeoutException(...))` gotcha.
+            logger.exception("sicau timetable failed user=%s semester=%s", req.user_id, semester)
+            raise HTTPException(status_code=500, detail=repr(e))
         return TimetableResponse(**result)
 
     return router
