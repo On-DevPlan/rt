@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     sicau_default_semester: str = "2025-2026-2"
     sicau_request_timeout_sec: int = 30
 
+    # --- Anime season (yuc.wiki + bangumi fallback) ---
+    anime_cache_ttl_sec: int = 21600  # 6h，契约 §3.5
+    anime_upstream_timeout_sec: int = 15
+
     tts_cache_db_path: str = "./tts_cache.db"
 
     # --- Rapfi (gomoku engine) ---
