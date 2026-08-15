@@ -124,11 +124,16 @@ def parse_yuc_page(html: str, page_year: int, page_month: int) -> list[dict]:
         time_p = tag.find("p", class_=re.compile(r"^imgtext"))
         if not time_p:
             continue
-        norm = normalize_time(time_p.get_text(strip=True))
-        if not norm:
-            continue  # 无合法时刻（如网络放送日期）
-        carry, hhmm = norm
-        weekday = ((current_weekday - 1 + carry) % 7) + 1
+        # 文本可能是合法时刻（"21:00~" / "24:30~"）或状态标记（"完结"）。
+        # 过去季页（季已结束）用 "完结" 取代时刻——仍保留条目，只把 time 置 null。
+        time_text = time_p.get_text(strip=True)
+        norm = normalize_time(time_text)
+        hhmm: Optional[str] = None
+        if norm:
+            carry, hhmm = norm
+            weekday = ((current_weekday - 1 + carry) % 7) + 1
+        else:
+            weekday = current_weekday
 
         img = tag.find("img")
         key = _img_key(img) if img else None

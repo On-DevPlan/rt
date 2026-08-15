@@ -9,6 +9,7 @@ from rt_backend.anime_season.yuc import (
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "yuc_sample.html"
+PAST_FIXTURE = Path(__file__).parent / "fixtures" / "yuc_past_season.html"
 
 
 def test_normalize_time_regular():
@@ -87,3 +88,33 @@ def test_parse_page_grid_start_date_from_imgep2():
     items = {i["title"]: i for i in parse_yuc_page(FIXTURE.read_text(encoding="utf-8"), 2026, 7)}
     # imgep2 "8/12~" 中途加入 → startDateIso 兜底
     assert items["跨季续播番 第4期 Part.2 夺还篇"]["startDateIso"] == "2026-08-12"
+
+
+def test_parse_past_season_keeps_finished_entries():
+    """过去季页用 <p class=imgtext2>完结</p> 取代时刻 —— 仍保留条目，time=null。
+
+    这是兼容性修复：之前 parser 因 normalize_time("完结") 返 None 而跳过整行，
+    导致 2025年1月页 63 条只剩 1 条；现在保留全部（time=null，weekday 来自节头）。
+    """
+    items = parse_yuc_page(PAST_FIXTURE.read_text(encoding="utf-8"), 2025, 1)
+    titles = {i["title"] for i in items}
+    # 2 个 TV 网格完结条目保留；网络放送条目被过滤
+    assert len(items) == 2
+    assert "网络独播番" not in titles
+    # 所有保留条目 time=null，但 weekday/startDateIso/episodes 都有
+    for i in items:
+        assert i["time"] is None
+        assert i["weekday"] is not None
+        assert i["startDateIso"] is not None
+        assert i["episodes"] is not None
+
+
+def test_parse_past_season_detail_join_still_works():
+    """imgtext2 完结条目仍按图片哈希 join 详情区拿到 titleNative/sourceUrl/eps."""
+    items = {i["title"]: i for i in parse_yuc_page(PAST_FIXTURE.read_text(encoding="utf-8"), 2025, 1)}
+    re0 = items["Re:从零开始的异世界生活 第3期 Part.2 反击篇"]
+    assert re0["titleNative"] == "Re:ゼロから始める異世界生活 3rd season"
+    assert re0["weekday"] == 3
+    assert re0["startDateIso"] == "2025-02-05"  # 详情 broadcast_r "2/5周三晚间"
+    assert re0["episodes"] == 8  # 详情 (全8话) 覆盖网格
+    assert re0["sourceUrl"] == "https://re-zero-anime.jp/tv/"
