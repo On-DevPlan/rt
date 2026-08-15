@@ -13,10 +13,11 @@ class AnimeItem(BaseModel):
     titleNative: Optional[str] = Field(None, description="日文原名")
     startDateIso: Optional[str] = Field(None, description="开播日期 YYYY-MM-DD (JST)")
     weekday: Optional[int] = Field(None, ge=1, le=7, description="1=周一..7=周日，JST 自然日")
-    time: Optional[str] = Field(None, description="HH:mm JST 自然日 24h 制")
+    time: Optional[str] = Field(None, description="HH:mm JST 自然日 24h 制；完结剧为 null")
     episodes: Optional[int] = Field(None, gt=0)
     durationMin: Optional[int] = Field(None, gt=0)
     sourceUrl: Optional[str] = Field(None)
+    finished: bool = Field(False, description="True = 季已完结/剧已停播（time 必为 null）")
     matchedSources: List[str] = Field(default_factory=list)
 
 

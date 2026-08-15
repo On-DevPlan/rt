@@ -91,7 +91,7 @@ def test_parse_page_grid_start_date_from_imgep2():
 
 
 def test_parse_past_season_keeps_finished_entries():
-    """过去季页用 <p class=imgtext2>完结</p> 取代时刻 —— 仍保留条目，time=null。
+    """过去季页用 <p class=imgtext2>完结</p> 取代时刻 —— 仍保留条目，time=null、finished=true。
 
     这是兼容性修复：之前 parser 因 normalize_time("完结") 返 None 而跳过整行，
     导致 2025年1月页 63 条只剩 1 条；现在保留全部（time=null，weekday 来自节头）。
@@ -101,12 +101,21 @@ def test_parse_past_season_keeps_finished_entries():
     # 2 个 TV 网格完结条目保留；网络放送条目被过滤
     assert len(items) == 2
     assert "网络独播番" not in titles
-    # 所有保留条目 time=null，但 weekday/startDateIso/episodes 都有
+    # 所有保留条目 time=null, finished=True
     for i in items:
         assert i["time"] is None
+        assert i["finished"] is True
         assert i["weekday"] is not None
         assert i["startDateIso"] is not None
         assert i["episodes"] is not None
+
+
+def test_parse_current_season_finished_false():
+    """当前季页用 <p class=imgtext4/5>HH:mm~</p> —— finished=False。"""
+    items = parse_yuc_page(FIXTURE.read_text(encoding="utf-8"), 2026, 7)
+    for i in items:
+        assert i["finished"] is False
+        assert i["time"] is not None
 
 
 def test_parse_past_season_detail_join_still_works():

@@ -178,6 +178,8 @@ def parse_yuc_page(html: str, page_year: int, page_month: int) -> list[dict]:
                 "episodes": eps,
                 "durationMin": None,
                 "sourceUrl": (detail and detail["url"]) or None,
+                # yuc 网格 <p class=imgtext2>完结</p> 标记 = 季已结束，时刻不可考
+                "finished": hhmm is None,
                 "matchedSources": ["yuc"],
             }
         )
