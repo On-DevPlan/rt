@@ -115,6 +115,46 @@ def build_sheet_router(store_provider) -> APIRouter:
             headers={"Content-Disposition": f'attachment; filename="frames-{job_id}.zip"'},
         )
 
+    @router.get("/jobs/{job_id}/frames/{filename}")
+    def get_single_frame(
+        job_id: str, filename: str, store: IslandSheetJobStore = Depends(_store),
+    ):
+        """单帧直下（路径穿越防御：白名单 frame_NNNNN.png + 路径必须在 frames_dir 内）。"""
+        job = _job_or_404(job_id, store)
+        # 白名单：仅 frame_NNNNN.png（5 位数字）
+        import re as _re
+        if not _re.fullmatch(r"frame_\d{5}\.png", filename):
+            raise HTTPException(404, f"非法文件名: {filename}")
+        target = (job.frames_dir / filename).resolve()
+        if job.frames_dir.resolve() not in target.parents:
+            raise HTTPException(404, f"非法路径: {filename}")
+        if not target.exists():
+            raise HTTPException(404, f"帧不存在: {filename}")
+        return FileResponse(target, media_type="image/png")
+
+    @router.get("/jobs/{job_id}/bundle.zip")
+    def get_bundle_zip(job_id: str, store: IslandSheetJobStore = Depends(_store)):
+        """全产物 zip：sheet.png + frames.json + frames/*.png + preview.apng + preview.webp。"""
+        job = _job_or_404(job_id, store)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            if job.sheet_path.exists():
+                zf.write(job.sheet_path, "sheet.png")
+            if job.frames_json_path.exists():
+                zf.write(job.frames_json_path, "frames.json")
+            if job.frames_dir.exists():
+                for fp in sorted(job.frames_dir.glob("*.png")):
+                    zf.write(fp, f"frames/{fp.name}")
+            if job.preview_apng_path.exists():
+                zf.write(job.preview_apng_path, "preview.apng")
+            if job.preview_webp_path.exists():
+                zf.write(job.preview_webp_path, "preview.webp")
+        return Response(
+            content=buf.getvalue(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="sheet-bundle-{job_id}.zip"'},
+        )
+
     @router.get("/jobs/{job_id}/preview.apng")
     def get_preview_apng(job_id: str, store: IslandSheetJobStore = Depends(_store)):
         job = _job_or_404(job_id, store)

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   DEFAULT_PARAMS, cutVideo,
   sheetUrl, framesZipUrl, framesJsonUrl,
-  previewApngUrl, previewWebpUrl,
+  previewApngUrl, previewWebpUrl, bundleZipUrl,
 } from '../services/videoSheetApi.js'
 import styles from './IslandCutPage.module.css'
 
@@ -149,8 +149,11 @@ export default function VideoSheetPanel() {
             <a className={styles.primaryBtn} href={sheetUrl(result.job_id)} download>
               ⬇ sheet.png
             </a>
-            <a className={styles.primaryBtn} href={framesZipUrl(result.job_id)} download>
-              ⬇ frames.zip
+            <a className={styles.primaryBtn} href={bundleZipUrl(result.job_id)} download>
+              ⬇ bundle.zip
+            </a>
+            <a className={styles.ghostBtn} href={framesZipUrl(result.job_id)} download>
+              frames.zip
             </a>
             <a className={styles.ghostBtn} href={framesJsonUrl(result.job_id)} target="_blank" rel="noreferrer">
               frames.json

@@ -114,6 +114,7 @@ def process_video(
                 "filename": f"frames/{name}",
                 "col": c, "row": r,
                 "bbox": bbox,
+                "t": round(i / fps, 3),  # mpdecimate 后每帧=等间隔 1/fps 秒
             })
             sheet_img.save(out_dir / "sheet.png")
 

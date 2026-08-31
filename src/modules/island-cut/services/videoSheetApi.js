@@ -37,3 +37,5 @@ export const framesZipUrl = (jobId) => `${API_BASE}/jobs/${jobId}/frames.zip`
 export const framesJsonUrl = (jobId) => `${API_BASE}/jobs/${jobId}/frames.json`
 export const previewApngUrl = (jobId) => `${API_BASE}/jobs/${jobId}/preview.apng`
 export const previewWebpUrl = (jobId) => `${API_BASE}/jobs/${jobId}/preview.webp`
+export const bundleZipUrl = (jobId) => `${API_BASE}/jobs/${jobId}/bundle.zip`
+export const singleFrameUrl = (jobId, filename) => `${API_BASE}/jobs/${jobId}/frames/${filename}`
