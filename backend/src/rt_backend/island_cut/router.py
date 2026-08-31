@@ -86,7 +86,11 @@ def build_router(store_provider) -> APIRouter:
         job = _job_or_404(job_id, store)
         if not any(p["filename"] == filename for p in job.pieces):
             raise HTTPException(404, f"切片不存在: {filename}")
-        return FileResponse(job.dir / filename, media_type="image/png")
+        # 走 attachment：浏览器触发下载而非打开大图；filename 参数固定 Content-Disposition
+        return FileResponse(
+            job.dir / filename, media_type="image/png",
+            filename=filename, content_disposition_type="attachment",
+        )
 
     @router.get("/jobs/{job_id}/full.png")
     def get_full(job_id: str, store: IslandJobStore = Depends(_store)):

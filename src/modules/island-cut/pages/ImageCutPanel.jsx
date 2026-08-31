@@ -207,6 +207,14 @@ export default function ImageCutPanel() {
                   <figcaption>
                     <span className="mono">{p.filename}</span>
                     <span>{p.width}×{p.height} · {p.area.toLocaleString()}px</span>
+                    <a
+                      className={styles.pieceDownload}
+                      href={pieceUrl(result.job_id, p.filename)}
+                      download={p.filename}
+                      title={`下载 ${p.filename}`}
+                    >
+                      ⬇
+                    </a>
                   </figcaption>
                 </figure>
               ))}

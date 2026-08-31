@@ -266,3 +266,21 @@
   color: var(--muted);
   border-top: 1px solid var(--line);
 }
+
+
+.pieceDownload {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  align-self: flex-start;
+}
+.pieceDownload:hover {
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+  text-decoration: none;
+}
