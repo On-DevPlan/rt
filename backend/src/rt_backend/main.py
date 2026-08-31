@@ -10,6 +10,7 @@ from .core.config import get_settings
 from .core.http import HttpClientHolder
 from .core.logging import configure_logging, request_id_middleware
 from .island_cut.store import IslandJobStore
+from .island_cut.video_island.store import IslandVideoJobStore
 from .tts.cache import TTSCache
 
 
@@ -99,6 +100,21 @@ def create_app() -> FastAPI:
 
     from .island_cut.router import build_router as _build_island_cut
     app.include_router(_build_island_cut(_island_store_dep))
+
+    video_root = (
+        Path(settings.video_island_dir)
+        if settings.video_island_dir
+        else Path(tempfile.gettempdir()) / "rt_island_cut_video"
+    )
+    app.state.video_store = IslandVideoJobStore(
+        root=video_root, ttl_sec=settings.video_island_ttl_min * 60
+    )
+
+    def _island_video_store_dep(request: _Req) -> IslandVideoJobStore:
+        return request.app.state.video_store
+
+    from .island_cut.video_island.router import build_video_router as _build_video_island
+    app.include_router(_build_video_island(_island_video_store_dep))
 
     return app
 
