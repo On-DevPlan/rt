@@ -26,5 +26,7 @@ export const ISLAND_CUT_TABS = [
   {
     id: 'video-sheet',
     label: '视频 → Sheet',
+    locked: true,
+    lockReason: '预览机制维护中',
   },
 ]

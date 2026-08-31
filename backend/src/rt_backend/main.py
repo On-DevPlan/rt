@@ -67,6 +67,18 @@ def create_app() -> FastAPI:
     async def _rid(request, call_next):
         return await request_id_middleware(request, call_next)
 
+    # video-sheet 整模块封锁（预览是其中 11MB/job 的浪费 + OOM 风险）
+    # 取消封锁：删除此中间件 或 改 path 不以 /api/island-cut/video-sheet 开头
+    @app.middleware("http")
+    async def _lock_sheet_module(request, call_next):
+        if request.url.path.startswith("/api/island-cut/video-sheet"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                {"detail": "video-sheet 模块维护中（预览机制暂禁用）", "locked": True},
+                status_code=503,
+            )
+        return await call_next(request)
+
     @app.get("/health")
     async def health():
         return {"status": "ok"}

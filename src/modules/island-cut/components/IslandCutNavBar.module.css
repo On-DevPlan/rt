@@ -41,3 +41,14 @@
   background: rgba(127, 127, 127, 0.18);
   color: var(--muted);
 }
+
+.tabLocked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.tabLocked:hover {
+  border-color: transparent;
+  background: transparent;
+}
