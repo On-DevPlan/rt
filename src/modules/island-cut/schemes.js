@@ -16,6 +16,10 @@ export const ISLAND_CUT_TABS = [
     label: '视频 → GIF',
   },
   {
+    id: 'video-webp',
+    label: '视频 → WebP',
+  },
+  {
     id: 'video-apng',
     label: '视频 → APNG',
     badge: '未来',

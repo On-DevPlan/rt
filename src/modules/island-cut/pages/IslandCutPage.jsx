@@ -3,11 +3,13 @@ import { ISLAND_CUT_TABS } from '../schemes.js'
 import { IslandCutNavBar } from '../components/IslandCutNavBar.jsx'
 import ImageCutPanel from './ImageCutPanel.jsx'
 import VideoGifPanel from './VideoGifPanel.jsx'
+import VideoWebpPanel from './VideoWebpPanel.jsx'
 import VideoApngPanel from './VideoApngPanel.jsx'
 
 const PANEL_BY_ID = {
   'image-cut': ImageCutPanel,
   'video-gif': VideoGifPanel,
+  'video-webp': VideoWebpPanel,
   'video-apng': VideoApngPanel,
 }
 
