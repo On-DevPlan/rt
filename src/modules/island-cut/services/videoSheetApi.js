@@ -10,7 +10,8 @@ export const DEFAULT_PARAMS = {
   min_area: 200,
   max_duration_sec: 60,
   max_frames: 600,
-  max_output_kb: null  // 输出体积上限 KB；null = 不限制
+  max_output_kb: null,  // 输出体积上限 KB；null = 不限制
+  max_size: 512  // 画布长边像素；0 = 不缩放
 }
 
 export async function cutVideo(file, params) {

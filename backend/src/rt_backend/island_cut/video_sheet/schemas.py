@@ -10,6 +10,8 @@ class SheetParams(BaseModel):
     max_frames: int = Field(600, ge=1, le=3000)
     max_output_bytes: int | None = Field(None, ge=1024, le=500_000_000,
                                        description="输出产物总体积上限（字节）；超限自动二分 fps 重抽帧")
+    max_size: int = Field(512, ge=0, le=2048,
+                          description="canvas 长边像素（0 = 不缩放）；控制 sheet 位图内存与体积")
 
 
 class SheetResponse(BaseModel):

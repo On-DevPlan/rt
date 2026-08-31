@@ -54,6 +54,7 @@ def process_video(
     max_duration_sec: int = 60,
     max_frames: int = 600,
     max_output_bytes: int | None = None,
+    max_size: int = 512,
 ) -> SheetResult:
     """写 out_dir 下的全部产物（sheet.png / frames/ / frames.json / preview.*）。
 
@@ -65,6 +66,10 @@ def process_video(
     若 max_output_bytes 设置：写盘后统计产物总字节数，超限则二分 fps 阶梯
     （fps/2, fps/4, fps/8, 1）重抽帧重做全流程，直到 ≤ 限值。
     仍超限抛 ValueError（router 转 413）。
+
+    内存策略（300MB 预算 / 1.8GB 主机实测 OOM 教训）：
+      渲染后 RGBA 立即落盘，内存只留 (name, bbox, bg) 元数据；
+      sheet 拼装与预览逐帧从磁盘读回（canvas 经 max_size 缩放控制位图峰值）。
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -86,8 +91,8 @@ def process_video(
             if len(frames) > max_frames:
                 raise SheetOversizeError(f"采样帧数 {len(frames)} 超过 {max_frames}")
 
-            # 每帧独立处理
-            rendered: list[tuple[str, np.ndarray, tuple[int, int, int, int] | None, list[int]]] = []
+            # 每帧独立处理：RGBA 处理完立即落盘（磁盘换内存），内存只留元数据
+            rendered: list[tuple[str, tuple[int, int, int, int] | None, list[int]]] = []
             for f in frames:
                 rgba = np.array(Image.open(f).convert("RGBA"))
                 bg_color = bg.estimate_bg_from_border(rgba)
@@ -97,19 +102,29 @@ def process_video(
                 subject = fg.keep_largest_island(foreground, min_area)
                 alpha = feather.feathering(subject) * 255
                 out_rgba = np.dstack([rgba[..., :3], alpha])
+                del rgba
                 ys, xs = np.where(subject)
                 bbox = (int(ys.min()), int(xs.min()), int(ys.max()) + 1, int(xs.max()) + 1) if len(ys) else None
-                rendered.append((f.name, out_rgba, bbox, bg_color.tolist()))
+                Image.fromarray(out_rgba, "RGBA").save(frames_dir / f.name)
+                rendered.append((f.name, bbox, bg_color.tolist()))
+                del out_rgba
 
-            valid = [r for r in rendered if r[2] is not None]
+            valid = [r for r in rendered if r[1] is not None]
             if not valid:
                 raise ValueError("全片未识别到主体（检查 tol / min-area）")
 
-            uy0 = min(r[2][0] for r in valid)
-            ux0 = min(r[2][1] for r in valid)
-            uy1 = max(r[2][2] for r in valid)
-            ux1 = max(r[2][3] for r in valid)
+            uy0 = min(r[1][0] for r in valid)
+            ux0 = min(r[1][1] for r in valid)
+            uy1 = max(r[1][2] for r in valid)
+            ux1 = max(r[1][3] for r in valid)
             canvas_h, canvas_w = uy1 - uy0, ux1 - ux0
+
+            # canvas 过大时缩帧（内存/浏览器渲染双约束）：NEAREST 保像素锐利
+            scale = 1.0
+            if max_size and max(canvas_h, canvas_w) > max_size:
+                scale = max_size / max(canvas_h, canvas_w)
+                canvas_h = max(1, round(canvas_h * scale))
+                canvas_w = max(1, round(canvas_w * scale))
 
             n = len(rendered)
             cols = int(np.ceil(np.sqrt(n)))
@@ -121,18 +136,29 @@ def process_video(
             meta = {
                 "fps_hint": trial_fps,
                 "params": {"tol": tol, "min_area": min_area},
-                "canvas": {"x": ux0, "y": uy0, "w": canvas_w, "h": canvas_h},
+                "canvas": {"x": ux0, "y": uy0, "w": round((ux1 - ux0) * scale), "h": round((uy1 - uy0) * scale)},
+                "canvas_src": {"x": ux0, "y": uy0, "w": ux1 - ux0, "h": uy1 - uy0},
+                "scale": round(scale, 4),
                 "grid": {"cols": cols, "rows": rows},
                 "canvas_size": {"w": sheet_w, "h": sheet_h},
                 "frames": [],
-                "per_frame_bg": [r[3] for r in rendered],
+                "per_frame_bg": [r[2] for r in rendered],
             }
 
-            for i, (name, rgba, bbox, _) in enumerate(rendered):
+            for i, (name, bbox, _) in enumerate(rendered):
                 r, c = divmod(i, cols)
-                cropped = rgba[uy0:uy1, ux0:ux1] if bbox else np.zeros((canvas_h, canvas_w, 4), np.uint8)
-                sheet_img.paste(Image.fromarray(cropped, "RGBA"), (c * canvas_w, r * canvas_h))
-                Image.fromarray(rgba, "RGBA").save(frames_dir / name)
+                if bbox:
+                    rgba = np.array(Image.open(frames_dir / name).convert("RGBA"))  # 按需读回
+                    cropped = rgba[uy0:uy1, ux0:ux1]
+                    del rgba
+                    im = Image.fromarray(cropped, "RGBA")
+                    if scale != 1.0:
+                        im = im.resize((canvas_w, canvas_h), Image.NEAREST)
+                    del cropped
+                else:
+                    im = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+                sheet_img.paste(im, (c * canvas_w, r * canvas_h))
+                del im
                 meta["frames"].append({
                     "id": f"frame_{i:03d}",
                     "filename": f"frames/{name}",
@@ -145,11 +171,12 @@ def process_video(
             # 预览 APNG + Animated WebP（小尺寸 + 8fps）
             PREVIEW_W, PREVIEW_FPS = 240, 8
             imgs_small: list[Image.Image] = []
-            for _, rgba_full, _, _ in rendered:
-                h, w = rgba_full.shape[:2]
+            for name, _, _ in rendered:
+                im = Image.open(frames_dir / name).convert("RGBA")  # 按需读回
+                h, w = im.height, im.width
                 tw = max(1, int(w * PREVIEW_W / h))
-                im = Image.fromarray(rgba_full, "RGBA").resize((tw, PREVIEW_W), Image.NEAREST)
-                imgs_small.append(im)
+                imgs_small.append(im.resize((tw, PREVIEW_W), Image.NEAREST))
+                im.close()
             if imgs_small:
                 frame_ms = int(1000 / PREVIEW_FPS)
                 imgs_small[0].save(

@@ -12,6 +12,7 @@ const PARAM_FIELDS = [
   { key: 'min_area',         label: '最小岛屿', min: 50, max: 5000, step: 50, hint: '低于此像素数的岛屿视为噪点丢弃' },
   { key: 'max_duration_sec', label: '时长上限', min: 10, max: 300, step: 10, hint: '超过抛 413' },
   { key: 'max_frames',       label: '帧数上限', min: 60, max: 1500, step: 30, hint: '超过抛 413' },
+  { key: 'max_size',         label: '画布长边', min: 0,  max: 2048, step: 32, hint: '统一画布长边像素（0=不缩放）；控制 sheet 尺寸与内存' },
 ]
 
 /** 体积上限独立输入（KB，空 = 不限制） */
