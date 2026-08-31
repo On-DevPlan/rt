@@ -1,5 +1,7 @@
 """FastAPI application factory."""
 from contextlib import asynccontextmanager
+from pathlib import Path
+import tempfile
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import get_settings
 from .core.http import HttpClientHolder
 from .core.logging import configure_logging, request_id_middleware
+from .island_cut.store import IslandJobStore
 from .tts.cache import TTSCache
 
 
@@ -21,6 +24,15 @@ async def lifespan(app: FastAPI):
 
     tts_cache = TTSCache(settings.tts_cache_db_path)
     app.state.tts_cache = tts_cache
+
+    island_root = (
+        Path(settings.island_cut_dir)
+        if settings.island_cut_dir
+        else Path(tempfile.gettempdir()) / "rt_island_cut"
+    )
+    app.state.island_store = IslandJobStore(
+        root=island_root, ttl_sec=settings.island_cut_ttl_min * 60
+    )
 
     try:
         yield
@@ -81,6 +93,12 @@ def create_app() -> FastAPI:
 
     from .anime_season.router import build_router as _build_anime
     app.include_router(_build_anime(_http_dep, settings))
+
+    def _island_store_dep(request: _Req) -> IslandJobStore:
+        return request.app.state.island_store
+
+    from .island_cut.router import build_router as _build_island_cut
+    app.include_router(_build_island_cut(_island_store_dep))
 
     return app
 

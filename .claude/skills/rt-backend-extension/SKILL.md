@@ -286,7 +286,14 @@ docker exec -it rt_app tail -f /var/log/backend.err.log
 
 一句话：在 `bilibili_history/` feature 目录加 `service.py` + `router.py`，`POST /api/bilibili/history/recent` 入参 `{sessdata, extra_cookies?, days?, business?, max_pages?}`，上游是 `api.bilibili.com/x/web-interface/history/cursor`（只需 cookie 鉴权，不需要 WBI 签名）。
 
-### 4. 鉴权模式
+### 4. `island_cut/` — 岛屿切割（图片 → 透明像素块）
+
+- 路由：`POST /api/island-cut/jobs`（multipart 上传 + params JSON 表单字段）/ `GET .../pieces/{filename}` / `GET .../full.png` / `GET .../zip` / `DELETE .../jobs/{id}`
+- 依赖：numpy / pillow / scipy / python-multipart；`IslandJobStore` 在 lifespan 挂到 `app.state`（系统临时目录 + TTL 惰性清扫，`island_cut_ttl_min` 配置）
+- 参考点：CPU 密集任务用**同步 def 端点**（FastAPI 自动进线程池）；依赖 provider 的 `request` 参数必须标 `Request` 类型注解，否则 FastAPI 误判为 query 参数报 422；上传大小与 nginx `client_max_body_size 50m` 对齐
+- 前端：`src/modules/island-cut/`（`/island-cut/studio`）
+
+### 5. 鉴权模式
 
 当前所有路由**无后端鉴权**——按设计是单机自用工具。如果是 `bilibili_history` 这类需要用户提供第三方凭证的接口，**部署时务必加一层调用方鉴权**（JWT、API key、或放在只监听 `127.0.0.1` 的 nginx 后）。
 

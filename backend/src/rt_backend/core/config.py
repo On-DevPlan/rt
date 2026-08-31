@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     tts_cache_db_path: str = "./tts_cache.db"
 
+    # --- Island cut (临时持久化，TTL 后清扫) ---
+    island_cut_dir: str = ""  # 空 = 系统临时目录 / rt_island_cut
+    island_cut_ttl_min: int = 60
+
     # --- Rapfi (gomoku engine) ---
     rapfi_bin_path: str = "/opt/rapfi/pbrain-Rapfi"
     rapfi_model_dir: str = "/opt/rapfi"
