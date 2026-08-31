@@ -132,6 +132,7 @@ def process_video(
     max_duration_sec: int = 60,
     max_frames: int = 600,
     max_output_bytes: int | None = None,
+    use_palette: bool = False,
 ) -> VideoResult:
     import av
 
