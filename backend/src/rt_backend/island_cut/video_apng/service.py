@@ -45,8 +45,13 @@ def build_mask(rgb: np.ndarray, bg: np.ndarray, tol: int, close_iter: int = 1) -
     return mask
 
 
-def encode_animated_png(frames: list[Image.Image], out_fps: float, loop: int = 0) -> bytes:
-    """PIL Animated PNG：save_all + duration(ms) + loop=0；保留 8 位 alpha。"""
+def encode_animated_png(frames: list[Image.Image], out_fps: float, loop: int = 0,
+                         palette: bool = False) -> bytes:
+    """PIL Animated PNG：save_all + duration(ms) + loop=0；保留 8 位 alpha。
+
+    palette=True → 调色板模式（256 色），体积可压 2-4x。
+    透明度用 tRNS chunk（每个调色板项带 alpha）；透明渐变被量化、有损。
+    """
     buf = io.BytesIO()
     delay_ms = max(20, round(1000 / out_fps))
     frames[0].save(
@@ -199,13 +204,13 @@ def process_video(
 
     current_fps = out_fps
     attempts = 1
-    apng_bytes = encode_animated_png(rgba_frames, out_fps=current_fps)
+    apng_bytes = encode_animated_png(rgba_frames, out_fps=current_fps, palette=use_palette)
     if max_output_bytes is not None:
         for trial_fps in (current_fps / 2, current_fps / 4, current_fps / 8, 1):
             trial_fps = max(1, int(trial_fps))
             if trial_fps >= current_fps:
                 continue
-            apng_bytes = encode_animated_png(rgba_frames, out_fps=trial_fps)
+            apng_bytes = encode_animated_png(rgba_frames, out_fps=trial_fps, palette=use_palette)
             attempts += 1
             current_fps = trial_fps
             if len(apng_bytes) <= max_output_bytes:

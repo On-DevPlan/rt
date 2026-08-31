@@ -11,18 +11,25 @@ export const DEFAULT_PARAMS = {
   pad: 6,
   max_duration_sec: 60,
   max_frames: 600,
-  max_output_kb: null  // 输出体积上限 KB；null = 不限制
+  use_palette: false
+}
+
+/**
+ * 压缩倍数 → APNG 模式映射（PNG 调色板离散切换 + fps 阶梯作精细控制）：
+ *   1x  → palette=false (真 RGBA，零压缩)
+ *   2x  → palette=true  (256 色调色板，约 1/3-1/4 体积)
+ *   ≥3x → palette=true  (后续 max_output_bytes 自动 fps 阶梯)
+ *
+ * APNG 无 quality 滑杆（PNG 本质无损）；倍数 ≥2 走调色板，更大压缩靠 max_output_bytes。
+ */
+export function compressFactorToPalette(factor) {
+  return factor >= 2
 }
 
 export async function cutVideo(file, params) {
   const form = new FormData()
   form.append('file', file)
-  // max_output_kb → 后端 max_output_bytes（KB → ×1024；null 不传）
-  const { max_output_kb, ...rest } = params
-  const payload = max_output_kb != null
-    ? { ...rest, max_output_bytes: Math.round(max_output_kb * 1024) }
-    : { ...rest, max_output_bytes: null }
-  form.append('params', JSON.stringify(payload))
+  form.append('params', JSON.stringify(params))
 
   const response = await fetch(`${API_BASE}/jobs`, { method: 'POST', body: form })
 

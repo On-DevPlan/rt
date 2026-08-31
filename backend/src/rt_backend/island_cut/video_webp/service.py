@@ -45,15 +45,26 @@ def build_mask(rgb: np.ndarray, bg: np.ndarray, tol: int, close_iter: int = 1) -
     return mask
 
 
-def encode_animated_webp(frames: list[Image.Image], out_fps: float, loop: int = 0) -> bytes:
-    """PIL Animated WebP：lossless=True 保 alpha + save_all。"""
+def encode_animated_webp(frames: list[Image.Image], out_fps: float, loop: int = 0,
+                         lossless: bool = False, quality: int = 80) -> bytes:
+    """PIL Animated WebP。
+
+    lossless=True → 完整保留 RGBA（体积大，~×1 倍）；quality 被忽略
+    lossless=False → 有损压缩保留 alpha（体积约 1/3-1/5），quality 1-100
+    """
     buf = io.BytesIO()
     delay_ms = max(20, round(1000 / out_fps))
-    frames[0].save(
-        buf, format="WEBP", save_all=True,
+    save_kwargs: dict = dict(
+        format="WEBP", save_all=True,
         append_images=frames[1:],
-        duration=delay_ms, loop=loop, lossless=True,
+        duration=delay_ms, loop=loop,
     )
+    if lossless:
+        save_kwargs["lossless"] = True
+    else:
+        save_kwargs["lossless"] = False
+        save_kwargs["quality"] = quality
+    frames[0].save(buf, **save_kwargs)
     return buf.getvalue()
 
 
@@ -128,11 +139,16 @@ def process_video(
     max_duration_sec: int = 60,
     max_frames: int = 600,
     max_output_bytes: int | None = None,
+    quality: int = 80,
 ) -> VideoResult:
     """PyAV 流式解码 → max-island → Animated WebP。
 
-    若 max_output_bytes 设置：首次编码后超限则二分 fps 阶梯（fps/2, fps/4, fps/8, 1）
-    重新编码直到 ≤ 限值。仍超限抛 ValueError（router 转 413）。
+    压缩策略：
+      1. quality 1-100（100=lossless；<100=lossy+alpha，默认 80）
+      2. fps 阶梯：12 →6 → 3 → 2 → 1（WebP 本质有损，体积随 fps 线性下降）
+      3. 仍超限 → ValueError
+
+    WebP 本身有损压缩 → 体积控制比 APNG 灵活得多；quality 80 一般为 lossless 的 1/4-1/5。
     """
     import av
 
@@ -205,13 +221,20 @@ def process_video(
 
     current_fps = out_fps
     attempts = 1
-    webp_bytes = encode_animated_webp(rgba_frames, out_fps=current_fps)
+    lossless = quality >= 100
+    webp_bytes = encode_animated_webp(
+        rgba_frames, out_fps=current_fps,
+        lossless=lossless, quality=quality,
+    )
     if max_output_bytes is not None:
         for trial_fps in (current_fps / 2, current_fps / 4, current_fps / 8, 1):
             trial_fps = max(1, int(trial_fps))
             if trial_fps >= current_fps:
                 continue
-            webp_bytes = encode_animated_webp(rgba_frames, out_fps=trial_fps)
+            webp_bytes = encode_animated_webp(
+                rgba_frames, out_fps=trial_fps,
+                lossless=lossless, quality=quality,
+            )
             attempts += 1
             current_fps = trial_fps
             if len(webp_bytes) <= max_output_bytes:

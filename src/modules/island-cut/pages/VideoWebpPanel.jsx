@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEFAULT_PARAMS, cutVideo, webpUrl, previewUrl } from '../services/videoWebpApi.js'
+import {
+  DEFAULT_PARAMS, compressFactorToQuality,
+  cutVideo, webpUrl, previewUrl,
+} from '../services/videoWebpApi.js'
+import { fmtSize } from '../utils/fmt.js'
 import styles from './IslandCutPage.module.css'
 
 const PARAM_FIELDS = [
@@ -11,24 +15,8 @@ const PARAM_FIELDS = [
   { key: 'max_frames',       label: '帧数上限', min: 60,   max: 1500,  step: 30, hint: '超过抛 413' },
 ]
 
-/** 体积上限独立输入（KB，空 = 不限制） */
-function MaxOutputField({ value, onChange }) {
-  return (
-    <div className={styles.paramRow} title="输出文件超过该体积时自动降帧率重编码（fps/2, /4, /8 直到 1）；仍超限报 413">
-      <span className={styles.paramLabel}>体积上限</span>
-      <input
-        className={styles.paramValue}
-        style={{ gridColumn: '2 / -1' }}
-        type="number"
-        min={1}
-        step={64}
-        placeholder="KB，留空 = 不限制"
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-      />
-    </div>
-  )
-}
+const COMPRESS_MIN = 1
+const COMPRESS_MAX = 20
 
 function fmtBytes(n) {
   if (n > 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`
@@ -39,11 +27,18 @@ export default function VideoWebpPanel() {
   const [file, setFile] = useState(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [params, setParams] = useState(DEFAULT_PARAMS)
+  const [compressFactor, setCompressFactor] = useState(4)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef(null)
+
+  // 滑杆动时同步 quality
+  useEffect(() => {
+    const q = compressFactorToQuality(compressFactor)
+    setParams((p) => (p.quality === q ? p : { ...p, quality: q }))
+  }, [compressFactor])
 
   useEffect(() => () => {
     if (videoUrl) URL.revokeObjectURL(videoUrl)
@@ -78,6 +73,9 @@ export default function VideoWebpPanel() {
     }
   }
 
+  const sizeInfo = result?.output_size_bytes != null ? fmtSize(result.output_size_bytes) : '—'
+  const compressed = result?.compression_attempts > 1
+
   return (
     <div className={styles.layout}>
       <section className="panel">
@@ -86,7 +84,7 @@ export default function VideoWebpPanel() {
           className={`${styles.dropzone}${dragging ? ` ${styles.dropzoneActive}` : ''}`}
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
+          onDragLeave={() => setDragging(false) }
           onDrop={onDrop}
           role="button"
           tabIndex={0}
@@ -142,14 +140,37 @@ export default function VideoWebpPanel() {
               />
             </label>
           ))}
-          <MaxOutputField value={params.max_output_kb} onChange={(v) => setParam('max_output_kb', v)} />
+          <label className={styles.paramRow} title="1x = 不压；倍数越大画质越低、体积越小。实际缩小倍数依内容而异（约 1.5-2× 每档）">
+            <span className={styles.paramLabel}>压缩倍数</span>
+            <input
+              type="range"
+              min={COMPRESS_MIN}
+              max={COMPRESS_MAX}
+              step={1}
+              value={compressFactor}
+              onChange={(e) => setCompressFactor(Number(e.target.value))}
+            />
+            <input
+              className={styles.paramValue}
+              type="number"
+              min={COMPRESS_MIN}
+              max={COMPRESS_MAX}
+              step={1}
+              value={compressFactor}
+              onChange={(e) => setCompressFactor(Number(e.target.value))}
+            />
+          </label>
+          <p className={styles.compressHint}>
+            → WebP quality = <strong>{params.quality}</strong>
+            {params.quality >= 100 ? '（lossless，保真）' : `（lossy+alpha，${COMPRESS_MAX - compressFactor + 1} 档降质）`}
+          </p>
         </div>
 
         <div className={styles.actions}>
           <button type="button" className={styles.primaryBtn} disabled={!file || loading} onClick={handleCut}>
             {loading ? '处理中…' : '✂ 提取主体 → WebP'}
           </button>
-          <button type="button" className={styles.ghostBtn} onClick={() => setParams(DEFAULT_PARAMS)}>
+          <button type="button" className={styles.ghostBtn} onClick={() => { setParams(DEFAULT_PARAMS); setCompressFactor(4) }}>
             重置参数
           </button>
         </div>
@@ -160,15 +181,18 @@ export default function VideoWebpPanel() {
         <section className="panel">
           <div className="toolbar">
             <h3>WebP {result.width}×{result.height} · {result.frame_count} 帧</h3>
-            <span className="tag">{result.out_fps.toFixed(2)} fps</span>
-            {result.compression_attempts > 1 && (
-              <span className="tag" title={`为满足体积上限从 ${result.out_fps.toFixed(1)} fps 降帧重编了 ${result.compression_attempts - 1} 次`}>
-                压缩 ×{result.compression_attempts} · {result.final_fps.toFixed(1)} fps
+            <span className="tag">q={params.quality}</span>
+            {compressed && (
+              <span className="tag" title={`压缩迭代 ${result.compression_attempts} 次`}>
+                压缩 {result.compression_attempts}×
               </span>
             )}
-            <span className={styles.meta}>源 {result.src_fps.toFixed(2)} fps · {(result.output_size_bytes / 1024).toFixed(0)} KB · {result.elapsed_ms}ms</span>
+            <span className={styles.meta}>最终 fps {result.final_fps.toFixed(2)} · {result.elapsed_ms}ms</span>
             <span className={styles.spring} />
-            <a className={styles.primaryBtn} href={webpUrl(result.job_id)} download>
+            <strong className={styles.sizeBadge} title="输出文件大小">
+              📦 {sizeInfo}
+            </strong>
+            <a className={styles.primaryBtn} href={webpUrl(result.job_id)} download="output.webp">
               ⬇ 下载 WebP
             </a>
             <a className={styles.ghostBtn} href={previewUrl(result.job_id)} target="_blank" rel="noreferrer">
@@ -177,13 +201,13 @@ export default function VideoWebpPanel() {
           </div>
           <figure className={styles.gifFigure}>
             <img className={styles.checker} src={webpUrl(result.job_id)} alt="生成的透明 WebP" />
-            <figcaption>棋盘格底显示透明区域；WebP 是 lossless 保 alpha 的循环动画</figcaption>
+            <figcaption>棋盘格底显示透明区域；{params.quality >= 100 ? 'lossless' : `lossy q=${params.quality}`}</figcaption>
           </figure>
         </section>
       ) : (
         <section className="empty-card">
           <h3>WebP 结果将显示在这里</h3>
-          <p>算法：边框中位背景估计 → 每帧取最大连通岛屿 → 全帧统一裁剪 → NEAREST 缩放 → lossless Animated WebP。比 GIF 文件更小、画质更好、Win11 资源管理器可直接预览。</p>
+          <p>算法：边框中位背景估计 → 每帧取最大连通岛屿 → 全帧统一裁剪 → NEAREST 缩放 → q={params.quality} Animated WebP。q 越大保真越好；4x 压缩约为 q=80（推荐起点）。</p>
         </section>
       )}
     </div>

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEFAULT_PARAMS, cutVideo, apngUrl, previewUrl } from '../services/videoApngApi.js'
+import {
+  DEFAULT_PARAMS, compressFactorToPalette,
+  cutVideo, apngUrl, previewUrl,
+} from '../services/videoApngApi.js'
+import { fmtSize } from '../utils/fmt.js'
 import styles from './IslandCutPage.module.css'
 
 const PARAM_FIELDS = [
@@ -11,24 +15,8 @@ const PARAM_FIELDS = [
   { key: 'max_frames',       label: '帧数上限', min: 60,   max: 1500,  step: 30, hint: '超过抛 413' },
 ]
 
-/** 体积上限独立输入（KB，空 = 不限制） */
-function MaxOutputField({ value, onChange }) {
-  return (
-    <div className={styles.paramRow} title="输出文件超过该体积时自动降帧率重编码（fps/2, /4, /8 直到 1）；仍超限报 413">
-      <span className={styles.paramLabel}>体积上限</span>
-      <input
-        className={styles.paramValue}
-        style={{ gridColumn: '2 / -1' }}
-        type="number"
-        min={1}
-        step={64}
-        placeholder="KB，留空 = 不限制"
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-      />
-    </div>
-  )
-}
+const COMPRESS_MIN = 1
+const COMPRESS_MAX = 20
 
 function fmtBytes(n) {
   if (n > 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`
@@ -39,11 +27,17 @@ export default function VideoApngPanel() {
   const [file, setFile] = useState(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [params, setParams] = useState(DEFAULT_PARAMS)
+  const [compressFactor, setCompressFactor] = useState(4)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    const palette = compressFactorToPalette(compressFactor)
+    setParams((p) => (p.use_palette === palette ? p : { ...p, use_palette: palette }))
+  }, [compressFactor])
 
   useEffect(() => () => {
     if (videoUrl) URL.revokeObjectURL(videoUrl)
@@ -78,6 +72,9 @@ export default function VideoApngPanel() {
     }
   }
 
+  const sizeInfo = result?.output_size_bytes != null ? fmtSize(result.output_size_bytes) : '—'
+  const compressed = result?.compression_attempts > 1
+
   return (
     <div className={styles.layout}>
       <section className="panel">
@@ -86,7 +83,7 @@ export default function VideoApngPanel() {
           className={`${styles.dropzone}${dragging ? ` ${styles.dropzoneActive}` : ''}`}
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
+          onDragLeave={() => setDragging(false) }
           onDrop={onDrop}
           role="button"
           tabIndex={0}
@@ -142,14 +139,38 @@ export default function VideoApngPanel() {
               />
             </label>
           ))}
-          <MaxOutputField value={params.max_output_kb} onChange={(v) => setParam('max_output_kb', v)} />
+          <label className={styles.paramRow} title="1x = 不压（真 RGBA）；2x+ = 调色板 256 色（约 1/3-1/4 体积）；更大压缩靠 fps 阶梯（自动）">
+            <span className={styles.paramLabel}>压缩倍数</span>
+            <input
+              type="range"
+              min={COMPRESS_MIN}
+              max={COMPRESS_MAX}
+              step={1}
+              value={compressFactor}
+              onChange={(e) => setCompressFactor(Number(e.target.value))}
+            />
+            <input
+              className={styles.paramValue}
+              type="number"
+              min={COMPRESS_MIN}
+              max={COMPRESS_MAX}
+              step={1}
+              value={compressFactor}
+              onChange={(e) => setCompressFactor(Number(e.target.value))}
+            />
+          </label>
+          <p className={styles.compressHint}>
+            → 模式：{params.use_palette
+              ? <><strong>调色板 256 色</strong>（tRNS alpha，透明渐变被量化）</>
+              : <><strong>真 RGBA</strong>（保真无压缩）</>}
+          </p>
         </div>
 
         <div className={styles.actions}>
           <button type="button" className={styles.primaryBtn} disabled={!file || loading} onClick={handleCut}>
             {loading ? '处理中…' : '✂ 提取主体 → APNG'}
           </button>
-          <button type="button" className={styles.ghostBtn} onClick={() => setParams(DEFAULT_PARAMS)}>
+          <button type="button" className={styles.ghostBtn} onClick={() => { setParams(DEFAULT_PARAMS); setCompressFactor(4) }}>
             重置参数
           </button>
         </div>
@@ -160,14 +181,17 @@ export default function VideoApngPanel() {
         <section className="panel">
           <div className="toolbar">
             <h3>APNG {result.width}×{result.height} · {result.frame_count} 帧</h3>
-            <span className="tag">{result.out_fps.toFixed(2)} fps</span>
-            {result.compression_attempts > 1 && (
-              <span className="tag" title={`为满足体积上限从 ${result.out_fps.toFixed(1)} fps 降帧重编了 ${result.compression_attempts - 1} 次`}>
-                压缩 ×{result.compression_attempts} · {result.final_fps.toFixed(1)} fps
+            <span className="tag">{params.use_palette ? 'palette' : 'rgba'}</span>
+            {compressed && (
+              <span className="tag" title={`压缩迭代 ${result.compression_attempts} 次`}>
+                压缩 {result.compression_attempts}×
               </span>
             )}
-            <span className={styles.meta}>源 {result.src_fps.toFixed(2)} fps · {(result.output_size_bytes / 1024).toFixed(0)} KB · {result.elapsed_ms}ms</span>
+            <span className={styles.meta}>最终 fps {result.final_fps.toFixed(2)} · {result.elapsed_ms}ms</span>
             <span className={styles.spring} />
+            <strong className={styles.sizeBadge} title="输出文件大小">
+              📦 {sizeInfo}
+            </strong>
             <a className={styles.primaryBtn} href={apngUrl(result.job_id)} download="output.apng">
               ⬇ 下载 APNG
             </a>
@@ -177,13 +201,13 @@ export default function VideoApngPanel() {
           </div>
           <figure className={styles.gifFigure}>
             <img className={styles.checker} src={apngUrl(result.job_id)} alt="生成的透明 APNG" />
-            <figcaption>棋盘格底显示透明区域；APNG 在所有现代浏览器原生支持、保留 8 位 alpha</figcaption>
+            <figcaption>棋盘格底显示透明区域；{params.use_palette ? '256 色调色板' : '真 RGBA'}</figcaption>
           </figure>
         </section>
       ) : (
         <section className="empty-card">
           <h3>APNG 结果将显示在这里</h3>
-          <p>算法：边框中位背景估计 → 每帧取最大连通岛屿 → 全帧统一裁剪 → NEAREST 缩放 → save_all Animated PNG。兼容所有现代浏览器，体积略大于 GIF 但画质更好。</p>
+          <p>算法：边框中位背景估计 → 每帧取最大连通岛屿 → 全帧统一裁剪 → NEAREST 缩放 → {params.use_palette ? '调色板' : '真 RGBA'} APNG。压缩倍数 ≥2 启用调色板（≈ 1/3-1/4 体积）。</p>
         </section>
       )}
     </div>

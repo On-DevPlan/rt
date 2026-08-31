@@ -11,6 +11,8 @@ class VideoCutParams(BaseModel):
     max_frames: int = Field(600, ge=1, le=3000)
     max_output_bytes: int | None = Field(None, ge=1024, le=100_000_000,
                                        description="输出体积上限（字节）；超限自动二分 fps 重编")
+    quality: int = Field(80, ge=1, le=100,
+                         description="WebP 画质 1-100；100=lossless（保留 RGBA），<100=lossy+alpha（体积大幅减小）")
 
 
 class VideoCutResponse(BaseModel):

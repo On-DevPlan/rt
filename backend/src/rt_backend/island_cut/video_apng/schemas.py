@@ -11,6 +11,7 @@ class VideoCutParams(BaseModel):
     max_frames: int = Field(600, ge=1, le=3000)
     max_output_bytes: int | None = Field(None, ge=1024, le=100_000_000,
                                        description="输出体积上限（字节）；超限自动二分 fps 重编")
+    use_palette: bool = Field(False, description="256 色调色板模式（APNG 体积可压 2-4x，透明渐变被量化）")
 
 
 class VideoCutResponse(BaseModel):
