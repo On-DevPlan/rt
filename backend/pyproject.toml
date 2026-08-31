@@ -17,6 +17,7 @@ dependencies = [
     "pillow>=12.3.0",
     "scipy>=1.18.1",
     "python-multipart>=0.0.32",
+    "av>=12",
 ]
 
 [project.optional-dependencies]
