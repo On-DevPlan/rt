@@ -6,7 +6,13 @@ dist
 *.local
 
 # Cloned repositories (nested git repos)
-.claude/repo/
+# 父目录必须用 /* 半透明模式，否则否定规则失效
+.claude/repo/*
+!.claude/repo/_read/
+!.claude/repo/_read/**
+
+!.claude/repo/_self/
+!.claude/repo/_self/**
 
 .playwright-mcp
 .venv
@@ -14,4 +20,5 @@ dist
 __pycache__/
 *.pyc
 .pytest_cache/
-.tool
+# Tool artifacts / scratch tools (本地工具产物，不入库)
+.tool/
