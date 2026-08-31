@@ -12,6 +12,7 @@ from .core.logging import configure_logging, request_id_middleware
 from .island_cut.store import IslandJobStore
 from .island_cut.video_apng.store import IslandVideoApngJobStore
 from .island_cut.video_island.store import IslandVideoJobStore
+from .island_cut.video_sheet.store import IslandSheetJobStore
 from .island_cut.video_webp.store import IslandVideoWebPJobStore
 from .tts.cache import TTSCache
 
@@ -147,6 +148,21 @@ def create_app() -> FastAPI:
 
     from .island_cut.video_apng.router import build_apng_router as _build_video_apng
     app.include_router(_build_video_apng(_island_video_apng_store_dep))
+
+    sheet_root = (
+        Path(settings.video_island_dir)
+        if settings.video_island_dir
+        else Path(tempfile.gettempdir()) / "rt_island_cut_video_sheet"
+    )
+    app.state.sheet_store = IslandSheetJobStore(
+        root=sheet_root, ttl_sec=settings.video_island_ttl_min * 60
+    )
+
+    def _island_sheet_store_dep(request: _Req) -> IslandSheetJobStore:
+        return request.app.state.sheet_store
+
+    from .island_cut.video_sheet.router import build_sheet_router as _build_video_sheet
+    app.include_router(_build_video_sheet(_island_sheet_store_dep))
 
     return app
 
