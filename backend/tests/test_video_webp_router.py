@@ -24,9 +24,10 @@ def test_post_returns_200_and_metadata(client, monkeypatch):
     monkeypatch.setattr(
         "rt_backend.island_cut.video_webp.router.process_video",
         lambda data, **kw: VideoResult(
-            webp=b"RIFF\x00\x00\x00\x00WEBP-data", preview=b"PNG-data",
-            frame_count=10, src_fps=30.0, out_fps=12.0,
-            width=100, height=100, duration_sec=5.0),
+            webp=b"WEBP-data", preview=b"PNG-data",
+            frame_count=10, src_fps=30.0, out_fps=12.0, final_fps=12.0,
+            width=100, height=100, duration_sec=5.0,
+            output_size_bytes=len(b"WEBP-data"), compression_attempts=1),
     )
     r = client.post(
         "/api/island-cut/video-webp/jobs",
@@ -37,6 +38,8 @@ def test_post_returns_200_and_metadata(client, monkeypatch):
     body = r.json()
     assert body["frame_count"] == 10
     assert body["width"] == 100
+    assert body["final_fps"] == 12.0
+    assert body["output_size_bytes"] > 0
     assert body["webp_url"].startswith("/api/island-cut/video-webp/jobs/")
     assert body["preview_url"].startswith("/api/island-cut/video-webp/jobs/")
 
@@ -64,14 +67,28 @@ def test_post_oversize_413(client, monkeypatch):
     assert r.status_code == 413
 
 
+def test_post_compress_failure_413(client, monkeypatch):
+    def _raise(data, **kw):
+        raise ValueError("无法压缩到 1024 字节")
+    monkeypatch.setattr(
+        "rt_backend.island_cut.video_webp.router.process_video", _raise)
+    r = client.post(
+        "/api/island-cut/video-webp/jobs",
+        files={"file": ("a.mp4", _fake_mp4_bytes(), "video/mp4")},
+        data={"params": '{"max_output_bytes": 1024}'},
+    )
+    assert r.status_code == 413
+
+
 def test_get_webp_preview_and_delete(client, monkeypatch):
     from rt_backend.island_cut.video_webp.service import VideoResult
     monkeypatch.setattr(
         "rt_backend.island_cut.video_webp.router.process_video",
         lambda data, **kw: VideoResult(
-            webp=b"RIFF\x00\x00\x00\x00WEBP-data", preview=b"PNG-data",
-            frame_count=10, src_fps=30.0, out_fps=12.0,
-            width=100, height=100, duration_sec=5.0),
+            webp=b"WEBP-data", preview=b"PNG-data",
+            frame_count=10, src_fps=30.0, out_fps=12.0, final_fps=12.0,
+            width=100, height=100, duration_sec=5.0,
+            output_size_bytes=len(b"WEBP-data"), compression_attempts=1),
     )
     r = client.post(
         "/api/island-cut/video-webp/jobs",
@@ -82,7 +99,7 @@ def test_get_webp_preview_and_delete(client, monkeypatch):
 
     w = client.get(f"/api/island-cut/video-webp/jobs/{job_id}/webp")
     assert w.status_code == 200
-    assert w.content == b"RIFF\x00\x00\x00\x00WEBP-data"
+    assert w.content == b"WEBP-data"
     assert w.headers["content-type"] == "image/webp"
 
     p = client.get(f"/api/island-cut/video-webp/jobs/{job_id}/preview.png")

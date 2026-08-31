@@ -11,6 +11,25 @@ const PARAM_FIELDS = [
   { key: 'max_frames',       label: '帧数上限', min: 60,   max: 1500,  step: 30, hint: '超过抛 413' },
 ]
 
+/** 体积上限独立输入（KB，空 = 不限制） */
+function MaxOutputField({ value, onChange }) {
+  return (
+    <div className={styles.paramRow} title="输出文件超过该体积时自动降帧率重编码（fps/2, /4, /8 直到 1）；仍超限报 413">
+      <span className={styles.paramLabel}>体积上限</span>
+      <input
+        className={styles.paramValue}
+        style={{ gridColumn: '2 / -1' }}
+        type="number"
+        min={1}
+        step={64}
+        placeholder="KB，留空 = 不限制"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+      />
+    </div>
+  )
+}
+
 function fmtBytes(n) {
   if (n > 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`
   return `${Math.max(1, Math.round(n / 1024))} KB`
@@ -123,6 +142,7 @@ export default function VideoWebpPanel() {
               />
             </label>
           ))}
+          <MaxOutputField value={params.max_output_kb} onChange={(v) => setParam('max_output_kb', v)} />
         </div>
 
         <div className={styles.actions}>
@@ -141,7 +161,12 @@ export default function VideoWebpPanel() {
           <div className="toolbar">
             <h3>WebP {result.width}×{result.height} · {result.frame_count} 帧</h3>
             <span className="tag">{result.out_fps.toFixed(2)} fps</span>
-            <span className={styles.meta}>源 {result.src_fps.toFixed(2)} fps · {result.duration_sec.toFixed(1)}s · {result.elapsed_ms}ms</span>
+            {result.compression_attempts > 1 && (
+              <span className="tag" title={`为满足体积上限从 ${result.out_fps.toFixed(1)} fps 降帧重编了 ${result.compression_attempts - 1} 次`}>
+                压缩 ×{result.compression_attempts} · {result.final_fps.toFixed(1)} fps
+              </span>
+            )}
+            <span className={styles.meta}>源 {result.src_fps.toFixed(2)} fps · {(result.output_size_bytes / 1024).toFixed(0)} KB · {result.elapsed_ms}ms</span>
             <span className={styles.spring} />
             <a className={styles.primaryBtn} href={webpUrl(result.job_id)} download>
               ⬇ 下载 WebP

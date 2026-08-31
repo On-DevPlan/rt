@@ -110,9 +110,12 @@ class VideoResult:
     frame_count: int
     src_fps: float
     out_fps: float
+    final_fps: float
     width: int
     height: int
     duration_sec: float
+    output_size_bytes: int
+    compression_attempts: int
 
 
 def process_video(
@@ -124,8 +127,13 @@ def process_video(
     pad: int = 6,
     max_duration_sec: int = 60,
     max_frames: int = 600,
+    max_output_bytes: int | None = None,
 ) -> VideoResult:
-    """PyAV 流式解码 → max-island → Animated WebP。"""
+    """PyAV 流式解码 → max-island → Animated WebP。
+
+    若 max_output_bytes 设置：首次编码后超限则二分 fps 阶梯（fps/2, fps/4, fps/8, 1）
+    重新编码直到 ≤ 限值。仍超限抛 ValueError（router 转 413）。
+    """
     import av
 
     container = av.open(io.BytesIO(data), "r", format="mp4")
@@ -195,7 +203,24 @@ def process_video(
             im = im.resize((tw, th), Image.NEAREST)
         rgba_frames.append(im)
 
-    webp_bytes = encode_animated_webp(rgba_frames, out_fps=out_fps)
+    current_fps = out_fps
+    attempts = 1
+    webp_bytes = encode_animated_webp(rgba_frames, out_fps=current_fps)
+    if max_output_bytes is not None:
+        for trial_fps in (current_fps / 2, current_fps / 4, current_fps / 8, 1):
+            trial_fps = max(1, int(trial_fps))
+            if trial_fps >= current_fps:
+                continue
+            webp_bytes = encode_animated_webp(rgba_frames, out_fps=trial_fps)
+            attempts += 1
+            current_fps = trial_fps
+            if len(webp_bytes) <= max_output_bytes:
+                break
+        if len(webp_bytes) > max_output_bytes:
+            raise ValueError(
+                f"无法压缩到 {max_output_bytes} 字节（最小 fps=1 仍为 {len(webp_bytes)}）"
+            )
+
     preview_bytes = make_preview_png(
         [frames[i] for i in kept],
         masks,
@@ -207,7 +232,10 @@ def process_video(
         frame_count=len(rgba_frames),
         src_fps=src_fps,
         out_fps=out_fps,
+        final_fps=current_fps,
         width=tw,
         height=th,
         duration_sec=duration_sec,
+        output_size_bytes=len(webp_bytes),
+        compression_attempts=attempts,
     )

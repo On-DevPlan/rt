@@ -109,9 +109,12 @@ class VideoResult:
     frame_count: int
     src_fps: float
     out_fps: float
+    final_fps: float
     width: int
     height: int
     duration_sec: float
+    output_size_bytes: int
+    compression_attempts: int
 
 
 def process_video(
@@ -123,6 +126,7 @@ def process_video(
     pad: int = 6,
     max_duration_sec: int = 60,
     max_frames: int = 600,
+    max_output_bytes: int | None = None,
 ) -> VideoResult:
     import av
 
@@ -193,7 +197,24 @@ def process_video(
             im = im.resize((tw, th), Image.NEAREST)
         rgba_frames.append(im)
 
-    apng_bytes = encode_animated_png(rgba_frames, out_fps=out_fps)
+    current_fps = out_fps
+    attempts = 1
+    apng_bytes = encode_animated_png(rgba_frames, out_fps=current_fps)
+    if max_output_bytes is not None:
+        for trial_fps in (current_fps / 2, current_fps / 4, current_fps / 8, 1):
+            trial_fps = max(1, int(trial_fps))
+            if trial_fps >= current_fps:
+                continue
+            apng_bytes = encode_animated_png(rgba_frames, out_fps=trial_fps)
+            attempts += 1
+            current_fps = trial_fps
+            if len(apng_bytes) <= max_output_bytes:
+                break
+        if len(apng_bytes) > max_output_bytes:
+            raise ValueError(
+                f"无法压缩到 {max_output_bytes} 字节（最小 fps=1 仍为 {len(apng_bytes)}）"
+            )
+
     preview_bytes = make_preview_png(
         [frames[i] for i in kept],
         masks,
@@ -205,7 +226,10 @@ def process_video(
         frame_count=len(rgba_frames),
         src_fps=src_fps,
         out_fps=out_fps,
+        final_fps=current_fps,
         width=tw,
         height=th,
         duration_sec=duration_sec,
+        output_size_bytes=len(apng_bytes),
+        compression_attempts=attempts,
     )

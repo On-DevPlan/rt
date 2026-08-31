@@ -56,11 +56,11 @@ def build_sheet_router(store_provider) -> APIRouter:
         job_id = uuid.uuid4().hex[:12]
         job_dir = store._root / job_id
         try:
-            result: SheetResult = process_video(file, job_dir, **cut_params.model_dump())
+            result = process_video(file, job_dir, **cut_params.model_dump())
         except SheetOversizeError as exc:
             raise HTTPException(413, str(exc)) from exc
         except ValueError as exc:
-            raise HTTPException(400, str(exc)) from exc
+            raise HTTPException(413, f"压缩失败: {exc}") from exc
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(400, f"视频处理失败: {exc}") from exc
 
@@ -72,17 +72,21 @@ def build_sheet_router(store_provider) -> APIRouter:
             fps_hint=result.fps_hint,
         )
         elapsed_ms = int((time.perf_counter() - started) * 1000)
-        log.info("island-cut-sheet job=%s frames=%d %dx%d in %dms",
-                 job.id, result.frame_count, result.width, result.height, elapsed_ms)
+        log.info("island-cut-sheet job=%s frames=%d %dx%d final_fps=%.1f size=%d attempts=%d in %dms",
+                 job.id, result.frame_count, result.width, result.height,
+                 result.final_fps, result.output_size_bytes, result.compression_attempts, elapsed_ms)
         return SheetResponse(
             job_id=job.id,
             frame_count=result.frame_count,
             fps_hint=result.fps_hint,
+            final_fps=result.final_fps,
             width=result.width,
             height=result.height,
             cols=result.cols,
             rows=result.rows,
             elapsed_ms=elapsed_ms,
+            output_size_bytes=result.output_size_bytes,
+            compression_attempts=result.compression_attempts,
             sheet_url=f"/api/island-cut/video-sheet/jobs/{job.id}/sheet.png",
             frames_zip_url=f"/api/island-cut/video-sheet/jobs/{job.id}/frames.zip",
             frames_json_url=f"/api/island-cut/video-sheet/jobs/{job.id}/frames.json",

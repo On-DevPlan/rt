@@ -49,14 +49,15 @@ def build_webp_router(store_provider) -> APIRouter:
         except VideoOversizeError as exc:
             raise HTTPException(413, str(exc)) from exc
         except ValueError as exc:
-            raise HTTPException(400, str(exc)) from exc
+            raise HTTPException(413, f"压缩失败: {exc}") from exc
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(400, f"视频解码失败: {exc}") from exc
 
         job = store.create(result, webp=result.webp, preview=result.preview)
         elapsed_ms = int((time.perf_counter() - started) * 1000)
-        log.info("island-cut-video-webp job=%s frames=%d %dx%d in %dms",
-                 job.id, result.frame_count, result.width, result.height, elapsed_ms)
+        log.info("island-cut-video-webp job=%s frames=%d %dx%d final_fps=%.1f size=%d attempts=%d in %dms",
+                 job.id, result.frame_count, result.width, result.height,
+                 result.final_fps, result.output_size_bytes, result.compression_attempts, elapsed_ms)
         return VideoCutResponse(
             job_id=job.id,
             width=result.width,
@@ -64,8 +65,11 @@ def build_webp_router(store_provider) -> APIRouter:
             frame_count=result.frame_count,
             src_fps=result.src_fps,
             out_fps=result.out_fps,
+            final_fps=result.final_fps,
             duration_sec=result.duration_sec,
             elapsed_ms=elapsed_ms,
+            output_size_bytes=result.output_size_bytes,
+            compression_attempts=result.compression_attempts,
             webp_url=f"/api/island-cut/video-webp/jobs/{job.id}/webp",
             preview_url=f"/api/island-cut/video-webp/jobs/{job.id}/preview.png",
         )

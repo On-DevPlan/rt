@@ -15,7 +15,9 @@ def store(tmp_path):
 
 def _result(gif=b"GIF89a", preview=b"\x89PNG\r\n"):
     return VideoResult(gif=gif, preview=preview, frame_count=10, src_fps=30.0,
-                       out_fps=12.0, width=100, height=100, duration_sec=5.0)
+                       out_fps=12.0, final_fps=12.0, width=100, height=100,
+                       duration_sec=5.0, output_size_bytes=len(gif),
+                       compression_attempts=1)
 
 
 def test_create_writes_gif_and_preview(store):

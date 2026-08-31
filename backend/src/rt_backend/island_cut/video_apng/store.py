@@ -26,7 +26,7 @@ class VideoJob:
     created: float
 
 
-APNG_NAME = "output.png"
+APNG_NAME = "output.apng"  # APNG 是带动画的 PNG；扩展名用 .apng 便于识别
 PREVIEW_NAME = "preview.png"
 
 

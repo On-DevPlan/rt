@@ -9,6 +9,8 @@ class VideoCutParams(BaseModel):
     pad: int = Field(6, ge=0, le=50)
     max_duration_sec: int = Field(60, ge=1, le=600)
     max_frames: int = Field(600, ge=1, le=3000)
+    max_output_bytes: int | None = Field(None, ge=1024, le=100_000_000,
+                                       description="输出体积上限（字节）；超限自动二分 fps 重编")
 
 
 class VideoCutResponse(BaseModel):
@@ -18,7 +20,10 @@ class VideoCutResponse(BaseModel):
     frame_count: int
     src_fps: float
     out_fps: float
+    final_fps: float = Field(..., description="压缩迭代后的最终 fps（可能低于 out_fps）")
     duration_sec: float
     elapsed_ms: int
+    output_size_bytes: int = Field(..., description="最终输出文件字节数")
+    compression_attempts: int = Field(1, ge=1, description="编码尝试次数（1=未压缩）")
     gif_url: str
     preview_url: str
