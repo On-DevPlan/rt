@@ -1,20 +1,11 @@
-"""MP4 → 透明 sprite sheet + 元数据（自完备；移植 .tool/video-sheet/scripts/build_sheet.py）。
+"""MP4 → 透明 sprite sheet + 元数据（编排层，薄壳）。
 
-算法（参考 build_sheet.py）：
-  1. ffmpeg 抽帧（带 mpdecimate 去重复帧 + 重采样到目标 fps）
-  2. 每帧独立：边缘 bg 估计 + 色距掩膜 + 边界泛洪 + closing + 仅最大岛 + 高斯羽化
-  3. 全片 union bbox → 统一画布
-  4. 拼 sprite sheet 网格 + frames.json + 预览 APNG/WebP
-  5. 落盘：sheet.png / frames/frame_*.png / frames.json / preview.apng / preview.webp
-
-与 video_island / video_webp / video_apng 不同的算法（不是 max-island 系列）。
-横向隔离：本文件不 import 其他 video_* 子包。
+只负责把 strategies/* 拼起来——具体算法（背景估计、前景、羽化、IO）
+都在 strategies/ 子包各自的文件里，便于单独替换或测试。
 """
 from __future__ import annotations
 
-import io
 import json
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,79 +14,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-
-# ===== 算法原语 =====
-
-def estimate_bg_from_border(rgba: np.ndarray) -> np.ndarray:
-    """四边像素的颜色中位数（uint8 RGB）。抗噪。"""
-    edges = np.concatenate([
-        rgba[0], rgba[-1],
-        rgba[:, 0], rgba[:, -1],
-    ])[:, :3]
-    return np.median(edges, axis=0).astype(np.uint8)
-
-
-def color_distance_mask(rgba: np.ndarray, bg: np.ndarray, tol: float) -> np.ndarray:
-    """色距 < tol 视为背景候选（bool）。"""
-    diff = rgba[..., :3].astype(np.int32) - bg.astype(np.int32)
-    dist = np.sqrt((diff ** 2).sum(axis=-1))
-    return dist < tol
-
-
-def flood_fill_background(is_bg: np.ndarray) -> np.ndarray:
-    """与边缘连通的 bg 候选 = 真背景。"""
-    lbl, _ = ndimage.label(is_bg)
-    border_labels = (
-        set(lbl[0].tolist())
-        | set(lbl[-1].tolist())
-        | set(lbl[:, 0].tolist())
-        | set(lbl[:, -1].tolist())
-    )
-    border_labels.discard(0)
-    if not border_labels:
-        return np.zeros_like(is_bg)
-    return np.isin(lbl, list(border_labels))
-
-
-def keep_largest_island(fg: np.ndarray, min_area: int) -> np.ndarray:
-    """保留最大连通域 = 主体色块，其余清零。"""
-    lbl, n = ndimage.label(fg)
-    if n == 0:
-        return np.zeros_like(fg)
-    sizes = np.bincount(lbl.ravel())[1:]
-    if (sizes >= min_area).sum() == 0:
-        return np.zeros_like(fg)
-    keep_idx = int(np.argmax(sizes)) + 1
-    return lbl == keep_idx
-
-
-def feathering(mask: np.ndarray) -> np.ndarray:
-    """简单抗锯齿：高斯模糊 + 阈值。"""
-    soft = ndimage.gaussian_filter(mask.astype(np.float32), sigma=0.7)
-    return (soft > 0.5).astype(np.uint8)
-
-
-# ===== 流水线 =====
-
-def _save_to_tmp(data: bytes, td: str) -> Path:
-    """把 MP4 字节落临时文件，让 ffmpeg 直接读。"""
-    p = Path(td) / "input.mp4"
-    p.write_bytes(data)
-    return p
-
-
-def extract_frames(video: Path, out_dir: Path, fps: int) -> list[Path]:
-    """ffmpeg 抽帧 + mpdecimate 去重复帧 + 重采样到目标 fps。"""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    pattern = out_dir / "frame_%05d.png"
-    cmd = [
-        "ffmpeg", "-y", "-loglevel", "error",
-        "-i", str(video),
-        "-vf", f"mpdecimate,fps={fps}",
-        str(pattern),
-    ]
-    subprocess.run(cmd, check=True, capture_output=True)
-    return sorted(out_dir.glob("frame_*.png"))
+from .strategies import bg, feather, fg, io as strat_io
 
 
 @dataclass
@@ -122,16 +41,22 @@ def process_video(
     max_duration_sec: int = 60,
     max_frames: int = 600,
 ) -> SheetResult:
-    """写 out_dir 下的全部产物。data 为 MP4 字节。"""
+    """写 out_dir 下的全部产物（sheet.png / frames/ / frames.json / preview.*）。
+
+    算法（参考 .tool/video-sheet/scripts/build_sheet.py）：
+      bg.estimate_bg_from_border → fg.color_distance_mask → fg.flood_fill_background →
+      binary_closing → fg.keep_largest_island → feather.feathering →
+      全片 union bbox → 拼 sprite sheet + 预览
+    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     frames_dir = out_dir / "frames"
     frames_dir.mkdir(exist_ok=True)
 
     with tempfile.TemporaryDirectory() as td:
-        src_mp4 = _save_to_tmp(data, td)
+        src_mp4 = strat_io._save_to_tmp(data, td)
         tmp_frames_dir = Path(td) / "frames_tmp"
-        frames = extract_frames(src_mp4, tmp_frames_dir, fps=fps)
+        frames = strat_io.extract_frames(src_mp4, tmp_frames_dir, fps=fps)
         if not frames:
             raise ValueError("no frames extracted")
         if len(frames) > max_frames:
@@ -141,16 +66,16 @@ def process_video(
         rendered: list[tuple[str, np.ndarray, tuple[int, int, int, int] | None, list[int]]] = []
         for f in frames:
             rgba = np.array(Image.open(f).convert("RGBA"))
-            bg = estimate_bg_from_border(rgba)
-            is_bg = color_distance_mask(rgba, bg, tol)
-            flood_bg = flood_fill_background(is_bg)
-            fg = ndimage.binary_closing(~flood_bg, iterations=2)
-            subject = keep_largest_island(fg, min_area)
-            alpha = feathering(subject) * 255
+            bg_color = bg.estimate_bg_from_border(rgba)
+            is_bg = fg.color_distance_mask(rgba, bg_color, tol)
+            flood_bg = fg.flood_fill_background(is_bg)
+            foreground = ndimage.binary_closing(~flood_bg, iterations=2)
+            subject = fg.keep_largest_island(foreground, min_area)
+            alpha = feather.feathering(subject) * 255
             out_rgba = np.dstack([rgba[..., :3], alpha])
             ys, xs = np.where(subject)
             bbox = (int(ys.min()), int(xs.min()), int(ys.max()) + 1, int(xs.max()) + 1) if len(ys) else None
-            rendered.append((f.name, out_rgba, bbox, bg.tolist()))
+            rendered.append((f.name, out_rgba, bbox, bg_color.tolist()))
 
         valid = [r for r in rendered if r[2] is not None]
         if not valid:
@@ -190,7 +115,7 @@ def process_video(
                 "col": c, "row": r,
                 "bbox": bbox,
             })
-        sheet_img.save(out_dir / "sheet.png")
+            sheet_img.save(out_dir / "sheet.png")
 
         # 预览 APNG + Animated WebP（小尺寸 + 8fps）
         PREVIEW_W, PREVIEW_FPS = 240, 8

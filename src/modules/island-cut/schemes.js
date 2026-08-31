@@ -22,6 +22,9 @@ export const ISLAND_CUT_TABS = [
   {
     id: 'video-apng',
     label: '视频 → APNG',
-    badge: '未来',
+  },
+  {
+    id: 'video-sheet',
+    label: '视频 → Sheet',
   },
 ]

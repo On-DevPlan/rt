@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEFAULT_PARAMS, cutVideo, apngUrl, previewUrl } from '../services/videoApngApi.js'
+import {
+  DEFAULT_PARAMS, cutVideo,
+  sheetUrl, framesZipUrl, framesJsonUrl,
+  previewApngUrl, previewWebpUrl,
+} from '../services/videoSheetApi.js'
 import styles from './IslandCutPage.module.css'
 
 const PARAM_FIELDS = [
-  { key: 'fps',              label: '帧率',     min: 1,    max: 30,    step: 1, hint: '输出 APNG 帧率（源帧率更低时自动夹紧）' },
-  { key: 'max_size',         label: '最长边',   min: 0,    max: 1024,  step: 16, hint: '0 = 不缩放；>0 时主体长边 = 该值' },
-  { key: 'bg_tol',           label: 'BG容差',   min: 1,    max: 255,   step: 1, hint: '与背景色差异阈值；>水印最大差异才能吃掉水印' },
-  { key: 'pad',              label: '留白',     min: 0,    max: 50,    step: 1, hint: '主体包围盒四周留白像素' },
-  { key: 'max_duration_sec', label: '时长上限', min: 10,   max: 300,   step: 10, hint: '超过抛 413' },
-  { key: 'max_frames',       label: '帧数上限', min: 60,   max: 1500,  step: 30, hint: '超过抛 413' },
+  { key: 'fps',              label: '帧率',   min: 1,   max: 30,  step: 1,  hint: '输出帧率（ffmpeg mpdecimate 去重帧后）' },
+  { key: 'tol',              label: '色距容差', min: 1,   max: 255, step: 1,  hint: '> 水印最大色距才能吃掉水印' },
+  { key: 'min_area',         label: '最小岛屿', min: 50, max: 5000, step: 50, hint: '低于此像素数的岛屿视为噪点丢弃' },
+  { key: 'max_duration_sec', label: '时长上限', min: 10, max: 300, step: 10, hint: '超过抛 413' },
+  { key: 'max_frames',       label: '帧数上限', min: 60, max: 1500, step: 30, hint: '超过抛 413' },
 ]
 
 function fmtBytes(n) {
@@ -16,7 +19,7 @@ function fmtBytes(n) {
   return `${Math.max(1, Math.round(n / 1024))} KB`
 }
 
-export default function VideoApngPanel() {
+export default function VideoSheetPanel() {
   const [file, setFile] = useState(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [params, setParams] = useState(DEFAULT_PARAMS)
@@ -99,7 +102,7 @@ export default function VideoApngPanel() {
           </p>
         )}
 
-        <h3 className={styles.sectionTitle}>2 · APNG 参数</h3>
+        <h3 className={styles.sectionTitle}>2 · Sheet 参数</h3>
         <div className={styles.paramList}>
           {PARAM_FIELDS.map((f) => (
             <label key={f.key} className={styles.paramRow} title={f.hint}>
@@ -127,7 +130,7 @@ export default function VideoApngPanel() {
 
         <div className={styles.actions}>
           <button type="button" className={styles.primaryBtn} disabled={!file || loading} onClick={handleCut}>
-            {loading ? '处理中…' : '✂ 提取主体 → APNG'}
+            {loading ? '处理中…' : '✂ 提取主体 → sprite sheet'}
           </button>
           <button type="button" className={styles.ghostBtn} onClick={() => setParams(DEFAULT_PARAMS)}>
             重置参数
@@ -139,26 +142,35 @@ export default function VideoApngPanel() {
       {result ? (
         <section className="panel">
           <div className="toolbar">
-            <h3>APNG {result.width}×{result.height} · {result.frame_count} 帧</h3>
-            <span className="tag">{result.out_fps.toFixed(2)} fps</span>
-            <span className={styles.meta}>源 {result.src_fps.toFixed(2)} fps · {result.duration_sec.toFixed(1)}s · {result.elapsed_ms}ms</span>
+            <h3>Sheet {result.width}×{result.height} · {result.frame_count} 帧 · {result.cols}×{result.rows} 网格</h3>
+            <span className="tag">{result.fps_hint.toFixed(2)} fps</span>
+            <span className={styles.meta}>{result.elapsed_ms}ms</span>
             <span className={styles.spring} />
-            <a className={styles.primaryBtn} href={apngUrl(result.job_id)} download>
-              ⬇ 下载 APNG
+            <a className={styles.primaryBtn} href={sheetUrl(result.job_id)} download>
+              ⬇ sheet.png
             </a>
-            <a className={styles.ghostBtn} href={previewUrl(result.job_id)} target="_blank" rel="noreferrer">
-              棋盘预览
+            <a className={styles.primaryBtn} href={framesZipUrl(result.job_id)} download>
+              ⬇ frames.zip
+            </a>
+            <a className={styles.ghostBtn} href={framesJsonUrl(result.job_id)} target="_blank" rel="noreferrer">
+              frames.json
+            </a>
+            <a className={styles.ghostBtn} href={previewApngUrl(result.job_id)} target="_blank" rel="noreferrer">
+              预览 APNG
+            </a>
+            <a className={styles.ghostBtn} href={previewWebpUrl(result.job_id)} target="_blank" rel="noreferrer">
+              预览 WebP
             </a>
           </div>
           <figure className={styles.gifFigure}>
-            <img className={styles.checker} src={apngUrl(result.job_id)} alt="生成的透明 APNG" />
-            <figcaption>棋盘格底显示透明区域；APNG 在所有现代浏览器原生支持、保留 8 位 alpha</figcaption>
+            <img className={styles.checker} src={previewApngUrl(result.job_id)} alt="sprite sheet 预览" />
+            <figcaption>棋盘格底显示透明区域；预览为 APNG 动画（首/中/尾 3 帧 8fps）</figcaption>
           </figure>
         </section>
       ) : (
         <section className="empty-card">
-          <h3>APNG 结果将显示在这里</h3>
-          <p>算法：边框中位背景估计 → 每帧取最大连通岛屿 → 全帧统一裁剪 → NEAREST 缩放 → save_all Animated PNG。兼容所有现代浏览器，体积略大于 GIF 但画质更好。</p>
+          <h3>Sprite Sheet 结果将显示在这里</h3>
+          <p>算法：每帧独立色距背景估计 → 边界泛洪 → 仅最大连通域 → 全片统一画布（union bbox）→ 网格拼图 + frames.json 元数据 + 预览动画。适合游戏/网页 sprite 批量导入。</p>
         </section>
       )}
     </div>
