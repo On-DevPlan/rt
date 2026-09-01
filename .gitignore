@@ -22,3 +22,4 @@ __pycache__/
 .pytest_cache/
 # Tool artifacts / scratch tools (本地工具产物，不入库)
 .tool/
+.env
