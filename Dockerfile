@@ -95,6 +95,10 @@ WORKDIR /app/backend
 ENV PYTHONPATH=/app/backend/src
 RUN uv sync --no-dev --frozen
 
+# Chromium for Playwright. --with-deps pulls in the runtime shared libs
+# (libnss3, libatk, libxcomposite, etc.) the headless shell needs.
+RUN uv run --no-dev playwright install --with-deps chromium 2>&1 | tail -5
+
 EXPOSE 80
 
 CMD ["sh", "-c", "supervisord -c /etc/supervisord.conf & nginx -g 'daemon off;'"]
