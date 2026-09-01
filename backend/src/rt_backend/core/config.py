@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     sicau_default_semester: str = "2025-2026-2"
     sicau_request_timeout_sec: int = 30
 
+    # --- SICAU timetable v2 (WebVPN + Playwright) ---
+    sicau_v2_headless: bool = True
+    sicau_v2_browser_timeout_ms: int = 60_000
+    sicau_v2_total_timeout_sec: int = 90
+    sicau_v2_captcha_max_retries: int = 3
+    # 智谱 BigModel API key — GLM-4.6V-Flash 用于验证码识别（ddddocr 对该校验证码不准）
+    sicau_v2_glm_api_key: str = ""
+
     # --- Anime season (yuc.wiki + bangumi fallback) ---
     anime_cache_ttl_sec: int = 21600  # 6h，契约 §3.5
     anime_upstream_timeout_sec: int = 15

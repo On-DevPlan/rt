@@ -14,6 +14,7 @@ from .island_cut.video_apng.store import IslandVideoApngJobStore
 from .island_cut.video_island.store import IslandVideoJobStore
 from .island_cut.video_sheet.store import IslandSheetJobStore
 from .island_cut.video_webp.store import IslandVideoWebPJobStore
+from .sicau_timetable_v2.browser import PlaywrightHolder
 from .tts.cache import TTSCache
 
 
@@ -25,6 +26,10 @@ async def lifespan(app: FastAPI):
     http_holder = HttpClientHolder(timeout=float(settings.sicau_request_timeout_sec))
     await http_holder.start()
     app.state.http = http_holder
+
+    v2_browser = PlaywrightHolder(headless=settings.sicau_v2_headless)
+    await v2_browser.start()
+    app.state.v2_browser = v2_browser
 
     tts_cache = TTSCache(settings.tts_cache_db_path)
     app.state.tts_cache = tts_cache
@@ -42,6 +47,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await http_holder.close()
+        await v2_browser.close()
         tts_cache.close()
 
 
@@ -95,8 +101,15 @@ def create_app() -> FastAPI:
     from .tts.router import build_router as _build_tts
     app.include_router(_build_tts(_tts_cache_dep))
 
-    from .sicau_timetable.router import build_router as _build_sicau
-    app.include_router(_build_sicau(_http_dep, settings))
+    from .sicau_timetable.router import build_router as _build_sicau_old
+    app.include_router(_build_sicau_old(_http_dep, settings))
+
+    from .sicau_timetable_v2.router import build_router as _build_sicau_v2
+
+    def _v2_browser_dep(request: _Req) -> PlaywrightHolder:
+        return request.app.state.v2_browser
+
+    app.include_router(_build_sicau_v2(_v2_browser_dep, settings))
 
     from .bilibili_history.router import build_router as _build_bili
     app.include_router(_build_bili(_http_dep))

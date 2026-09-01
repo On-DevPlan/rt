@@ -18,6 +18,8 @@ dependencies = [
     "scipy>=1.18.1",
     "python-multipart>=0.0.32",
     "av>=12",
+    "playwright>=1.62.0",
+    "ddddocr>=1.6.1",
 ]
 
 [project.optional-dependencies]

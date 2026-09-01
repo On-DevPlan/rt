@@ -81,6 +81,7 @@ jobs:
               --restart unless-stopped \
               -p $PORT:80 \
               -e NODE_ENV=production \
+              -e SICAU_V2_GLM_API_KEY=${{ secrets.SICAU_V2_GLM_API_KEY }} \
               $IMAGE_NAME:latest
 
             echo "Waiting for service to start..."

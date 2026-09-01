@@ -153,7 +153,7 @@ def parse_courses_from_html(html: str) -> List[dict]:
     courses: List[dict] = []
     for tr in rows[1:]:
         cells = [c.get_text(" ", strip=True) for c in tr.find_all(["th", "td"])]
-        if not cells or not cells[1]:
+        if not cells or len(cells) < 2 or not cells[1]:
             continue
         cells = (cells + [""] * len(header_cells))[: len(header_cells)]
         courses.append(dict(zip(header_cells, cells)))

@@ -64,7 +64,7 @@ async def test_sicau_timetable_success():
 
         with TestClient(app) as client:
             r = client.post(
-                "/api/sicau/timetable",
+                "/api/sicau/old/timetable",
                 json={"user_id": "202300000", "password": "pw"},
             )
 
@@ -83,5 +83,5 @@ def test_sicau_timetable_missing_user_id():
     settings = Settings()
     app.include_router(build_router(lambda: holder, settings))
     with TestClient(app) as client:
-        r = client.post("/api/sicau/timetable", json={"password": "pw"})
+        r = client.post("/api/sicau/old/timetable", json={"password": "pw"})
     assert r.status_code == 422

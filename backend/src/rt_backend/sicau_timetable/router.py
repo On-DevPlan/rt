@@ -21,7 +21,7 @@ def build_router(
     http_provider: Callable[[], HttpClientHolder],
     settings: Settings,
 ) -> APIRouter:
-    router = APIRouter(prefix="/api/sicau", tags=["sicau"])
+    router = APIRouter(prefix="/api/sicau/old", tags=["sicau-old"])
 
     @router.post("/timetable", response_model=TimetableResponse)
     async def timetable(
