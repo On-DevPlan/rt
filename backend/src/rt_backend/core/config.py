@@ -41,16 +41,6 @@ class Settings(BaseSettings):
     video_island_dir: str = ""  # 空 = 系统临时目录 / rt_island_cut_video
     video_island_ttl_min: int = 60
 
-    # --- Rapfi (gomoku engine) ---
-    rapfi_bin_path: str = "/opt/rapfi/pbrain-Rapfi"
-    rapfi_model_dir: str = "/opt/rapfi"
-    rapfi_time_turn_weak: int = 500
-    rapfi_time_turn_mid: int = 2000
-    rapfi_time_turn_strong: int = 5000
-    rapfi_max_memory_mb: int = 256
-    rapfi_threads: int = 1
-    rapfi_max_node: int = 10_000_000
-
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
