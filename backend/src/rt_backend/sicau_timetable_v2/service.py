@@ -334,16 +334,22 @@ async def _navigate_to_timetable(page: Page, semester: str) -> None:
     await page.wait_for_timeout(300)
     await page.locator("a").filter(has_text="网上选(退)课").first.click()
 
-    if not await _click_link_in_any_frame(page, semester):
+    if not await _click_link_in_any_frame(page, semester, exact=True):
         raise FetchError(f"学期链接未找到: {semester}")
     if not await _click_link_in_any_frame(page, "选课情况(课表)"):
         raise FetchError("选课情况(课表) 链接未找到")
 
 
 async def _click_link_in_any_frame(
-    page: Page, text: str, timeout_ms: int = 20_000
+    page: Page, text: str, timeout_ms: int = 20_000, *, exact: bool = False
 ) -> bool:
-    """Find a visible <a> with `text` in any (sub)frame and click it."""
+    """Find a visible <a> with `text` in any (sub)frame and click it.
+
+    When exact=True, only matches links whose trimmed text equals `text`
+    exactly — this avoids hitting e.g. "当前学期状态：2026-2027-1 点击更改"
+    when looking for the semester list entry "2026-2027-1".
+    """
+    import re
     import time
 
     deadline = time.monotonic() + timeout_ms / 1000
@@ -352,10 +358,17 @@ async def _click_link_in_any_frame(
             if f == page.main_frame:
                 continue
             try:
-                loc = f.locator("a").filter(has_text=text).first
+                if exact:
+                    loc = (
+                        f.locator("a")
+                        .filter(has_text=re.compile(r"^\s*" + re.escape(text) + r"\s*$"))
+                        .first
+                    )
+                else:
+                    loc = f.locator("a").filter(has_text=text).first
                 if await loc.count() > 0 and await loc.is_visible():
                     await loc.click()
-                    logger.info("clicked %r in frame %s", text, f.url[:80])
+                    logger.info("clicked %r (exact=%s) in frame %s", text, exact, f.url[:80])
                     await page.wait_for_timeout(500)
                     return True
             except Exception:
