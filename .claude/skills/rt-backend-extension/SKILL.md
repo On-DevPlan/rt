@@ -1,11 +1,11 @@
 ---
 name: rt-backend-extension
-description: 当用户要在 rt 项目中扩展 FastAPI 后端（加新功能模块、新接口、共享资源、新配置项）、修改 Nginx 配置（反代、CORS、HTTPS、WebSocket、限流），或调用 B 站相关 API（历史记录、tag 统计、收藏夹、登录态）时触发此 skill。仅适用于 D:\code\a_js\proj\rt 的 rt_backend + Docker + nginx 架构。
+description: 当用户要在 rt 项目中扩展 FastAPI 后端（加新功能模块、新接口、共享资源、新配置项）、修改 Nginx 配置（反代、CORS、HTTPS、WebSocket、限流），或调用 B 站相关 API（历史记录、tag 统计、收藏夹、登录态）时触发此 skill。仅适用于 D:\code\js\proj\rt 的 rt_backend + Docker + nginx 架构。
 ---
 
 # rt 后端扩展 + Nginx 使用指南
 
-适用项目：`D:\code\a_js\proj\rt`（FastAPI + React + Docker + nginx 单容器部署）
+适用项目：`D:\code\js\proj\rt`（FastAPI + React + Docker + nginx 单容器部署）
 
 ---
 
@@ -108,66 +108,97 @@ MY_FEATURE_API_KEY=xxx
 
 ```
 外网 :80 → nginx :80 → {
-  /              → /usr/share/nginx/html  (React 静态资源)
-  /api/*         → 127.0.0.1:8000         (uvicorn)
+  /              → /usr/share/nginx/html  (React 静态资源，try_files 兜 SPA 路由)
+  /api/*         → 127.0.0.1:8080         (uvicorn)
+  /health        → 直接 200 'ok'，不反代
 }
-supervisord 同时拉起 nginx + uvicorn
+宿主端口映射是 -p 81:80（见 .github/workflows/deploy.yml）
 ```
+
+**进程管理是分开的**：`Dockerfile` 的 CMD 是
+`supervisord -c /etc/supervisord.conf & nginx -g 'daemon off;'`——
+nginx 跑在前台由容器本身监管，supervisord 只管 backend 一个进程。
+所以 `supervisord.conf` 里**没有** `[program:nginx]`。
 
 ### 1. nginx.conf 关键配置
 
 容器内路径：`/etc/nginx/nginx.conf`
 
 ```nginx
-events { worker_connections 1024; }
+events {
+    worker_connections 1024;
+}
 
 http {
-  upstream backend {
-    server 127.0.0.1:8000;
-  }
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
 
-  server {
-    listen 80;
-    
-    # 前端 SPA
-    location / {
-      root /usr/share/nginx/html;
-      try_files $uri $uri/ /index.html;   # SPA fallback
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+    access_log /var/log/nginx/access.log main;
+
+    sendfile on;
+    keepalive_timeout 65;
+    client_max_body_size 50m;  # 图片上传（/api/island-cut）
+
+    server {
+        listen 80;
+        server_name _;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # 健康检查直接返回，不经过 uvicorn
+        location = /health {
+            add_header Content-Type text/plain;
+            return 200 'ok';
+        }
+
+        location /api/ {
+            proxy_pass http://127.0.0.1:8080/api/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+        }
+
+        # 前端 SPA fallback：放最后，否则会吞掉上面的 /api/
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
     }
-    
-    # 后端 API 反代
-    location /api/ {
-      proxy_pass http://backend;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
-      proxy_read_timeout 60s;
-    }
-    
-    location /health {
-      proxy_pass http://backend/health;
-    }
-  }
 }
 ```
 
+**注意 `proxy_pass` 结尾那个斜杠**。带 `/api/` 是"原样拼接"，不带是"替换前缀"，
+两种行为差别很大——历史上 `/tts` 就是这么踩的，详见
+[[docker-python-deploy-pitfalls]]。
+
 ### 2. supervisord.conf 关键配置
 
+只有 backend 一个 program（nginx 不在这里，见上面的进程管理说明）。
+
 ```ini
-[program:nginx]
-command=nginx -g "daemon off;"
-autorestart=true
-stdout_logfile=/var/log/nginx.out.log
-stderr_logfile=/var/log/nginx.err.log
+[supervisord]
+nodaemon=true
+logfile=/var/log/supervisord.log
+pidfile=/var/run/supervisord.pid
 
 [program:backend]
-command=uv run uvicorn rt_backend.main:app --host 127.0.0.1 --port 8000
-directory=/app/backend
+command=uv --directory /app/backend run uvicorn rt_backend.main:app --host 0.0.0.0 --port 8080
+directory=/app
+autostart=true
 autorestart=true
-stdout_logfile=/var/log/backend.out.log
+startsecs=5
+startretries=3
 stderr_logfile=/var/log/backend.err.log
+stdout_logfile=/var/log/backend.out.log
 ```
+
+两个容易写错的点：`uv --directory /app/backend run` 而不是 `cd` 进目录再 `uv run`
+（supervisord 的 `directory` 是进程工作目录，不是 uv 的项目定位）；
+host 是 `0.0.0.0` 而不是 `127.0.0.1`。
 
 ### 3. 常见 nginx 修改场景
 
@@ -185,9 +216,12 @@ stderr_logfile=/var/log/backend.err.log
 ### 4. 本地调试
 
 ```bash
-# 单独跑后端（不走 nginx）
+# 单独跑后端（不走 nginx）。端口必须与 vite.config.js 的 proxy target 一致
 cd backend
-uv run uvicorn rt_backend.main:app --reload --port 8000
+uv run uvicorn rt_backend.main:app --reload --port 8080
+
+# 或者从仓库根目录一次拉起前后端（vite 在 81，后端在 8080）
+pnpm dev:all
 
 # 单独测 nginx
 docker run -p 80:80 -v $(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro nginx:alpine
@@ -229,7 +263,7 @@ docker exec -it rt_app tail -f /var/log/backend.err.log
 
 4. **写测试** → `uv run pytest -v`
 
-5. **本地验证** → `uv run uvicorn rt_backend.main:app --port 8000`，curl 测一下
+5. **本地验证** → `uv run uvicorn rt_backend.main:app --port 8080`，curl 测一下
 
 6. **CI 部署** → `git push` 即触发 GitHub Actions
 
@@ -260,6 +294,8 @@ docker exec -it rt_app tail -f /var/log/backend.err.log
 | 把第三方 cookie/token 硬编码到 git 跟踪的脚本 | 凭证泄露 | 用 `os.environ.get()` + 文档说明，不写进文件 |
 | SKILL.md 膨胀到 300+ 行不拆 ref | 主文档臃肿，触发时加载慢 | 按 key_board_3 拆到 `references/<topic>.md`，主文档留锚点 + 索引表 |
 | 拆出 ref 但不写加载引导 | ref 文档成为孤儿，模型不知道何时读 | 末尾加 ref 索引表，标注"何时读这个 ref" |
+| 文档里的示例配置凭记忆写 | 与本仓库真实配置漂移，照着抄就错 | 写配置片段前**先 Read 真实文件**，端口/路径/进程管理都要对齐 |
+| 改了 `app_port` 不同步全仓 | 前后端端口不一致，本地联调直接连不上 | 端口散落在 `config.py` / `.env.example` / `vite.config.js` / `nginx.conf` / `supervisord.conf` / `package.json` 六处，改一处要全 grep |
 
 ---
 
@@ -293,7 +329,16 @@ docker exec -it rt_app tail -f /var/log/backend.err.log
 - 参考点：CPU 密集任务用**同步 def 端点**（FastAPI 自动进线程池）；依赖 provider 的 `request` 参数必须标 `Request` 类型注解，否则 FastAPI 误判为 query 参数报 422；上传大小与 nginx `client_max_body_size 50m` 对齐
 - 前端：`src/modules/island-cut/`（`/island-cut/studio`）
 
-### 5. 鉴权模式
+### 5. `reversing/` — F12 逆向挑战（无状态）
+
+- 路由（前缀 `/api/reversing/v1`）：`GET /challenge`、`POST /handshake`、`POST /attest`、`POST /notarize`、`POST /terminal`、蜜罐 `ANY /admin/*`（恒 403 + 假 trace_id）
+- 依赖：**零共享资源**——不挂 `app.state`、不建 store、不落盘。`build_router(settings)` 只需要 `reversing_pow_bits`
+- 参考点：这是**唯一走自定义错误 envelope 的模块**（`{code, msg, trace_id}`，`trace_id` 优先取 `core/logging.get_request_id()`，中间件缺席时退化成随机 hex）；`crypto.py` 是纯函数无 IO，与前端 `public/reversing/js/hb-crypto.js` 逐字节对齐
+- 常量在 `data/shards.json`（含主盐）+ `data/final.blob`（答案密文），由 `.tool/reversing-gen/gen.mjs` 生成
+- 契约文档：`docs/reversing-protocol.md`
+- 前端：`src/modules/reversing/`（`/reversing`）；谜题本体在 `public/reversing/js/`，**不进打包器**
+
+### 6. 鉴权模式
 
 当前所有路由**无后端鉴权**——按设计是单机自用工具。如果是 `bilibili_history` 这类需要用户提供第三方凭证的接口，**部署时务必加一层调用方鉴权**（JWT、API key、或放在只监听 `127.0.0.1` 的 nginx 后）。
 

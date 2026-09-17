@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     video_island_dir: str = ""  # 空 = 系统临时目录 / rt_island_cut_video
     video_island_ttl_min: int = 60
 
+    # --- Reversing（F12 逆向挑战，无状态）---
+    # PoW 前导零比特数。20 位在纯 JS 下约 1–3 秒。
+    # 注意：主盐不在这里——它在 reversing/data/shards.json，与碎片同源，
+    # 由 .tool/reversing-gen/gen.mjs 生成。改盐必须重跑生成器。
+    reversing_pow_bits: int = 20
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

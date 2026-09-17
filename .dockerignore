@@ -3,5 +3,13 @@ dist
 .git
 .github
 README.md
-tts/.venv
-tts/__pycache__
+
+# Python 虚拟环境与缓存绝不进构建上下文：
+# Dockerfile 里是 COPY backend/ /app/backend/，本地跑过一次 uv sync 之后
+# backend/.venv 就有 600MB+，而且全是宿主平台的二进制。
+# .gitignore 管不了这一层——docker 只看 .dockerignore。
+**/.venv
+**/__pycache__
+**/.pytest_cache
+*.pyc
+*.db

@@ -1,0 +1,13 @@
+{
+  "salt": "rt-reversing-v1-master-salt-do-not-rotate",
+  "shards": {
+    "0": "23e6a2414b3cfcb6",
+    "1": "dc3fb30671bee8a9",
+    "2": "05cf6e94fdcbf110",
+    "3": "b30050d6ded6aa6b",
+    "4": "364cb0f7e4c4317f",
+    "5": "7f95f4b4f5238e70",
+    "6": "d555151061a5367f",
+    "7": "f43552ba784b56a6"
+  }
+}

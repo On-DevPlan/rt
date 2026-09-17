@@ -29,7 +29,7 @@
 ### 示例
 
 ```bash
-curl -X POST http://localhost:8000/api/bilibili/history/recent \
+curl -X POST http://localhost:8080/api/bilibili/history/recent \
   -H "Content-Type: application/json" \
   -d '{
     "sessdata": "abc%2C1234567890%2C1234%2Aexample",
@@ -203,7 +203,7 @@ export const recentHistory = (sessdata, days = 7) =>
 
 ```bash
 cd backend
-PYTHONPATH=src uv run uvicorn rt_backend.main:app --port 8000
+PYTHONPATH=src uv run uvicorn rt_backend.main:app --port 8080
 ```
 
 ### 烟测脚本

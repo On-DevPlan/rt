@@ -1,0 +1,485 @@
+/* 只放全局词汇表（src/app/styles.css）里没有的布局类。 */
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  display: grid;
+  gap: 28px;
+}
+
+/* ---------------------------------------------------------------- 说明区 */
+
+.hero {
+  display: grid;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.15;
+}
+
+.lede {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.lede code,
+.footer code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(31, 26, 22, 0.06);
+}
+
+.heroStats {
+  gap: 28px;
+}
+
+.stat {
+  display: grid;
+  gap: 2px;
+}
+
+.fine {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- 哨兵告警 */
+
+.alarm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-color: rgba(166, 81, 49, 0.4);
+  background: linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(250, 238, 232, 0.94));
+}
+
+/* ---------------------------------------------------------------- 通用小节 */
+
+.section {
+  display: grid;
+  gap: 16px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 22px;
+}
+
+.sectionNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 76ch;
+}
+
+/* ---------------------------------------------------------------- 技能表 */
+
+.skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.skill {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.skillLabel {
+  font-size: 14px;
+}
+
+.skillNote {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------- 关卡卡 */
+
+.gates {
+  display: grid;
+  gap: 14px;
+}
+
+.gateCard {
+  display: grid;
+  gap: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.gateDone {
+  border-color: rgba(30, 122, 93, 0.35);
+}
+
+.gateHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.gateNo {
+  font-size: 30px;
+  line-height: 1;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.gateDone .gateNo {
+  color: var(--accent);
+}
+
+.gateTitle {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+
+.gateName {
+  margin: 0;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hardTag {
+  background: rgba(166, 81, 49, 0.14);
+  color: #a65131;
+}
+
+.gateBrief {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.statusDone {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.statusPending {
+  background: rgba(31, 26, 22, 0.05);
+}
+
+.gateExtra {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+  line-height: 1.6;
+}
+
+.errTag,
+.okTag {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.errTag {
+  background: var(--danger-soft);
+  color: #a65131;
+}
+
+.okTag {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* ---------------------------------------------------------------- 提示 */
+
+.hints {
+  display: grid;
+  gap: 10px;
+}
+
+.hintList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.hint {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.hintTier {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.hintText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.hintButton {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.hintButton:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.hintButton:disabled {
+  background: rgba(31, 26, 22, 0.08);
+  color: var(--muted);
+  cursor: default;
+}
+
+.ghostButton {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ghostButton:hover {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- 碎片板 */
+
+.board {
+  display: grid;
+  gap: 16px;
+}
+
+.boardCount {
+  font-size: 30px;
+}
+
+.boardCount small {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.slotFilled {
+  border-color: rgba(30, 122, 93, 0.35);
+  background: var(--accent-soft);
+}
+
+.slotLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.slotValue,
+.slotEmpty {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text);
+}
+
+.slotValue {
+  cursor: pointer;
+  text-align: left;
+}
+
+.slotValue:hover {
+  color: var(--accent-strong);
+  text-decoration: underline dotted;
+}
+
+.slotEmpty {
+  color: rgba(102, 88, 74, 0.45);
+}
+
+.claimRow {
+  display: grid;
+  gap: 12px;
+}
+
+.claimItem {
+  display: grid;
+  gap: 6px;
+}
+
+.claimLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.claimInput {
+  width: 220px;
+}
+
+.keyPanel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.keyLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.keyValue {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  word-break: break-all;
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ---------------------------------------------------------------- 终章 */
+
+.finale {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.finaleTitle {
+  margin: 0;
+  font-size: 17px;
+}
+
+.blobInput {
+  width: min(460px, 100%);
+}
+
+.graduated {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(238, 247, 243, 0.92));
+  border: 1px solid rgba(30, 122, 93, 0.3);
+  animation: reveal 0.5s ease;
+}
+
+.graduatedLabel {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.answer {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  letter-spacing: 0.06em;
+  color: var(--accent-strong);
+  user-select: all;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: #a65131;
+}
+
+.graduatedBanner {
+  display: grid;
+  gap: 6px;
+  border-color: rgba(30, 122, 93, 0.35);
+  animation: reveal 0.4s ease;
+}
+
+.graduatedBanner span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------- 页脚 */
+
+.footer {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 20px 16px 60px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .answer {
+    font-size: 24px;
+  }
+}

@@ -186,6 +186,9 @@ def create_app() -> FastAPI:
     from .island_cut.video_sheet.router import build_sheet_router as _build_video_sheet
     app.include_router(_build_video_sheet(_island_sheet_store_dep))
 
+    from .reversing.router import build_router as _build_reversing
+    app.include_router(_build_reversing(settings))
+
     return app
 
 
