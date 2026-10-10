@@ -2,14 +2,15 @@
 
 > Ralph 循环任务（nx-rp loop-1，5 轮上限）。每轮开始先读本文件 + `git log` 恢复上下文。
 
-## 状态：第 4 轮完成 ✅（终验轮：全部验收项从干净状态重验通过）
+## 状态：第 5 轮完成 ✅（任务完结 — 5/5 轮，6 条验收标准全项通过）
 
 ### 轮次历史
 
 - **第 1 轮（d081ad0）**：4 模块交付 + 分层测试（unit/router/e2e）+ 全套文档
 - **第 2 轮（deee0d8）**：收藏夹 v3 接口 + skill_seekers llms.txt Layer 2 + backend/README
 - **第 3 轮（b215a1c）**：修复 5 个既有基线失败（纯测试修复，零生产代码改动）
-- **第 4 轮（本轮）**：终验 + ASGITransport 字面合规用例
+- **第 4 轮（e4f5e0f）**：终验 + ASGITransport 字面合规用例
+- **第 5 轮（本轮）**：收尾 — 计数修正、最终全量验证、记忆归档
 
 ### 第 4 轮改动
 
@@ -49,7 +50,7 @@
 ## 交付物
 
 - 模块：`backend/src/rt_backend/{bilibili_crawler,bilibili_tools,skill_seekers,mediacrawler}/`
-- 测试：`backend/tests/{unit,router,e2e}/`（unit 17 + router 28 + e2e 8 = 53 新用例）
+- 测试：`backend/tests/{unit,router,e2e}/`（unit 17 + router 28 + e2e 10 = 55 新用例）
 - 文档：总文档 + 本文件 + 4 模块 README + backend/README + tests/README
 - 决策：scrapy / bilibili-API-collect 不建模块（理由在总文档）
 
