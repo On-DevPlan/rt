@@ -1,7 +1,9 @@
+import httpx
 import pytest
-from httpx import AsyncClient
+import respx
+from httpx import AsyncClient, Response
 
-from rt_backend.core.http import HttpClientHolder
+from rt_backend.core.http import HttpClientHolder, request_with_retry
 
 
 @pytest.mark.asyncio
@@ -22,3 +24,89 @@ async def test_holder_idempotent():
     await holder.start()  # second call should not replace
     assert holder.client is first
     await holder.close()
+
+
+# --- request_with_retry：指数退避重试 -----------------------------------------
+
+
+@pytest.fixture
+def sleep_calls(monkeypatch):
+    """记录退避时长但不真正等待（避免测试变慢）。"""
+    delays: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        delays.append(seconds)
+
+    monkeypatch.setattr("rt_backend.core.http.asyncio.sleep", fake_sleep)
+    return delays
+
+
+@pytest.mark.asyncio
+async def test_retry_5xx_then_success(sleep_calls):
+    with respx.mock(base_url="https://up.example.com") as router:
+        route = router.get("/a").mock(side_effect=[Response(502), Response(200, json={"ok": True})])
+        async with AsyncClient() as client:
+            resp = await request_with_retry(client, "GET", "https://up.example.com/a", base_delay=0.01)
+    assert resp.status_code == 200
+    assert resp.json() == {"ok": True}
+    assert route.call_count == 2
+    assert len(sleep_calls) == 1  # 失败一次后退避一次
+
+
+@pytest.mark.asyncio
+async def test_retry_4xx_not_retried(sleep_calls):
+    with respx.mock(base_url="https://up.example.com") as router:
+        route = router.get("/b").mock(return_value=Response(404, json={"code": -404}))
+        async with AsyncClient() as client:
+            resp = await request_with_retry(client, "GET", "https://up.example.com/b")
+    assert resp.status_code == 404
+    assert route.call_count == 1  # 4xx 是确定性响应，不重试
+    assert sleep_calls == []
+
+
+@pytest.mark.asyncio
+async def test_retry_exhausted_returns_last_5xx(sleep_calls):
+    with respx.mock(base_url="https://up.example.com") as router:
+        route = router.get("/c").mock(return_value=Response(503))
+        async with AsyncClient() as client:
+            resp = await request_with_retry(
+                client, "GET", "https://up.example.com/c", max_attempts=3, base_delay=0.0
+            )
+    assert resp.status_code == 503  # 耗尽后返回最后一个响应，由调用方 raise_for_status
+    assert route.call_count == 3
+
+
+@pytest.mark.asyncio
+async def test_retry_backoff_delay_doubles(sleep_calls):
+    with respx.mock(base_url="https://up.example.com") as router:
+        router.get("/d").mock(return_value=Response(500))
+        async with AsyncClient() as client:
+            await request_with_retry(
+                client, "GET", "https://up.example.com/d", max_attempts=3, base_delay=2.0
+            )
+    # 尝试 1 后 2*2^0=2；尝试 2 后 2*2^1=4；尝试 3 无退避
+    assert sleep_calls == [2.0, 4.0]
+
+
+@pytest.mark.asyncio
+async def test_retry_connection_error_then_success(sleep_calls):
+    with respx.mock(base_url="https://up.example.com") as router:
+        route = router.get("/e").mock(
+            side_effect=[httpx.ConnectError("boom"), Response(200, json={"ok": True})]
+        )
+        async with AsyncClient() as client:
+            resp = await request_with_retry(client, "GET", "https://up.example.com/e", base_delay=0.01)
+    assert resp.status_code == 200
+    assert route.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_retry_connection_error_exhausted_raises(sleep_calls):
+    with respx.mock(base_url="https://up.example.com") as router:
+        route = router.get("/f").mock(side_effect=httpx.ConnectError("boom"))
+        async with AsyncClient() as client:
+            with pytest.raises(httpx.HTTPError):
+                await request_with_retry(
+                    client, "GET", "https://up.example.com/f", max_attempts=2, base_delay=0.0
+                )
+    assert route.call_count == 2

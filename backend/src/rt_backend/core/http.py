@@ -1,7 +1,48 @@
 """Async HTTP client holder. Single httpx.AsyncClient per process, managed via lifespan."""
-from typing import Optional
+import asyncio
+from typing import Any, Optional
 
 import httpx
+
+# 重试默认值（语义对齐 Skill_Seekers retry_with_backoff：3 次尝试、base*2^(n-1) 退避、
+# 仅 5xx 与连接错误重试，4xx 为确定性响应不重试）
+_RETRY_MAX_ATTEMPTS = 3
+_RETRY_BASE_DELAY = 1.0
+_RETRY_STATUSES = frozenset({500, 502, 503, 504})
+
+
+async def request_with_retry(
+    client: httpx.AsyncClient,
+    method: str,
+    url: str,
+    *,
+    max_attempts: int | None = None,
+    base_delay: float | None = None,
+    retry_statuses: frozenset[int] | None = None,
+    **kwargs: Any,
+) -> httpx.Response:
+    """带指数退避的请求：连接/超时异常与 retry_statuses 触发重试，其余响应原样返回。
+
+    delay = base_delay * 2**(attempt-1)（1s, 2s, 4s…）；4xx 不重试（调用方自行
+    raise_for_status）。默认值从模块常量读取，便于测试 monkeypatch。
+    """
+    attempts = max_attempts if max_attempts is not None else _RETRY_MAX_ATTEMPTS
+    delay_base = base_delay if base_delay is not None else _RETRY_BASE_DELAY
+    statuses = retry_statuses if retry_statuses is not None else _RETRY_STATUSES
+
+    for attempt in range(1, attempts + 1):
+        try:
+            resp = await client.request(method, url, **kwargs)
+        except httpx.HTTPError:
+            if attempt >= attempts:
+                raise
+        else:
+            if resp.status_code in statuses and attempt < attempts:
+                await asyncio.sleep(delay_base * (2 ** (attempt - 1)))
+                continue
+            return resp
+        await asyncio.sleep(delay_base * (2 ** (attempt - 1)))
+    raise RuntimeError("unreachable")  # pragma: no cover
 
 
 class HttpClientHolder:

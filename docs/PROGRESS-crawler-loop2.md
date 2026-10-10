@@ -11,7 +11,7 @@
 | 1 | ✅ 12 条差距（Top3：置顶评论+排序 / 视频元数据包 / UP 全量投稿） | Top1 + Top3 + 测试补充 | ✅ 264/0 + build | ✅ |
 | 2 | ✅ 上游行为实证（A-E 五节：view/playurl/弹幕XML/sitemap递归/md解析） | 视频元数据包（#4+#2+#10）+ sitemap index 递归（#7） | ✅ 269/0 + build | ✅ |
 | 3 | ✅ doc_scraper 增值特征规则实证（patterns/低信号/描述规范化/分类/quick_ref/SKILL 管线边界） | .md 解析（#8）+ patterns/语言启发式（#6 页级）+ categorize 聚合开关 | ✅ 290/0 + build | ✅ |
-| 4 | ⏳（建议：HTTP 重试退避（#9）+ cookbook 场景补齐与语义标签（#11）） | — | — | — |
+| 4 | ✅ HTTP 重试（core/http::request_with_retry）+ 语义标签补齐（order 1-3 含义/quality bitrate 0-2/qn 120 4K/fnval 16）+ retry 测试 8 条 | Top2（order 语义缺/quality bitrate 缺）→ Top1+Top2 实装 + retry 测试全绿 | ✅ 299/0 + build | — |
 | 5 | 未开始 | | | |
 
 ## 第 1 轮记录（2026-10-11，commit 2fbb126）
@@ -74,6 +74,26 @@ respx side_effect 模拟 502→200）+ cookbook 场景补齐与 order/quality �
 **验证**：backend pytest **269 passed / 0 failed**（+5）；`pnpm build` 通过。
 
 **下轮建议**：.md 直链 markdown 解析（#8，报告 E 节 legacy 规则可直接照抄：title/# 标题/fenced code/≥20 字符段/links .md 过滤）+ doc_scraper patterns 抽取与语言启发式兜底（#6）。次选：cookbook 场景覆盖补齐（#11：wbi/sign、favorites/add、playlist/user songs、platforms + order/quality 语义标签）。
+
+## 第 4 轮记录（2026-10-11）
+
+**sub agent 报告结论**：HTTP 重试（#9，core/http + 两模块接线）+ order/quality 语义标签缺损（#11）。
+
+**本轮实现**（差距 #9、#11）：
+
+1. `core/http.py`：`request_with_retry`（指数退避 1s/2s/4s、5xx+连接错误重试、4xx 不重试）
+2. `bilibili_crawler/service.py::_get_json` 接线（`from ..core.http`）
+3. `skill_seekers/service.py::_fetch_and_extract` 接线（`from ..core.http`；修复导入路径 `...`→`..`）
+4. `bilibili_tools/router.py`：`order ge=1,le=3`（1=最新发布 2=最多播放 3=最多收藏）+ `quality` 位率标签（0=128K 1=192K 2=320K）+ 修复 uid 纯数字参数兜底
+5. `bilibili_crawler/schemas.py`：`qn` 新增 120=4K（需 fnval 含 128）+ `fnval` 新增 16=仅 DASH；description 补全语义
+6. 前端 specs：bilibiliTools order/quality 标签 + bilibiliCrawler qn 120/fnval 16 选项
+7. `bilibili_tools/README.md`：order/quality 语义 + cover 字段 + curl 补全
+8. `crawler-cookbook.md`：`/favorites` curl 用 `-G --data-urlencode`（解决 ? 分隔冲突）+ favorites/add 示例 + audio quality bitrate 说明
+9. 测试 +9：retry 单元 6 条（5xx→200/4xx 不重试/耗尽/delay 双倍/连接错误→200/耗尽抛）+ order=3 透传 + order=4→422 + video_info 502→200 重试成功
+
+**验证**：backend pytest **299 passed / 0 failed**（+9）；`pnpm build` 通过。
+
+**下轮建议**：loop-2 最终轮，重点确认迁移完备性闭环（README/cookbook 与实现的最后对齐）。
 
 ## 遗留候选（sub agent 报告未实现项，供后续轮次）
 

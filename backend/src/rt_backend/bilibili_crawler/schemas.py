@@ -64,11 +64,11 @@ class PlayUrlRequest(BaseModel):
     cid: int = Field(description="分P cid")
     qn: int = Field(
         default=80,
-        description="清晰度：116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高 qn 多需 SESSDATA）",
+        description="清晰度：120=4K 116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高的多需 SESSDATA；4K 还需 fnval 含 128 + fourk）",
     )
     fnval: int = Field(
         default=1,
-        description="格式位掩码：1=音视频合一 mp4（返回 durl 直链）；4048=DASH（无 durl，dash=true）",
+        description="格式位掩码：1=音视频合一 mp4（返回 durl 直链）；16=仅 DASH；4048=全部 DASH（无 durl，dash=true）",
     )
     fourk: bool = Field(default=True, description="允许 4K")
     sessdata: str | None = Field(default=None, description="高清晰度需要 SESSDATA")

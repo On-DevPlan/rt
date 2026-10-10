@@ -534,8 +534,10 @@ async def _fetch_and_extract(
     is_valid_fn=None,
 ) -> dict[str, Any]:
     """抓一页；discover_only（dry-run）只返回链接不解析正文；.md 结尾的 URL 走
-    markdown 解析（原仓库 _has_md_extension 分支）。"""
-    resp = await client.get(url, timeout=30.0)
+    markdown 解析（原仓库 _has_md_extension 分支）。5xx/网络错误自动重试。"""
+    from ..core.http import request_with_retry
+
+    resp = await request_with_retry(client, "GET", url, timeout=30.0)
     resp.raise_for_status()
     if urlparse(url).path.endswith(".md"):
         # .md 直链：markdown 解析（原仓库分支），HTML 响应兜底走普通提取

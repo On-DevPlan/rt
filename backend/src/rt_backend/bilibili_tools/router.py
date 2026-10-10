@@ -104,15 +104,23 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
         http: HttpClientHolder = Depends(http_provider),
         uid: str | None = Query(default=None, description="数字 uid"),
         link: str | None = Query(default=None, description="完整 space 链接 space.bilibili.com/{uid}/audio"),
-        order: int = Query(default=1, ge=1, le=2),
+        order: int = Query(
+            default=1, ge=1, le=3, description="排序：1=最新发布 2=最多播放 3=最多收藏"
+        ),
         max_pages: int = Query(default=3, ge=1, le=10),
     ):
         """UP 主上传的歌曲列表。uid 或 link 二选一。"""
         from .service import parse_space_uid
 
-        real_uid = parse_space_uid(link) if link else (parse_space_uid(uid) if uid else "")
+        if link:
+            real_uid = parse_space_uid(link)
+        elif uid:
+            # uid 可为纯数字或 space 链接
+            real_uid = parse_space_uid(uid) or (uid if uid.isdigit() else "")
+        else:
+            real_uid = ""
         if not real_uid:
-            raise HTTPException(status_code=422, detail="需要 uid 或合法的 space 链接")
+            raise HTTPException(status_code=422, detail="需要 uid（数字或 space 链接）或 link")
         try:
             data = await fetch_user_songs(http.client, real_uid, order, max_pages)
         except BilibiliToolsError as e:
@@ -123,7 +131,9 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
     async def song_info(
         sid: str,
         http: HttpClientHolder = Depends(http_provider),
-        quality: int = Query(default=2, ge=0, le=2, description="音质 0/1/2，越大越高"),
+        quality: int = Query(
+            default=2, ge=0, le=2, description="音质位率：0=128K 1=192K 2=320K（越大越高）"
+        ),
     ):
         """音频区歌曲信息 + 播放 CDN 直链（支持传 au{id} 完整链接或纯数字 id）。"""
         from .service import parse_audio_sid

@@ -165,6 +165,44 @@ async def test_video_info_success():
 
 
 @pytest.mark.asyncio
+async def test_video_info_retries_5xx_then_succeeds(monkeypatch):
+    """上游首次 502（瞬时故障）→ 自动重试 → 第二次 200，端点仍成功（验证重试接线）。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    async def _fast_sleep(_seconds):  # 退避不真等待
+        return None
+
+    monkeypatch.setattr("rt_backend.core.http.asyncio.sleep", _fast_sleep)
+
+    view_payload = {
+        "code": 0,
+        "data": {
+            "View": {
+                "bvid": "BV1xx411c7mD",
+                "aid": 170001,
+                "cid": 9001,
+                "title": "重试成功",
+                "owner": {"mid": 42, "name": "up主"},
+                "stat": {"view": 1},
+            }
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        route = router.get("/x/web-interface/view/detail").mock(
+            side_effect=[Response(502), Response(200, json=view_payload)]
+        )
+        with TestClient(app) as client:
+            r = client.get("/api/bilibili-crawler/video/BV1xx411c7mD")
+
+    assert r.status_code == 200, r.text
+    assert r.json()["title"] == "重试成功"
+    assert route.call_count == 2
+
+
+@pytest.mark.asyncio
 async def test_play_url_signed_request_and_durl():
     """playurl：WBI 签名 + avid 参数名 + durl/accept_quality 规范化。"""
     app = FastAPI()

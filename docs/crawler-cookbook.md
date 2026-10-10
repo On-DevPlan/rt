@@ -72,7 +72,17 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
 - **端点**：`GET /api/bilibili-tools/favorites`
 - **curl**：
   ```bash
-  curl "http://127.0.0.1:8080/api/bilibili-tools/favorites?link=https://space.bilibili.com/42/favlist?fid=12345&limit=50"
+  # link 含 ?fid= 与父级 query 冲突，用 -G --data-urlencode 让它整体成为 link 的值
+  curl -G "http://127.0.0.1:8080/api/bilibili-tools/favorites" \
+    --data-urlencode "link=https://space.bilibili.com/42/favlist?fid=12345" \
+    --data-urlencode "limit=50"
+  ```
+- **写操作示例**（把多个 av 号加进收藏夹，需 SESSDATA + bili_jct）：
+  ```bash
+  curl -X POST "http://127.0.0.1:8080/api/bilibili-tools/favorites/add" \
+    -H "Content-Type: application/json" \
+    -d '{"sessdata":"...","bili_jct":"...","fid":"12345","aids":["170001","2"]}'
+  # → results[] 逐条 {aid, code, ok, message}；11007/11201=已收藏（ok=true）
   ```
 - **UI**：`/crawlers/bilibili-tools` → 「收藏夹枚举」→ 贴完整 favlist 链接 → 提交。
 - **返回解读**：`fav_title` 收藏夹名；`items[].state=1` 失效视频；`bvid` 可直接拼 `https://www.bilibili.com/video/{bvid}`。
@@ -87,8 +97,8 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
   curl "http://127.0.0.1:8080/api/bilibili-tools/audio/au241921?quality=2"
   ```
 - **UI**：`/crawlers/bilibili-tools` → 「单曲信息 + CDN 直链」→ 填 `au241921` → 提交。
-- **返回解读**：`cdns[]` 是 m4a 直链（**有时效 + Referer 校验**，下载时 `curl -H "Referer: https://www.bilibili.com/" -o song.m4a <cdn>`）；`lyric` 是 `.lrc` 歌词地址。
-- **常见错误**：quality 越界 → 422；直链 403 时补 Referer。
+- **返回解读**：`cdns[]` 是 m4a 直链（**有时效 + Referer 校验**，下载时 `curl -H "Referer: https://www.bilibili.com/" -o song.m4a <cdn>`）；`lyric` 是 `.lrc` 歌词地址；`cover` 封面图；`quality` 回显生效音质。
+- **常见错误**：quality 越界（合法 0=128K / 1=192K / 2=320K）→ 422；直链 403 时补 Referer。
 
 ### 3.4 B 站关键词搜索（按点击量找教程）
 

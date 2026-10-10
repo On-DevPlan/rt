@@ -233,3 +233,20 @@ def test_user_songs(client):
     assert body["uid"] == "2932528"
     assert body["total"] == 1
     assert body["items"][0]["author"] == "up"  # upper 接口的 uname 归一为 author
+
+
+def test_user_songs_order_three_accepted_and_forwarded(client):
+    payload = {"code": 0, "data": {"data": [], "pageCount": 1, "curPage": 1}}
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        route = router.get(UPPER_URL).mock(return_value=Response(200, json=payload))
+        r = client.get(
+            "/api/bilibili-tools/audio/user",
+            params={"uid": "2932528", "order": 3},  # 3=最多收藏（上游合法）
+        )
+    assert r.status_code == 200, r.text
+    assert route.calls.last.request.url.params["order"] == "3"
+
+
+def test_user_songs_order_out_of_range_rejected(client):
+    r = client.get("/api/bilibili-tools/audio/user", params={"uid": "2932528", "order": 4})
+    assert r.status_code == 422  # 上游 order 合法域为 1/2/3

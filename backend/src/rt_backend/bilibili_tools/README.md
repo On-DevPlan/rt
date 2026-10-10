@@ -24,8 +24,8 @@
 | GET | `/favorites` | query: `link`（完整收藏夹链接）或 `mid`+`fid`；`limit≤200` | `{mid, fid, total, items:[{aid,title,pic,state}]}` |
 | POST | `/favorites/add` | body: `{sessdata, bili_jct, fid, aids[]}` | 逐个 av 的 `{code, ok, pattern, message}` |
 | GET | `/audio/playlist/{sid}` | 路径: `am{id}` 或纯数字；`max_pages≤10` | `{menu_sid, total, items:[{sid,title,author,...}]}` |
-| GET | `/audio/user` | query: `uid` 或 `link`（space 链接）；`order`、`max_pages` | `{uid, total, items:[...]}` |
-| GET | `/audio/{sid}` | 路径: `au{id}` 或纯数字；query: `quality 0-2` | 歌曲信息 + `cdns[]` 直链 |
+| GET | `/audio/user` | query: `uid` 或 `link`（space 链接）；`order`（1=最新发布 2=最多播放 3=最多收藏）、`max_pages` | `{uid, total, items:[...]}` |
+| GET | `/audio/{sid}` | 路径: `au{id}` 或纯数字；query: `quality`（0=128K 1=192K 2=320K） | 歌曲信息（含 `cover`/`lyric`/`quality`）+ `cdns[]` 直链 |
 
 注意：`/audio/{sid}` 是通配路由，必须注册在 `/audio/playlist`、`/audio/user` 之后（FastAPI 按注册顺序匹配）。
 
@@ -50,13 +50,14 @@ curl -X POST "http://127.0.0.1:8080/api/bilibili-tools/favorites/add" \
 curl "http://127.0.0.1:8080/api/bilibili-tools/audio/playlist/am76105"
 # → {"menu_sid":"76105","total":100,"items":[{"sid":"1","title":"...","author":"..."}]}
 
-# 4. UP 主上传的歌曲（给 space 链接也行）
-curl "http://127.0.0.1:8080/api/bilibili-tools/audio/user?link=https://space.bilibili.com/2932528/audio"
+# 4. UP 主上传的歌曲（给 space 链接也行；order 1=最新发布 2=最多播放 3=最多收藏）
+curl "http://127.0.0.1:8080/api/bilibili-tools/audio/user?link=https://space.bilibili.com/2932528/audio&order=2"
 # → {"uid":"2932528","total":30,"items":[{"sid":"9","title":"...","author":"..."}]}
 
-# 5. 单曲信息 + CDN 直链（拿直链后自行下载）
+# 5. 单曲信息 + CDN 直链（拿直链后自行下载；quality 0=128K 1=192K 2=320K）
 curl "http://127.0.0.1:8080/api/bilibili-tools/audio/au241921?quality=2"
-# → {"sid":"241921","title":"...","author":"...","lyric":"http://....lrc","cdns":["http://cdn.../song.m4a"]}
+# → {"sid":"241921","title":"...","author":"...","lyric":"http://....lrc",
+#    "cover":"http://.../cover.jpg","quality":2,"cdns":["http://cdn.../song.m4a"]}
 ```
 
 ## 测试

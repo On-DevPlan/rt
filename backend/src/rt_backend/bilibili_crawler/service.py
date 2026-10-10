@@ -159,8 +159,10 @@ async def _get_json(
     params: dict[str, Any],
     sessdata: str | None,
 ) -> dict[str, Any]:
-    """GET 并解析 B 站 JSON envelope；code!=0 时抛对应错误。"""
-    resp = await client.get(url, params=params, headers=_headers(sessdata))
+    """GET 并解析 B 站 JSON envelope；code!=0 时抛对应错误。5xx/网络错误自动重试。"""
+    from ..core.http import request_with_retry
+
+    resp = await request_with_retry(client, "GET", url, params=params, headers=_headers(sessdata))
     if resp.status_code == 412:
         raise UpstreamError("B 站风控拦截（412），请提供 SESSDATA 或稍后再试")
     resp.raise_for_status()

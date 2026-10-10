@@ -56,7 +56,7 @@ export const bilibiliCrawlerEndpoints = [
   {
     id: 'play-url',
     title: '播放直链 + 清晰度',
-    description: 'WBI 签名 playurl。aid/cid 从「视频完整详情」的 pages[] 拿。qn：116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高 qn 多需 SESSDATA）。fnval=1 返回 mp4 合一直链（durl）；4048=DASH（无直链）。直链下载需带 B 站 Referer。',
+    description: 'WBI 签名 playurl。aid/cid 从「视频完整详情」的 pages[] 拿。qn：120=4K 116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高的多需 SESSDATA）。fnval=1 返回 mp4 合一直链（durl）；16=仅 DASH；4048=全部 DASH（无直链）。直链下载需带 B 站 Referer。',
     method: 'POST',
     path: '/api/bilibili-crawler/play-url',
     inputs: [
@@ -68,6 +68,7 @@ export const bilibiliCrawlerEndpoints = [
         type: 'select',
         default: 80,
         options: [
+          { value: 120, label: '120 — 4K（需 SESSDATA + fnval 含 128）' },
           { value: 116, label: '116 — 1080P60（需 SESSDATA）' },
           { value: 112, label: '112 — 1080P+（需 SESSDATA）' },
           { value: 80, label: '80 — 1080P' },
@@ -84,7 +85,8 @@ export const bilibiliCrawlerEndpoints = [
         default: 1,
         options: [
           { value: 1, label: '1 — mp4 合一直链（durl）' },
-          { value: 4048, label: '4048 — DASH（无直链）' }
+          { value: 16, label: '16 — 仅 DASH（无直链）' },
+          { value: 4048, label: '4048 — 全部 DASH（无直链）' }
         ]
       },
       { name: 'fourk', label: '允许 4K', type: 'bool', default: true },

@@ -54,9 +54,9 @@ export const bilibiliToolsEndpoints = [
         type: 'select',
         default: 2,
         options: [
-          { value: 0, label: '0 — 低' },
-          { value: 1, label: '1 — 中' },
-          { value: 2, label: '2 — 高' }
+          { value: 0, label: '0 — 128K' },
+          { value: 1, label: '1 — 192K' },
+          { value: 2, label: '2 — 320K' }
         ]
       }
     ],
@@ -91,8 +91,9 @@ export const bilibiliToolsEndpoints = [
         type: 'select',
         default: 1,
         options: [
-          { value: 1, label: '1 — 默认' },
-          { value: 2, label: '2 — 其他' }
+          { value: 1, label: '1 — 最新发布' },
+          { value: 2, label: '2 — 最多播放' },
+          { value: 3, label: '3 — 最多收藏' }
         ]
       },
       { name: 'max_pages', label: '翻页上限（≤10）', type: 'number', default: 3 }
