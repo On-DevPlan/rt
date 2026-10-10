@@ -2,15 +2,33 @@
 
 > Ralph 循环任务（nx-rp loop-1，5 轮上限）。每轮开始先读本文件 + `git log` 恢复上下文。
 
-## 状态：第 3 轮完成 ✅（pytest 全绿 256/0，6 条验收标准全部字面成立）
+## 状态：第 4 轮完成 ✅（终验轮：全部验收项从干净状态重验通过）
 
 ### 轮次历史
 
 - **第 1 轮（d081ad0）**：4 模块交付 + 分层测试（unit/router/e2e）+ 全套文档
 - **第 2 轮（deee0d8）**：收藏夹 v3 接口 + skill_seekers llms.txt Layer 2 + backend/README
-- **第 3 轮（本轮）**：修复 5 个既有基线失败（纯测试修复，零生产代码改动）
+- **第 3 轮（b215a1c）**：修复 5 个既有基线失败（纯测试修复，零生产代码改动）
+- **第 4 轮（本轮）**：终验 + ASGITransport 字面合规用例
 
-### 第 3 轮改动明细
+### 第 4 轮改动
+
+- 新增 `test_real_app_via_httpx_asgi_transport`：验收标准 2 写明「httpx ASGITransport
+  启动真实 ASGI app」——原 e2e 用 TestClient（语义等价但非字面）。新用例用原生
+  `httpx.AsyncClient + ASGITransport` 手动驱动 lifespan，对 fixture 站点跑完整爬取链路
+
+### 第 4 轮终验结果（全部从当前 HEAD 重验）
+
+1. ✅ 4 模块 + 独立前缀挂载（OpenAPI 13 端点）
+2. ✅ `uv run pytest -q`：**257 passed / 0 failed**（含 ASGITransport 字面用例）
+3. ✅ `PYTHONPATH=src uv run uvicorn rt_backend.main:app --port 8080`：
+   /health + /docs + /api/mediacrawler/platforms 实测 200（验收原文端口 8080）
+4. ✅ 4 模块 README 齐备（功能/路由表/curl 案例）
+5. ✅ 总文档含 scrapy / bilibili-API-collect 决策理由 + 模块索引 + curl 汇总
+6. ✅ 本文件每轮更新
+- ✅ 「不引入特殊中间件」复核：`git diff d081ad0^..HEAD -- main.py` 只含 router 挂载与 import
+
+### 第 3 轮改动明细（历史，见 b215a1c）
 
 1. **anime×2（时间炸弹）**：降级只在查「当前季」时启用（service 的 `degraded_ok`），
    两个降级用例写死 SUMMER 2026——写测试时是当前季，10 月起 FALL 接管，降级路径不再
@@ -21,7 +39,7 @@
 ### 验收自查（第 3 轮逐项）
 
 1. ✅ 4 模块 + 独立前缀，main.py 挂载（OpenAPI 13 端点）
-2. ✅ `uv run pytest -q`：**256 passed / 0 failed**（历史首次全绿；e2e 走真实 ASGI app
+2. ✅ `uv run pytest -q`：256 passed / 0 failed（第 4 轮终验更新为 257/0）；e2e 走真实 ASGI app
    + 本地 fixture 站点真 HTTP，上游 respx 拦截，零外网零真实 cookie 依赖）
 3. ✅ `PYTHONPATH=src uv run uvicorn rt_backend.main:app` 冒烟：/health + convert 实测正确
 4. ✅ 4 模块 README（功能/路由表/curl 案例）齐全

@@ -4,6 +4,7 @@
 - skill_seekers 爬取：对本地 fixture 文档站（conftest.doc_site）发真 HTTP 回环请求
 - bilibili 系列上游端点：respx 拦截 api.bilibili.com，其余链路全真
 """
+import pytest
 import respx
 from httpx import Response
 
@@ -132,6 +133,46 @@ def test_bilibili_tools_favorites_through_real_app(real_app_client):
     assert body["total"] == 1
     assert body["fav_title"] == "e2e 收藏夹"
     assert body["items"][0]["title"] == "e2e 视频"
+
+
+@pytest.mark.asyncio
+async def test_real_app_via_httpx_asgi_transport(doc_site):
+    """验收标准 2 的字面实现：httpx ASGITransport 启动真实 ASGI app 打完整链路。
+
+    TestClient 走的是 starlette 的 portal 封装；这里用原生 httpx.AsyncClient +
+    ASGITransport，并手动驱动 lifespan（ASGITransport 不触发 lifespan 事件）。
+    """
+    import httpx
+    from httpx import ASGITransport
+
+    import rt_backend.main as main_mod
+    from rt_backend.sicau_timetable_v2.browser import PlaywrightHolder
+
+    async def _noop_start(self):  # noqa: ANN001
+        return None
+
+    original = PlaywrightHolder.start
+    PlaywrightHolder.start = _noop_start
+    try:
+        app = main_mod.create_app()
+        async with app.router.lifespan_context(app):
+            transport = ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+                # 纯计算端点
+                r = await client.get("/api/bilibili-crawler/convert", params={"aid": 2})
+                assert r.status_code == 200
+                assert r.json()["bvid"] == "BV1xx411c7mD"
+                # 爬虫端点：对本地 fixture 站点发真实 HTTP
+                r = await client.post(
+                    "/api/skill-seekers/scrape",
+                    json={"base_url": f"{doc_site}/docs/", "max_pages": 5, "rate_limit": 0},
+                )
+                assert r.status_code == 200, r.text
+                body = r.json()
+                assert body["pages_saved"] >= 3
+                assert any(p["url"].endswith("b.html") for p in body["pages"])
+    finally:
+        PlaywrightHolder.start = original
 
 
 def test_mediacrawler_platforms_through_real_app(real_app_client):
