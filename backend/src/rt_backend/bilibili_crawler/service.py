@@ -220,7 +220,7 @@ def _format_comment_time(ctime: int) -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _normalize_reply(reply: dict[str, Any]) -> dict[str, Any]:
+def _normalize_reply(reply: dict[str, Any], pinned: bool = False) -> dict[str, Any]:
     """抽取原脚本关注的字段：昵称/性别/时间/点赞/评论/IP属地/等级/uid/rpid。"""
     member = reply.get("member") or {}
     control = reply.get("reply_control") or {}
@@ -238,7 +238,48 @@ def _normalize_reply(reply: dict[str, Any]) -> dict[str, Any]:
         "level": (member.get("level_info") or {}).get("current_level", 0),
         "mid": str(member.get("mid", "")),
         "reply_count": reply.get("rcount", 0),
+        "pinned": pinned,
     }
+
+
+def _extract_pinned_replies(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """首页置顶评论提取（对齐原仓库行为：Bilibili_crawler.py 的 top_replies +
+    MediaCrawler client.py _extract_pinned_comments 的 top dict/list 混合形态）。
+
+    - top_replies: list[reply]
+    - top: dict（{upper: reply, admin: reply} 或 reply 本身）或 list（元素为 reply
+      或 {upper: reply} 包装），按 rpid 去重
+    """
+    pinned: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def _push(reply: Any) -> None:
+        if not isinstance(reply, dict):
+            return
+        rpid = str(reply.get("rpid", ""))
+        if not rpid or rpid in seen:
+            return
+        seen.add(rpid)
+        pinned.append(reply)
+
+    for reply in data.get("top_replies") or []:
+        _push(reply)
+
+    top = data.get("top")
+    if isinstance(top, dict):
+        upper = top.get("upper")
+        admin = top.get("admin")
+        if isinstance(upper, dict):
+            _push(upper)
+        if isinstance(admin, dict):
+            _push(admin)
+        if not isinstance(upper, dict) and not isinstance(admin, dict):
+            _push(top)  # top 本身就是一条 reply
+    elif isinstance(top, list):
+        for entry in top:
+            if isinstance(entry, dict):
+                _push(entry.get("upper") if isinstance(entry.get("upper"), dict) else entry)
+    return pinned
 
 
 async def _fetch_sub_replies(
@@ -286,9 +327,10 @@ async def fetch_comments(
     ps: int = 20,
     pages: int = 1,
     include_replies: bool = True,
+    mode: int = 3,
     sessdata: str | None = None,
 ) -> dict[str, Any]:
-    """爬取两级评论。
+    """爬取两级评论（含置顶，对齐原仓库 top_replies/top 处理）。
 
     Args:
         oid: 目标 id（type=1 视频为 aid，type=17 动态为动态 id）
@@ -296,27 +338,41 @@ async def fetch_comments(
         ps: 每页条数（上游上限 49？常用 20/30）
         pages: 抓取的一级评论页数
         include_replies: 是否抓取楼中楼
+        mode: 排序参数透传上游（2=按时间 3=按热度，0/1 为混合态）
         sessdata: 可选登录态
     """
     comments: list[dict[str, Any]] = []
+    seen_rpids: set[str] = set()
+
+    async def _append(reply: dict[str, Any], pinned: bool) -> None:
+        rpid = str(reply.get("rpid", ""))
+        if rpid and rpid in seen_rpids:
+            return  # 置顶常与普通列表重复下发，按 rpid 去重（MediaCrawler 语义）
+        if rpid:
+            seen_rpids.add(rpid)
+        item = _normalize_reply(reply, pinned=pinned)
+        item["replies"] = []
+        if include_replies and item["reply_count"] > 0:
+            item["replies"] = await _fetch_sub_replies(
+                client, oid, type_, item["rpid"], ps, sessdata
+            )
+        comments.append(item)
+
     for page in range(1, pages + 1):
         data = await _get_json(
             client,
             _REPLY_MAIN_API,
-            {"next": page, "type": type_, "oid": oid, "ps": ps, "mode": 3},
+            {"next": page, "type": type_, "oid": oid, "ps": ps, "mode": mode},
             sessdata,
         )
+        if page == 1:
+            for reply in _extract_pinned_replies(data):
+                await _append(reply, pinned=True)
         replies = data.get("replies") or []
         if not replies:
             break
         for reply in replies:
-            item = _normalize_reply(reply)
-            item["replies"] = []
-            if include_replies and item["reply_count"] > 0:
-                item["replies"] = await _fetch_sub_replies(
-                    client, oid, type_, item["rpid"], ps, sessdata
-                )
-            comments.append(item)
+            await _append(reply, pinned=False)
         await asyncio_sleep_small()
 
     cursor = data.get("cursor") if pages else None  # 保留最后一页的游标信息
@@ -373,3 +429,43 @@ async def fetch_user_space(
             await asyncio_sleep_small()
 
     return {"mid": mid, "pages_fetched": pages_fetched, "total": len(items), "items": items}
+
+
+# ---------------------------------------------------------------------------
+# UP 主全量投稿（MediaCrawler get_creator_videos 的 /x/space/wbi/arc/search 包装）
+# ---------------------------------------------------------------------------
+
+_ARC_SEARCH_API = "https://api.bilibili.com/x/space/wbi/arc/search"
+
+_ARC_ORDERS = ("pubdate", "click", "stow")  # 最近发布 / 最多播放 / 最多收藏
+
+
+async def fetch_user_videos(
+    client: httpx.AsyncClient,
+    mid: str,
+    pn: int = 1,
+    ps: int = 30,
+    order: str = "pubdate",
+    sessdata: str | None = None,
+) -> dict[str, Any]:
+    """UP 主全部投稿列表（区别于 user-space 的动态子集：置顶隐藏、非动态化
+    投稿都能拿到），WBI 签名跨请求复用 sign_params。"""
+    if order not in _ARC_ORDERS:
+        raise ValueError(f"order 必须是 {_ARC_ORDERS} 之一")
+    params: dict[str, Any] = {"mid": mid, "pn": pn, "ps": ps, "order": order}
+    signed = await sign_params(client, params)
+    data = await _get_json(client, _ARC_SEARCH_API, signed, sessdata)
+    vlist = (data.get("list") or {}).get("vlist") or []
+    items = [
+        {
+            "aid": v.get("aid"),
+            "bvid": v.get("bvid", ""),
+            "title": v.get("title", ""),
+            "created": v.get("created"),
+            "play": v.get("play"),
+            "video_review": v.get("video_review"),
+            "length": v.get("length", ""),
+        }
+        for v in vlist
+    ]
+    return {"mid": mid, "count": data.get("count"), "total": len(items), "items": items}

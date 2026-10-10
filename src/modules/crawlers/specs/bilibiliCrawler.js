@@ -70,6 +70,18 @@ export const bilibiliCrawlerEndpoints = [
       { name: 'ps', label: '每页条数（≤30）', type: 'number', default: 20 },
       { name: 'pages', label: '抓取页数（≤20）', type: 'number', default: 1 },
       { name: 'include_replies', label: '展开楼中楼', type: 'bool', default: true },
+      {
+        name: 'mode',
+        label: '排序（透传上游）',
+        type: 'select',
+        default: 3,
+        options: [
+          { value: 3, label: '3 — 按热度' },
+          { value: 2, label: '2 — 按时间' },
+          { value: 0, label: '0 — 混合' },
+          { value: 1, label: '1 — 混合' }
+        ]
+      },
       { name: 'sessdata', label: 'SESSDATA（可选，降风控）', type: 'text', sensitive: true }
     ],
     buildCurl: (v) =>
@@ -79,7 +91,7 @@ export const bilibiliCrawlerEndpoints = [
   {
     id: 'user-space',
     title: 'UP 主空间动态',
-    description: '动态列表，抽取每条的 comment_id_str / comment_type（可直接喂给上面的两级评论）。',
+    description: '动态列表，抽取每条的 comment_id_str/comment_type（可直接喂给上面的两级评论）。注意：动态 feed 只是投稿的子集。',
     method: 'POST',
     path: '/api/bilibili-crawler/user-space',
     inputs: [
@@ -90,5 +102,32 @@ export const bilibiliCrawlerEndpoints = [
     buildCurl: (v) =>
       `curl -X POST "${BASE}/user-space" -H "Content-Type: application/json" -d '${JSON.stringify(v)}'`,
     submit: (v) => api.fetchUserSpace(v)
+  },
+  {
+    id: 'user-videos',
+    title: 'UP 主全量投稿',
+    description: 'WBI 签名的 arc/search——全部投稿（含非动态化、置顶隐藏的），抓「全部投稿的评论」场景用本端点拿 (aid, type=1) 对再喂两级评论。',
+    method: 'POST',
+    path: '/api/bilibili-crawler/user-videos',
+    inputs: [
+      { name: 'mid', label: 'UP 主 uid', type: 'text', placeholder: '42', default: '42' },
+      { name: 'pn', label: '页码', type: 'number', default: 1 },
+      { name: 'ps', label: '每页条数（≤50）', type: 'number', default: 30 },
+      {
+        name: 'order',
+        label: '排序',
+        type: 'select',
+        default: 'pubdate',
+        options: [
+          { value: 'pubdate', label: 'pubdate — 最近发布' },
+          { value: 'click', label: 'click — 最多播放' },
+          { value: 'stow', label: 'stow — 最多收藏' }
+        ]
+      },
+      { name: 'sessdata', label: 'SESSDATA（可选）', type: 'text', sensitive: true }
+    ],
+    buildCurl: (v) =>
+      `curl -X POST "${BASE}/user-videos" -H "Content-Type: application/json" -d '${JSON.stringify(v)}'`,
+    submit: (v) => api.fetchUserVideos(v)
   }
 ]

@@ -10,6 +10,8 @@ from .schemas import (
     IdConvertResponse,
     UserSpaceRequest,
     UserSpaceResponse,
+    UserVideosRequest,
+    UserVideosResponse,
     VideoInfoResponse,
     WbiSignRequest,
     WbiSignResponse,
@@ -22,6 +24,7 @@ from .service import (
     bv2av,
     fetch_comments,
     fetch_user_space,
+    fetch_user_videos,
     fetch_video_info,
     sign_params,
 )
@@ -94,6 +97,7 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
                 ps=req.ps,
                 pages=req.pages,
                 include_replies=req.include_replies,
+                mode=req.mode,
                 sessdata=req.sessdata,
             )
         except AuthError as e:
@@ -121,5 +125,31 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
         except BilibiliCrawlerError as e:
             raise HTTPException(status_code=500, detail=str(e))
         return UserSpaceResponse(**data)
+
+    @router.post("/user-videos", response_model=UserVideosResponse)
+    async def user_videos(
+        req: UserVideosRequest,
+        http: HttpClientHolder = Depends(http_provider),
+    ):
+        """UP 主全量投稿列表（WBI 签名的 arc/search）——区别于 user-space 的动态子集，
+        抓「全部投稿的评论」场景请用本端点拿 (aid, type=1) 对再喂 /comments。"""
+        try:
+            data = await fetch_user_videos(
+                http.client,
+                mid=req.mid,
+                pn=req.pn,
+                ps=req.ps,
+                order=req.order,
+                sessdata=req.sessdata,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except AuthError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+        except UpstreamError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except BilibiliCrawlerError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        return UserVideosResponse(**data)
 
     return router

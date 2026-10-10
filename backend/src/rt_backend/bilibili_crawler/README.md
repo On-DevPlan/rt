@@ -13,6 +13,7 @@
 | 视频元信息 | `Bilibili_crawler.py`（view 接口） | `service.py: fetch_video_info` |
 | 两级评论爬取 | `Bilibili_crawler.py`（reply/main 分页 + reply/reply 楼中楼） | `service.py: fetch_comments`，字段抽取与原脚本对齐（昵称/性别/时间/点赞/评论/IP属地/等级/uid/rpid） |
 | UP 主动态列表 | `bili_user_space.py`（feed/space offset 翻页） | `service.py: fetch_user_space`，抽取 comment_id_str/comment_type 对 |
+| UP 主全量投稿 | `MediaCrawler client.py: get_creator_videos`（`/x/space/wbi/arc/search` + WBI） | `service.py: fetch_user_videos`，pn/ps/order（pubdate/click/stow），全部投稿含非动态化条目 |
 
 错误映射：上游 `code=-101` → 401；其他非 0 code / 风控 412 → 502。
 
@@ -23,8 +24,9 @@
 | POST | `/wbi/sign` | body: `{"params": {...任意业务参数}}` | `w_rid`/`wts`/`signed_params`/`query` |
 | GET | `/convert` | query: `aid` 或 `bvid`（二选一） | `{aid, bvid}` |
 | GET | `/video/{bvid}` | 路径: BV 号 | 标题/UP 主/播放/点赞等统计 |
-| POST | `/comments` | body: `{oid, type=1, ps=20, pages=1, include_replies=true, sessdata?}` | 规范化评论列表（含楼中楼） |
+| POST | `/comments` | body: `{oid, type=1, ps=20, pages=1, include_replies=true, mode=3, sessdata?}` | 规范化评论列表（含楼中楼；置顶评论置顶并带 `pinned: true`，按 rpid 去重） |
 | POST | `/user-space` | body: `{mid, max_pages=3, sessdata?}` | 动态列表（comment_id_str/comment_type/title） |
+| POST | `/user-videos` | body: `{mid, pn=1, ps=30, order=pubdate, sessdata?}` | 全量投稿列表（aid/bvid/title/created/play/length + count 总数） |
 
 ## curl 案例
 
@@ -56,6 +58,12 @@ curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/user-space" \
   -H "Content-Type: application/json" \
   -d '{"mid": "42", "max_pages": 3}'
 # → {"mid":"42","total":25,"items":[{"comment_id_str":"111","comment_type":1,"title":"..."}]}
+
+# 6. UP 主全量投稿（动态 feed 的补集：含置顶隐藏、非动态化投稿）
+curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/user-videos" \
+  -H "Content-Type: application/json" \
+  -d '{"mid": "42", "order": "click"}'
+# → {"mid":"42","count":88,"total":30,"items":[{"aid":170001,"bvid":"BV17x411w7KC","title":"...","play":500}]}
 ```
 
 ## 测试

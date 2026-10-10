@@ -26,7 +26,7 @@
 
 | 模块 | 前缀 | GET | POST |
 |---|---|---|---|
-| bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{bvid}` | `wbi/sign`、`comments`、`user-space` |
+| bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{bvid}` | `wbi/sign`、`comments`、`user-space`、`user-videos` |
 | bilibili-tools | `/api/bilibili-tools` | `favorites`、`audio/{sid}`、`audio/playlist/{sid}`、`audio/user` | `favorites/add` ⚠️写 |
 | skill-seekers | `/api/skill-seekers` | — | `scrape` |
 | mediacrawler | `/api/mediacrawler` | `platforms` | `search` |
@@ -118,24 +118,25 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
 - **返回解读**：`discovered_via_sitemap/llms_txt` 发现来源计数；`pages_saved` 真正存正文的页数；`skipped` 空内容页；`pages[].content` 段落文本（>20 字符）、`code_samples[]` 带语言。
 - **常见错误**：50 页硬上限；SPA 站点（正文靠 JS 渲染）抓不到——本模块不执行 JS；`base_url` 的目录前缀决定范围（`.../guide/` 只抓 guide 子树）。
 
-### 3.6 UP 主空间 → 全量视频评论链路
+### 3.6 UP 主全量投稿 → 全量视频评论链路
 
-- **场景**：抓某 UP 主所有投稿的评论。两步：先拿 (oid, type) 对，再逐条喂评论端点。
-- **端点**：`POST /api/bilibili-crawler/user-space` → `POST /api/bilibili-crawler/comments`
+- **场景**：抓某 UP 主**所有投稿**的评论（动态 feed 只是投稿子集——置顶隐藏、非动态化的投稿都拿不到，必须走 arc/search）。
+- **端点**：`POST /api/bilibili-crawler/user-videos`（WBI 签名）→ `POST /api/bilibili-crawler/comments`
 - **curl**：
   ```bash
-  # 第一步：拿动态/视频的 comment_id_str + comment_type
-  curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/user-space" \
-    -H "Content-Type: application/json" -d '{"mid": "42", "max_pages": 5}'
+  # 第一步：全量投稿列表（翻 pn 直到 count 覆盖完）
+  curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/user-videos" \
+    -H "Content-Type: application/json" \
+    -d '{"mid": "42", "pn": 1, "ps": 30, "order": "pubdate"}'
 
-  # 第二步：把每一对喂给评论端点（type=1 视频 oid 用 aid；type=17 动态 oid 用动态 id）
+  # 第二步：逐个视频喂评论端点（type 固定 1，oid 用 aid）
   curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/comments" \
     -H "Content-Type: application/json" \
-    -d '{"oid": "<comment_id_str>", "type": <comment_type>, "pages": 1}'
+    -d '{"oid": "<aid>", "type": 1, "pages": 1}'
   ```
-- **UI**：`/crawlers/bilibili-crawler` 先「UP 主空间动态」后「两级评论」，手动接力。
-- **返回解读**：user-space 的 `items[].comment_id_str` 即评论端点的 `oid`；`comment_type` 即 `type`。
-- **常见错误**：mid 无投稿 → 200 但 items 空；高频连跑触发风控 → 502，加 SESSDATA + 放慢。
+- **UI**：`/crawlers/bilibili-crawler` 先「UP 主全量投稿」后「两级评论」，手动接力。
+- **返回解读**：user-videos 的 `items[].aid` 即评论端点的 `oid`（type=1）；`count` 是投稿总数（翻页终止条件：`pn * ps >= count`）。补充：`user-space`（动态 feed）适合抓**动态**评论区（type=17），两者互补。
+- **常见错误**：order 非法 → 422（pubdate/click/stow）；高频连跑触发风控 → 502，加 SESSDATA + 放慢。评论响应里 `items[].pinned=true` 是置顶评论（已按 rpid 去重，与普通列表重复时只保留置顶份）。
 
 ---
 

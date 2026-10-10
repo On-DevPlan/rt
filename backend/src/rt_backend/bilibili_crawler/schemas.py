@@ -61,6 +61,7 @@ class CommentItem(BaseModel):
     level: int
     mid: str
     reply_count: int
+    pinned: bool = False
     replies: list["CommentItem"] = []
 
 
@@ -70,6 +71,12 @@ class CommentsRequest(BaseModel):
     ps: int = Field(default=20, ge=1, le=30, description="每页条数")
     pages: int = Field(default=1, ge=1, le=20, description="一级评论抓取页数")
     include_replies: bool = Field(default=True, description="是否抓取楼中楼回复")
+    mode: int = Field(
+        default=3,
+        ge=0,
+        le=3,
+        description="排序（透传上游）：2=按时间 3=按热度，0/1 为混合态",
+    )
     sessdata: str | None = Field(default=None, description="可选 SESSDATA 登录态，未登录也能爬部分评论")
 
 
@@ -103,3 +110,33 @@ class UserSpaceResponse(BaseModel):
     pages_fetched: int
     total: int
     items: list[UserSpaceItem]
+
+
+# --- UP 主全量投稿 -------------------------------------------------------------
+
+
+class UserVideosRequest(BaseModel):
+    mid: str = Field(description="UP 主 uid")
+    pn: int = Field(default=1, ge=1, le=100, description="页码")
+    ps: int = Field(default=30, ge=1, le=50, description="每页条数")
+    order: str = Field(
+        default="pubdate", description="排序：pubdate=最近发布 click=最多播放 stow=最多收藏"
+    )
+    sessdata: str | None = None
+
+
+class UserVideoItem(BaseModel):
+    aid: int | None = None
+    bvid: str
+    title: str
+    created: int | None = None
+    play: int | None = None
+    video_review: int | None = None
+    length: str = ""
+
+
+class UserVideosResponse(BaseModel):
+    mid: str
+    count: int | None = None
+    total: int
+    items: list[UserVideoItem]

@@ -17,3 +17,6 @@ export const fetchComments = (req) => request('POST', `${P}/comments`, { body: r
 
 // POST /api/bilibili-crawler/user-space  body: UserSpaceRequest
 export const fetchUserSpace = (req) => request('POST', `${P}/user-space`, { body: req })
+
+// POST /api/bilibili-crawler/user-videos  body: UserVideosRequest（WBI 签名的 arc/search）
+export const fetchUserVideos = (req) => request('POST', `${P}/user-videos`, { body: req })

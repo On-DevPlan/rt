@@ -6,8 +6,8 @@ const MODULES = [
     route: '/crawlers/bilibili-crawler',
     name: 'bilibili-crawler',
     title: 'Bilibili Crawler',
-    desc: 'WBI 签名、av↔bv 互转、视频信息、两级评论（含楼中楼）、UP 主空间动态。',
-    endpoints: '5 个端点',
+    desc: 'WBI 签名、av↔bv 互转、视频信息、两级评论（含置顶+排序）、UP 主动态与全量投稿。',
+    endpoints: '6 个端点',
     source: 'Bilibili_crawler'
   },
   {

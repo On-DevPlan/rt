@@ -282,3 +282,193 @@ async def test_user_space_offset_paging():
     assert body["items"][1]["comment_type"] == 17
     # 第二页 has_more=False → 停止
     assert space_route.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# loop-2 第 1 轮补齐：置顶评论 / mode 排序 / 412 风控 / 楼中楼边界 / UP 全量投稿
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_comments_pinned_dedup_and_flag():
+    """置顶评论（top_replies）置入结果头部 + pinned 标记 + 与普通列表 rpid 去重。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    page1 = {
+        "code": 0,
+        "data": {
+            "top_replies": [_reply("900", rcount=1)],
+            "replies": [_reply("900"), _reply("1")],  # 900 与置顶重复
+            "cursor": {"is_end": True},
+        },
+    }
+    sub = {"code": 0, "data": {"replies": [_reply("901")], "page": {"count": 1}}}
+
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(VIEW_URL).mock(return_value=Response(200, json=page1))
+        router.get(SUB_URL).mock(return_value=Response(200, json=sub))
+        with TestClient(app) as client:
+            r = client.post("/api/bilibili-crawler/comments", json={"oid": "1", "pages": 1})
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["total"] == 2  # 900(pinned) + 1，去重后不含第二个 900
+    assert body["items"][0]["rpid"] == "900"
+    assert body["items"][0]["pinned"] is True  # 置顶在前
+    assert body["items"][1]["pinned"] is False
+    assert body["items"][0]["replies"][0]["rpid"] == "901"  # 置顶的楼中楼也展开
+
+
+@pytest.mark.asyncio
+async def test_comments_mode_passthrough():
+    """mode 排序参数透传上游。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    page1 = {"code": 0, "data": {"replies": [_reply("1")], "cursor": {"is_end": True}}}
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        main_route = router.get(VIEW_URL).mock(return_value=Response(200, json=page1))
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/comments", json={"oid": "1", "mode": 2}
+            )
+
+    assert r.status_code == 200, r.text
+    sent = dict(main_route.calls[0].request.url.params)
+    assert sent["mode"] == "2"  # 按时间
+
+
+@pytest.mark.asyncio
+async def test_comments_412_risk_control_maps_502():
+    """上游风控 412 → 502 + 提示文案（README「已知限制」第 1 条）。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(VIEW_URL).mock(return_value=Response(412, text="blocked"))
+        with TestClient(app) as client:
+            r = client.post("/api/bilibili-crawler/comments", json={"oid": "1"})
+
+    assert r.status_code == 502
+    assert "风控" in r.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_comments_include_replies_false_skips_sub_api():
+    """include_replies=false 时不请求楼中楼接口。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    page1 = {"code": 0, "data": {"replies": [_reply("1", rcount=9)], "cursor": {}}}
+    # 被测行为就是「SUB 路由不被调用」，需关掉 respx 的 all-called 断言
+    with respx.mock(base_url="https://api.bilibili.com", assert_all_called=False) as router:
+        router.get(VIEW_URL).mock(return_value=Response(200, json=page1))
+        sub_route = router.get(SUB_URL).mock(
+            return_value=Response(200, json={"code": 0, "data": {"replies": [], "page": {}}})
+        )
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/comments",
+                json={"oid": "1", "include_replies": False},
+            )
+
+    assert r.status_code == 200
+    assert sub_route.call_count == 0
+    assert r.json()["items"][0]["replies"] == []
+
+
+@pytest.mark.asyncio
+async def test_comments_sub_replies_multipage():
+    """楼中楼 count=45、ps=20 → ceil 后抓 3 页。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    page1 = {"code": 0, "data": {"replies": [_reply("1", rcount=45)], "cursor": {}}}
+
+    def _sub_page(pn: int) -> dict:
+        rows = [_reply(str(1000 + pn * 20 + i)) for i in range(20 if pn < 3 else 5)]
+        return {"code": 0, "data": {"replies": rows, "page": {"count": 45}}}
+
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(VIEW_URL).mock(return_value=Response(200, json=page1))
+        sub_route = router.get(SUB_URL).mock(
+            side_effect=[Response(200, json=_sub_page(pn)) for pn in (1, 2, 3)]
+        )
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/comments", json={"oid": "1", "ps": 20}
+            )
+
+    assert r.status_code == 200, r.text
+    assert sub_route.call_count == 3  # ceil(45/20) = 3
+    assert len(r.json()["items"][0]["replies"]) == 45
+
+
+@pytest.mark.asyncio
+async def test_user_videos_signed_arc_search():
+    """UP 全量投稿：nav 取 key + WBI 签名的 arc/search，返回 vlist 规范化。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    arc_payload = {
+        "code": 0,
+        "data": {
+            "count": 88,
+            "list": {
+                "vlist": [
+                    {
+                        "aid": 170001,
+                        "bvid": "BV17x411w7KC",
+                        "title": "投稿一",
+                        "created": 1700000000,
+                        "play": 500,
+                        "video_review": 12,
+                        "length": "5:30",
+                    }
+                ]
+            },
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(NAV_URL).mock(return_value=Response(200, json=_nav_payload()))
+        arc_route = router.get("/x/space/wbi/arc/search").mock(
+            return_value=Response(200, json=arc_payload)
+        )
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/user-videos",
+                json={"mid": "42", "order": "click"},
+            )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["count"] == 88
+    assert body["total"] == 1
+    assert body["items"][0]["bvid"] == "BV17x411w7KC"
+    sent = dict(arc_route.calls[0].request.url.params)
+    assert sent["w_rid"] and sent["wts"]  # 必须带 WBI 签名
+    assert sent["mid"] == "42" and sent["order"] == "click"
+
+
+@pytest.mark.asyncio
+async def test_user_videos_invalid_order_422():
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+    with TestClient(app) as client:
+        r = client.post("/api/bilibili-crawler/user-videos", json={"mid": "42", "order": "bogus"})
+    assert r.status_code == 422
