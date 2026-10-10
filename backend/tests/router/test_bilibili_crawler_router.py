@@ -175,7 +175,7 @@ async def test_video_info_retries_5xx_then_succeeds(monkeypatch):
     async def _fast_sleep(_seconds):  # 退避不真等待
         return None
 
-    monkeypatch.setattr("rt_backend.core.http.asyncio.sleep", _fast_sleep)
+    monkeypatch.setattr("rt_backend.core.http._sleep", _fast_sleep)
 
     view_payload = {
         "code": 0,

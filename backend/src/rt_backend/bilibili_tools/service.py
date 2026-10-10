@@ -17,6 +17,8 @@ httpx.AsyncClient 版本：
 """
 from typing import Any
 
+import asyncio
+
 import httpx
 
 # ---------------------------------------------------------------------------
@@ -180,6 +182,12 @@ _FAV_ADD_CODE_TABLE: dict[str, tuple[int, str]] = {
 }
 
 
+# 节流与限流退避（模块常量便于测试 monkeypatch；-503/-509 是 HTTP 200 envelope，
+# request_with_retry 的 HTTP 状态码重试看不见它们，必须按 envelope code 重试）
+_FAV_ADD_THROTTLE = 0.3
+_FAV_ADD_RETRY_DELAYS = (0.5, 1.5)
+
+
 async def add_favorites(
     client: httpx.AsyncClient,
     sessdata: str,
@@ -187,7 +195,14 @@ async def add_favorites(
     fid: str,
     aids: list[str],
 ) -> dict[str, Any]:
-    """批量把视频加入收藏夹，逐个返回结果。"""
+    """批量把视频加入收藏夹，逐个返回结果。
+
+    节流：相邻 aid 之间隔 _FAV_ADD_THROTTLE 秒，降低 -503/-509 触发概率；
+    限流重试：envelope code -503/-509 按退避序列重试（最多 1+2 次尝试）；
+    部分结果保留：单条网络错误只记 pattern=-1 条目，不丢已完成的批次。
+    """
+    from ..core.http import request_with_retry
+
     cookies = {"SESSDATA": sessdata, "bili_jct": bili_jct}
     headers = {
         "User-Agent": (
@@ -198,24 +213,42 @@ async def add_favorites(
         "Referer": "https://www.bilibili.com/",
     }
     results: list[dict[str, Any]] = []
-    for aid in aids:
-        resp = await client.post(
-            _FAV_ADD_API,
-            data={"aid": aid, "fid": fid, "jsonp": "jsonp", "csrf": bili_jct},
-            cookies=cookies,
-            headers=headers,
-        )
-        resp.raise_for_status()
-        try:
-            payload = resp.json()
-        except Exception:
-            results.append({"aid": aid, "ok": False, "pattern": -1, "message": "响应非 JSON"})
-            continue
-        code = str(payload.get("code"))
-        pattern, msg = _FAV_ADD_CODE_TABLE.get(code, (-1, f"未知 code={code}: {payload.get('message')}"))
-        results.append(
-            {"aid": aid, "code": code, "ok": pattern == 0, "pattern": pattern, "message": msg}
-        )
+    for idx, aid in enumerate(aids):
+        if idx:
+            await asyncio.sleep(_FAV_ADD_THROTTLE)
+        code = ""
+        pattern = -1
+        msg = ""
+        ok = False
+        for attempt in range(1 + len(_FAV_ADD_RETRY_DELAYS)):
+            try:
+                resp = await request_with_retry(
+                    client,
+                    "POST",
+                    _FAV_ADD_API,
+                    data={"aid": aid, "fid": fid, "jsonp": "jsonp", "csrf": bili_jct},
+                    cookies=cookies,
+                    headers=headers,
+                )
+                resp.raise_for_status()
+            except httpx.HTTPError as e:
+                code, pattern, msg = "", -1, f"网络错误: {e}"
+                break
+            try:
+                payload = resp.json()
+            except Exception:
+                code, pattern, msg = "", -1, "响应非 JSON"
+                break
+            code = str(payload.get("code"))
+            pattern, msg = _FAV_ADD_CODE_TABLE.get(
+                code, (-1, f"未知 code={code}: {payload.get('message')}")
+            )
+            if code in ("-503", "-509") and attempt < len(_FAV_ADD_RETRY_DELAYS):
+                await asyncio.sleep(_FAV_ADD_RETRY_DELAYS[attempt])
+                continue
+            ok = pattern == 0
+            break
+        results.append({"aid": aid, "code": code, "ok": ok, "pattern": pattern, "message": msg})
     ok_count = sum(1 for r in results if r["ok"])
     return {"fid": fid, "requested": len(aids), "ok_count": ok_count, "results": results}
 

@@ -29,7 +29,7 @@ xhs/douyin/kuaishou/weibo/tieba/zhihu 需要浏览器登录签名的平台不包
 `order` 取值对齐原仓库 `SearchOrderType`：`default`（综合）/ `click`（最多点击）/
 `pubdate`（最新发布）/ `dm`（弹幕最多）/ `stow`（最多收藏）。
 
-错误映射：`-101` → 401；`-412` 风控 → 502（提示提供 SESSDATA）；其他非 0 code → 502。
+错误映射：`-101` → 401；`-412`/`-352`/`-403` 风控 → 502（提示提供 SESSDATA；**先自动失效 WBI key 缓存换新 key 重试一次**）；其他非 0 code → 502。
 
 ## curl 案例
 

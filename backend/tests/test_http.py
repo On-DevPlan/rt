@@ -31,13 +31,17 @@ async def test_holder_idempotent():
 
 @pytest.fixture
 def sleep_calls(monkeypatch):
-    """记录退避时长但不真正等待（避免测试变慢）。"""
+    """记录退避时长但不真正等待（避免测试变慢）。
+
+    只 patch core.http 的模块级 _sleep，不碰全局 asyncio.sleep——
+    全局 patch 会把其他线程（如 e2e 的 uvicorn loop）的 sleep 也记进来。
+    """
     delays: list[float] = []
 
     async def fake_sleep(seconds: float) -> None:
         delays.append(seconds)
 
-    monkeypatch.setattr("rt_backend.core.http.asyncio.sleep", fake_sleep)
+    monkeypatch.setattr("rt_backend.core.http._sleep", fake_sleep)
     return delays
 
 

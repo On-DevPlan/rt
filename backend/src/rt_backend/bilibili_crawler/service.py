@@ -13,6 +13,7 @@ httpx.AsyncClient 版本：
 import asyncio
 import random
 import time
+import weakref
 from hashlib import md5
 from typing import Any
 from urllib.parse import urlencode
@@ -34,6 +35,14 @@ class AuthError(BilibiliCrawlerError):
 
 class UpstreamError(BilibiliCrawlerError):
     """B 站接口返回非 0 code / 非 200 状态。"""
+
+
+class RiskControlError(UpstreamError):
+    """B 站风控拦截（HTTP 412 或 envelope code -352/-403/-412）。
+
+    继承 UpstreamError 以沿用路由层的 502 映射；签名请求链路捕获它做
+    换 key 重试（fetch_wbi_keys 缓存失效）。
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -87,9 +96,17 @@ _MIXIN_KEY_ENC_TAB = [
 _NAV_API = "https://api.bilibili.com/x/web-interface/nav"
 _WBI_TTL_SECONDS = 3600  # 1 hour, reused per client instance
 
-# WBI key cache: process-wide, reused per client, 1h TTL against key rotation
-_wbi_cache: dict[int, tuple[float, str, str]] = {}
+# WBI key 缓存：WeakKeyDictionary（client 被 GC 时条目随之消失，杜绝 id 复用脏读），
+# 1h TTL 防 key 轮转后脏读；签名遇风控时用 invalidate_wbi_keys 主动失效
+_wbi_cache: "weakref.WeakKeyDictionary[httpx.AsyncClient, tuple[float, str, str]]" = (
+    weakref.WeakKeyDictionary()
+)
 _wbi_lock = asyncio.Lock()
+
+
+def invalidate_wbi_keys(client: httpx.AsyncClient) -> None:
+    """签名失败（风控信号 412/-352/-403/-412）后清掉该 client 的 key 缓存。"""
+    _wbi_cache.pop(client, None)
 
 
 def get_mixin_key(orig: str) -> str:
@@ -115,17 +132,17 @@ def enc_wbi(params: dict[str, Any], img_key: str, sub_key: str) -> dict[str, Any
 
 async def fetch_wbi_keys(client: httpx.AsyncClient) -> tuple[str, str]:
     """从 nav 接口取最新的 img_key / sub_key（同 client 实例内 1 小时缓存）。"""
-    cid = id(client)
     now = asyncio.get_event_loop().time()
-    cached = _wbi_cache.get(cid)
+    cached = _wbi_cache.get(client)
     if cached is not None:
         expires, img_key, sub_key = cached
         if now < expires:
             return img_key, sub_key
 
     async with _wbi_lock:
-        # double-check after lock (another coroutine may have written it)
-        cached = _wbi_cache.get(cid)
+        # 锁等待后重取时钟：TTL 不被等待时间侵蚀；双检防并发重复打 nav
+        now = asyncio.get_event_loop().time()
+        cached = _wbi_cache.get(client)
         if cached is not None:
             expires, img_key, sub_key = cached
             if now < expires:
@@ -146,7 +163,7 @@ async def fetch_wbi_keys(client: httpx.AsyncClient) -> tuple[str, str]:
             raise UpstreamError("nav 接口缺少 wbi_img 字段")
         img_key = img_url.rsplit("/", 1)[1].split(".")[0]
         sub_key = sub_url.rsplit("/", 1)[1].split(".")[0]
-        _wbi_cache[cid] = (now + _WBI_TTL_SECONDS, img_key, sub_key)
+        _wbi_cache[client] = (now + _WBI_TTL_SECONDS, img_key, sub_key)
         return img_key, sub_key
 
 
@@ -187,15 +204,37 @@ async def _get_json(
 
     resp = await request_with_retry(client, "GET", url, params=params, headers=_headers(sessdata))
     if resp.status_code == 412:
-        raise UpstreamError("B 站风控拦截（412），请提供 SESSDATA 或稍后再试")
+        raise RiskControlError("B 站风控拦截（412），请提供 SESSDATA 或稍后再试")
     resp.raise_for_status()
     payload = resp.json()
     code = payload.get("code")
     if code == -101:
         raise AuthError(f"登录态失效或未登录（code=-101）：{payload.get('message')}")
+    if code in (-352, -403, -412):
+        raise RiskControlError(f"B 站风控拦截（code={code}）：{payload.get('message')}")
     if code != 0:
         raise UpstreamError(f"B 站接口 code={code}: {payload.get('message')}")
     return payload.get("data") or {}
+
+
+async def _signed_get_json(
+    client: httpx.AsyncClient,
+    url: str,
+    params: dict[str, Any],
+    sessdata: str | None,
+) -> dict[str, Any]:
+    """签名 + GET 组合：遇风控（412/-352/-403/-412）清 key 缓存换新 key 重试一次。
+
+    场景：B 站 key 服务端轮转后，缓存里的旧 key 会持续被风控拒绝，
+    不失效则最长 1 小时内所有签名请求全部 502。
+    """
+    signed = await sign_params(client, params)
+    try:
+        return await _get_json(client, url, signed, sessdata)
+    except RiskControlError:
+        invalidate_wbi_keys(client)
+        signed = await sign_params(client, params)
+        return await _get_json(client, url, signed, sessdata)
 
 
 # ---------------------------------------------------------------------------
@@ -277,8 +316,7 @@ async def fetch_play_url(
         "fnval": fnval,
         "platform": "pc",
     }
-    signed = await sign_params(client, params)
-    data = await _get_json(client, _PLAYURL_API, signed, sessdata)
+    data = await _signed_get_json(client, _PLAYURL_API, params, sessdata)
     durl = [
         {"url": u.get("url"), "backup_url": u.get("backup_url"), "size": u.get("size")}
         for u in data.get("durl") or []
@@ -564,8 +602,7 @@ async def fetch_user_videos(
     if order not in _ARC_ORDERS:
         raise ValueError(f"order 必须是 {_ARC_ORDERS} 之一")
     params: dict[str, Any] = {"mid": mid, "pn": pn, "ps": ps, "order": order}
-    signed = await sign_params(client, params)
-    data = await _get_json(client, _ARC_SEARCH_API, signed, sessdata)
+    data = await _signed_get_json(client, _ARC_SEARCH_API, params, sessdata)
     vlist = (data.get("list") or {}).get("vlist") or []
     items = [
         {

@@ -169,6 +169,39 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
 - **返回解读**：`pages[].cid` 是第二步的入参；`durl[].url` 直链**有时效 + Referer 校验**（下载 `curl -H "Referer: https://www.bilibili.com/"`）；`accept_quality[]` 是当前可用的清晰度集合；`durl` 段数 >1 表示整片被切分需按序拼接。
 - **常见错误**：qn=116/112/80 等高清晰度无 SESSDATA 时上游会降档或 CDN 403 → 带 sessdata；`fnval=4048` 时 `dash=true` 且无 durl（DASH 音视频分离，需自行合流）；aid/cid 不匹配 → 上游非 0 code → 502。
 
+### 3.8 批量收藏一条龙（枚举 → 加收藏）
+
+- **场景**：把一份 av 号清单批量加入某个自建收藏夹（写操作，需 SESSDATA + bili_jct）。
+- **端点**：`GET /api/bilibili-tools/favorites`（核对目标夹）→ `POST /api/bilibili-tools/favorites/add`
+- **curl**：
+  ```bash
+  # 第一步：确认目标收藏夹 fid 可写（自建夹 list 接口或网页核对）
+  curl -G "http://127.0.0.1:8080/api/bilibili-tools/favorites" \
+    --data-urlencode "link=https://space.bilibili.com/42/favlist?fid=12345"
+
+  # 第二步：批量添加（服务端已带节流 + -503/-509 限流退避 + 部分结果保留）
+  curl -X POST "http://127.0.0.1:8080/api/bilibili-tools/favorites/add" \
+    -H "Content-Type: application/json" \
+    -d '{"sessdata":"...","bili_jct":"...","fid":"12345","aids":["170001","2","3"]}'
+  ```
+- **返回解读**：`results[]` 逐条 `{aid, code, ok, pattern, message}`；聚合看 `ok_count`。`pattern`：0=成功/已收藏（11007/11201）、1=稿件不存在（10003/-404）、2=限流（-503/-509，服务端已自动退避重试）、-1=凭证或未知问题（-111 csrf / -101 未登录 / 网络错误）。
+- **常见错误**：`-111` → bili_jct 过期；`-101` → SESSDATA 过期；单批 ≤100 条，超大批次请分批调用。生产环境务必置于鉴权层后。
+
+### 3.9 WBI 签名调试
+
+- **场景**：自行请求其他需要 WBI 签名的 B 站接口时，先在本服务拿 `w_rid`/`wts` 与签名后参数。
+- **端点**：`POST /api/bilibili-crawler/wbi/sign`
+- **curl**：
+  ```bash
+  curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/wbi/sign" \
+    -H "Content-Type: application/json" \
+    -d '{"params": {"oid": 123, "type": 1, "ps": 20}}'
+  # → {"w_rid":"<32位hex>","wts":1710000000,
+  #    "signed_params":{...,"w_ts":...,"w_rid":"..."},"query":"oid=123&ps=20&...&w_rid=..."}
+  ```
+- **返回解读**：`query` 可直接拼到目标接口 URL 后；`signed_params` 是服务端实际发送的形态（参数值字符串化，与上游脚本 str(v) 行为一致）。WBI key 服务端同 client 实例内缓存 1 小时，遇风控（412/-352/-403/-412）自动失效换 key 重试一次。
+- **常见错误**：`w_rid` 校验不过多为参数被二次编码——直接用 `query` 原样拼接，不要再 urlencode。
+
 ---
 
 ## 4. 前端 API Explorer 对应关系

@@ -16,7 +16,13 @@ from typing import Any
 
 import httpx
 
-from ..bilibili_crawler.service import AuthError, UpstreamError, sign_params
+from ..bilibili_crawler.service import (
+    AuthError,
+    RiskControlError,
+    UpstreamError,
+    invalidate_wbi_keys,
+    sign_params,
+)
 
 _SEARCH_API = "https://api.bilibili.com/x/web-interface/wbi/search/type"
 
@@ -101,11 +107,18 @@ async def search_bilibili_videos(
     resp = await client.get(_SEARCH_API, params=signed, headers=headers)
     resp.raise_for_status()
     payload = resp.json()
+    if payload.get("code") == -412:
+        # 风控：key 可能已轮转，失效缓存换新 key 重试一次（对齐 bilibili_crawler._signed_get_json）
+        invalidate_wbi_keys(client)
+        signed = await sign_params(client, params)
+        resp = await client.get(_SEARCH_API, params=signed, headers=headers)
+        resp.raise_for_status()
+        payload = resp.json()
     code = payload.get("code")
     if code == -101:
         raise AuthError(f"登录态失效（code=-101）：{payload.get('message')}")
-    if code == -412:
-        raise UpstreamError("B 站风控拦截（-412），建议提供 SESSDATA 后重试")
+    if code in (-352, -403, -412):
+        raise RiskControlError(f"B 站风控拦截（code={code}）：{payload.get('message')}")
     if code != 0:
         raise UpstreamError(f"B 站接口 code={code}: {payload.get('message')}")
 

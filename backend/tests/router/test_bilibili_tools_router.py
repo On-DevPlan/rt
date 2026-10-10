@@ -150,6 +150,81 @@ def test_favorites_add_batch(client):
     assert "csrf=jct" in sent and "fid=123" in sent
 
 
+def test_favorites_add_rate_limit_retry(monkeypatch, client):
+    """-503 是 HTTP 200 envelope，须按 code 重试：503→0 第二次成功。"""
+    import rt_backend.bilibili_tools.service as svc
+
+    monkeypatch.setattr(svc, "_FAV_ADD_THROTTLE", 0.0)
+    monkeypatch.setattr(svc, "_FAV_ADD_RETRY_DELAYS", (0.0, 0.0))
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        add_route = router.post(FAV_ADD_URL).mock(
+            side_effect=[
+                Response(200, json={"code": -503, "message": "调用速度过快", "ttl": 1}),
+                Response(200, json={"code": 0, "message": "0", "ttl": 1}),
+            ]
+        )
+        r = client.post(
+            "/api/bilibili-tools/favorites/add",
+            json={"sessdata": "sd", "bili_jct": "jct", "fid": "123", "aids": ["1"]},
+        )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ok_count"] == 1  # 重试后成功
+    assert add_route.call_count == 2  # 恰好重试一次
+
+
+def test_favorites_add_rate_limit_exhausted(monkeypatch, client):
+    """连续 -509 耗尽退避后，逐条结果落 pattern=2，不抛 500。"""
+    import rt_backend.bilibili_tools.service as svc
+
+    monkeypatch.setattr(svc, "_FAV_ADD_THROTTLE", 0.0)
+    monkeypatch.setattr(svc, "_FAV_ADD_RETRY_DELAYS", (0.0, 0.0))
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.post(FAV_ADD_URL).mock(
+            return_value=Response(200, json={"code": -509, "message": "请求过于频繁", "ttl": 1})
+        )
+        r = client.post(
+            "/api/bilibili-tools/favorites/add",
+            json={"sessdata": "sd", "bili_jct": "jct", "fid": "123", "aids": ["1"]},
+        )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ok_count"] == 0
+    assert body["results"][0]["pattern"] == 2  # 限流
+
+
+def test_favorites_add_network_error_keeps_partial(monkeypatch, client):
+    """批量中途网络错误：已完成条目保留，失败条目落 pattern=-1，整批不 500。"""
+    import httpx as _httpx
+    import rt_backend.bilibili_tools.service as svc
+
+    monkeypatch.setattr(svc, "_FAV_ADD_THROTTLE", 0.0)
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.post(FAV_ADD_URL).mock(
+            side_effect=[
+                Response(200, json={"code": 0, "message": "0", "ttl": 1}),
+                # request_with_retry 对连接错误重试（默认 3 次尝试），耗尽后向上抛
+                _httpx.ConnectError("boom"),
+                _httpx.ConnectError("boom"),
+                _httpx.ConnectError("boom"),
+            ]
+        )
+        r = client.post(
+            "/api/bilibili-tools/favorites/add",
+            json={"sessdata": "sd", "bili_jct": "jct", "fid": "123", "aids": ["1", "2"]},
+        )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["requested"] == 2
+    assert body["results"][0]["ok"] is True  # 第一条成果保留
+    assert body["results"][1]["ok"] is False
+    assert body["results"][1]["pattern"] == -1
+    assert body["ok_count"] == 1
+
+
 def test_song_info_merges_info_and_cdns(client):
     info = {"code": 0, "data": {"title": "歌", "author": "唱见", "lyric": "http://l.lrc", "cover": "http://c.jpg"}}
     urls = {"code": 0, "data": {"cdns": ["http://cdn1/song.m4a", "http://cdn2/song.m4a"]}}

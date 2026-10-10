@@ -7,11 +7,13 @@ import pytest
 
 from rt_backend.bilibili_crawler.service import (
     _MIXIN_KEY_ENC_TAB,
+    _signed_get_json,
     av2bv,
     bv2av,
     enc_wbi,
     fetch_wbi_keys,
     get_mixin_key,
+    invalidate_wbi_keys,
 )
 
 
@@ -99,7 +101,8 @@ class TestWbiKeyCache:
         """每个测试前清空缓存，避免跨测试污染。"""
         monkeypatch.setattr("rt_backend.bilibili_crawler.service._wbi_cache", {})
 
-    def _nav_response(self, img="img1", sub="sub1"):
+    def _nav_response(self, img="a" * 32, sub="b" * 32):
+        # key 必须 32 字符：sign_params→get_mixin_key 按混淆表取到下标 63
         return {
             "code": 0,
             "data": {
@@ -129,7 +132,7 @@ class TestWbiKeyCache:
             await client.aclose()
 
         assert nav_calls == 1
-        assert k1 == k2 == k3 == ("img1", "sub1")
+        assert k1 == k2 == k3 == ("a" * 32, "b" * 32)
 
     @pytest.mark.asyncio
     async def test_different_clients_each_hit_nav(self):
@@ -158,3 +161,92 @@ class TestWbiKeyCache:
         assert k1 == ("img1", "sub1")
         assert k2 == ("img2", "sub2")
         assert k1b == ("img1", "sub1")
+
+    @pytest.mark.asyncio
+    async def test_signed_get_json_refreshes_keys_on_risk_control(self):
+        """envelope -352 → 失效缓存换新 key 重试：nav 两次、接口两次、最终成功。"""
+        nav_calls = 0
+        api_calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal nav_calls, api_calls
+            if request.url.path == "/x/web-interface/nav":
+                nav_calls += 1
+                return httpx.Response(
+                    200,
+                    json=self._nav_response(img="a" * 32, sub="b" * 32),
+                )
+            api_calls += 1
+            if api_calls == 1:
+                return httpx.Response(200, json={"code": -352, "message": "风控"})
+            return httpx.Response(200, json={"code": 0, "message": "0", "data": {"ok": True}})
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            data = await _signed_get_json(
+                client,
+                "https://api.bilibili.com/x/player/wbi/playurl",
+                {"aid": 1},
+                None,
+            )
+        finally:
+            await client.aclose()
+
+        assert data == {"ok": True}
+        assert nav_calls == 2  # 初次 + 失效后重取
+        assert api_calls == 2  # -352 失败一次 + 换 key 重试成功
+
+    @pytest.mark.asyncio
+    async def test_signed_get_json_exhausted_risk_control_raises(self):
+        """换 key 重试后仍 -412 → RiskControlError（UpstreamError 子类 → 路由 502）。"""
+        from rt_backend.bilibili_crawler.service import RiskControlError
+
+        nav_calls = 0
+        api_calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal nav_calls, api_calls
+            if request.url.path == "/x/web-interface/nav":
+                nav_calls += 1
+                return httpx.Response(
+                    200,
+                    json=self._nav_response(img="a" * 32, sub="b" * 32),
+                )
+            api_calls += 1
+            return httpx.Response(412, text="blocked")
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            with pytest.raises(RiskControlError):
+                await _signed_get_json(
+                    client,
+                    "https://api.bilibili.com/x/player/wbi/playurl",
+                    {"aid": 1},
+                    None,
+                )
+        finally:
+            await client.aclose()
+
+        assert nav_calls == 2
+        assert api_calls == 2  # 重试一次后放弃
+
+    @pytest.mark.asyncio
+    async def test_invalidate_wbi_keys_forces_refetch(self):
+        """invalidate 后再次取 key 必然重打 nav。"""
+        nav_calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal nav_calls
+            nav_calls += 1
+            return httpx.Response(200, json=self._nav_response())
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            await fetch_wbi_keys(client)
+            invalidate_wbi_keys(client)  # 缓存清空
+            await fetch_wbi_keys(client)
+            invalidate_wbi_keys(client)  # 未知 client 也安全
+        finally:
+            await client.aclose()
+
+        assert nav_calls == 2

@@ -8,7 +8,7 @@
 
 | 能力 | 原脚本 | 本模块实现 |
 |---|---|---|
-| WBI 签名 | `b站使用wbi签名的爬取方式.py`（mixinKeyEncTab + md5） | `service.py: enc_wbi / sign_params`，nav 接口的 img/sub key **同 client 实例内 1 小时缓存**（`_wbi_cache` + asyncio.Lock 双检），签名扇出不再逐请求打 nav（防风控） |
+| WBI 签名 | `b站使用wbi签名的爬取方式.py`（mixinKeyEncTab + md5） | `service.py: enc_wbi / sign_params`，nav 接口的 img/sub key **同 client 实例内 1 小时缓存**（`WeakKeyDictionary` + asyncio.Lock 双检），签名扇出不再逐请求打 nav（防风控）；签名请求遇风控自动失效缓存换 key 重试一次（`_signed_get_json`） |
 | av↔bv 互转 | `bv2oid.py`（NEWBV 编码） | `service.py: av2bv / bv2av`，纯计算 |
 | 视频完整详情 | `MediaCrawler get_video_info`（`/x/web-interface/view/detail`，aid/bvid 二选一、免签名） | `service.py: fetch_video_detail`，含分P `pages[]`（page/part/cid） |
 | 播放直链 + 清晰度 | `MediaCrawler get_video_play_url` + `BilibiliDownloader baseModels getQualities/getPlayurl` | `service.py: fetch_play_url`，WBI 签名 playurl（avid/cid/qn/fnval/platform），qn 语义表见 schemas |
@@ -17,7 +17,7 @@
 | UP 主动态列表 | `bili_user_space.py`（feed/space offset 翻页） | `service.py: fetch_user_space`，抽取 comment_id_str/comment_type 对 |
 | UP 主全量投稿 | `MediaCrawler client.py: get_creator_videos`（`/x/space/wbi/arc/search` + WBI） | `service.py: fetch_user_videos`，pn/ps/order（pubdate/click/stow），全部投稿含非动态化条目 |
 
-错误映射：上游 `code=-101` → 401；其他非 0 code / 风控 412 → 502。
+错误映射：上游 `code=-101` → 401；风控（HTTP 412 / code -352/-403/-412，`RiskControlError`）→ 502——签名链路会先自动失效 WBI key 缓存换新 key 重试一次；其他非 0 code → 502。
 
 ## 路由表
 

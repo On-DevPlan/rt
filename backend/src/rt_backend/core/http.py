@@ -10,6 +10,10 @@ _RETRY_MAX_ATTEMPTS = 3
 _RETRY_BASE_DELAY = 1.0
 _RETRY_STATUSES = frozenset({500, 502, 503, 504})
 
+# 模块级 sleep 符号：测试 monkeypatch 这里即可精确拦截重试退避，
+# 不污染全局 asyncio.sleep（其他线程/模块的 sleep 不受影响）
+_sleep = asyncio.sleep
+
 
 async def request_with_retry(
     client: httpx.AsyncClient,
@@ -38,10 +42,10 @@ async def request_with_retry(
                 raise
         else:
             if resp.status_code in statuses and attempt < attempts:
-                await asyncio.sleep(delay_base * (2 ** (attempt - 1)))
+                await _sleep(delay_base * (2 ** (attempt - 1)))
                 continue
             return resp
-        await asyncio.sleep(delay_base * (2 ** (attempt - 1)))
+        await _sleep(delay_base * (2 ** (attempt - 1)))
     raise RuntimeError("unreachable")  # pragma: no cover
 
 
