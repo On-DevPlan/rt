@@ -16,7 +16,6 @@ dist
 
 # git remote 提取脚本的运行产物（sl-git-standard）
 .claude/www/
-!.claude/www/git.remote
 
 .playwright-mcp
 .venv
