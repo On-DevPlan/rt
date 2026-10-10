@@ -114,6 +114,18 @@ def create_app() -> FastAPI:
     from .bilibili_history.router import build_router as _build_bili
     app.include_router(_build_bili(_http_dep))
 
+    from .bilibili_crawler.router import build_router as _build_bili_crawler
+    app.include_router(_build_bili_crawler(_http_dep))
+
+    from .bilibili_tools.router import build_router as _build_bili_tools
+    app.include_router(_build_bili_tools(_http_dep))
+
+    from .skill_seekers.router import build_router as _build_skill_seekers
+    app.include_router(_build_skill_seekers(_http_dep))
+
+    from .mediacrawler.router import build_router as _build_mediacrawler
+    app.include_router(_build_mediacrawler(_http_dep))
+
     from .tetris_ai.router import build_router as _build_tetris
     app.include_router(_build_tetris())
 

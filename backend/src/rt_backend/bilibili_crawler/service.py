@@ -1,0 +1,375 @@
+"""Bilibili crawler core logic.
+
+Extracted from ``.claude/repo/Bilibili_crawler``（requests 脚本）并改写为
+httpx.AsyncClient 版本：
+
+- WBI 签名（原 ``b站使用wbi签名的爬取方式.py``：mixinKeyEncTab + md5）
+- av<->bv 互转（原 ``bv2oid.py`` 的 NEWBV 编码算法）
+- 两级评论爬取（原 ``Bilibili_crawler.py``：/x/v2/reply/main 分页 +
+  /x/v2/reply/reply 楼中楼，字段抽取 昵称/性别/时间/点赞/评论/IP属地/等级/uid/rpid）
+- 用户空间动态列表（原 ``bili_user_space.py``：
+  /x/polymer/web-dynamic/v1/feed/space 的 offset 翻页，抽取 comment_id_str/comment_type）
+"""
+import random
+import time
+from hashlib import md5
+from typing import Any
+from urllib.parse import urlencode
+
+import httpx
+
+# ---------------------------------------------------------------------------
+# Errors
+# ---------------------------------------------------------------------------
+
+
+class BilibiliCrawlerError(Exception):
+    """Base error for the bilibili_crawler module."""
+
+
+class AuthError(BilibiliCrawlerError):
+    """Upstream rejected the credentials (code -101 等)."""
+
+
+class UpstreamError(BilibiliCrawlerError):
+    """B 站接口返回非 0 code / 非 200 状态。"""
+
+
+# ---------------------------------------------------------------------------
+# av <-> bv conversion（bv2oid.py 原样移植，纯函数）
+# ---------------------------------------------------------------------------
+
+_XOR_CODE = 23442827791579
+_MASK_CODE = 2251799813685247
+_MAX_AID = 1 << 51
+_ALPHABET = "FcwAPNKTMug3GV5Lj7EJnHpWsx4tb8haYeviqBz6rkCy12mUSDQX9RdoZf"
+_ENCODE_MAP = (8, 7, 0, 5, 1, 3, 2, 4, 6)
+_DECODE_MAP = tuple(reversed(_ENCODE_MAP))
+_BASE = len(_ALPHABET)
+_PREFIX = "BV1"
+_CODE_LEN = len(_ENCODE_MAP)
+
+
+def av2bv(aid: int) -> str:
+    """aid（av 号）→ bvid（BV 号）。"""
+    bvid = [""] * 9
+    tmp = (_MAX_AID | aid) ^ _XOR_CODE
+    for i in range(_CODE_LEN):
+        bvid[_ENCODE_MAP[i]] = _ALPHABET[tmp % _BASE]
+        tmp //= _BASE
+    return _PREFIX + "".join(bvid)
+
+
+def bv2av(bvid: str) -> int:
+    """bvid（BV 号）→ aid（av 号）。"""
+    if not bvid.startswith(_PREFIX):
+        raise ValueError(f"bvid 必须以 {_PREFIX} 开头: {bvid!r}")
+    bvid = bvid[3:]
+    tmp = 0
+    for i in range(_CODE_LEN):
+        idx = _ALPHABET.index(bvid[_DECODE_MAP[i]])
+        tmp = tmp * _BASE + idx
+    return (tmp & _MASK_CODE) ^ _XOR_CODE
+
+
+# ---------------------------------------------------------------------------
+# WBI 签名（b站使用wbi签名的爬取方式.py 原样移植）
+# ---------------------------------------------------------------------------
+
+_MIXIN_KEY_ENC_TAB = [
+    46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,
+    33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40,
+    61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11,
+    36, 20, 34, 44, 52,
+]
+
+_NAV_API = "https://api.bilibili.com/x/web-interface/nav"
+
+
+def get_mixin_key(orig: str) -> str:
+    """对 imgKey + subKey 按混淆表重排，取前 32 位。"""
+    return "".join(orig[i] for i in _MIXIN_KEY_ENC_TAB)[:32]
+
+
+def enc_wbi(params: dict[str, Any], img_key: str, sub_key: str) -> dict[str, Any]:
+    """为请求参数计算 wbi 签名，返回带 wts/w_rid 的新参数 dict。"""
+    mixin_key = get_mixin_key(img_key + sub_key)
+    signed = dict(params)
+    signed["wts"] = round(time.time())  # 添加 wts 时间戳
+    signed = dict(sorted(signed.items()))  # 按 key 重排
+    # 过滤 value 中的 "!'()*" 字符
+    signed = {
+        k: "".join(ch for ch in str(v) if ch not in "!'()*")
+        for k, v in signed.items()
+    }
+    query = urlencode(signed)
+    signed["w_rid"] = md5((query + mixin_key).encode()).hexdigest()
+    return signed
+
+
+async def fetch_wbi_keys(client: httpx.AsyncClient) -> tuple[str, str]:
+    """从 nav 接口取最新的 img_key / sub_key。"""
+    resp = await client.get(
+        _NAV_API,
+        headers={"Referer": "https://www.bilibili.com/"},
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+    if payload.get("code") != 0 or not payload.get("data"):
+        raise UpstreamError(f"nav 接口返回异常: code={payload.get('code')}")
+    wbi_img = payload["data"].get("wbi_img") or {}
+    img_url: str = wbi_img.get("img_url", "")
+    sub_url: str = wbi_img.get("sub_url", "")
+    if not img_url or not sub_url:
+        raise UpstreamError("nav 接口缺少 wbi_img 字段")
+    img_key = img_url.rsplit("/", 1)[1].split(".")[0]
+    sub_key = sub_url.rsplit("/", 1)[1].split(".")[0]
+    return img_key, sub_key
+
+
+async def sign_params(client: httpx.AsyncClient, params: dict[str, Any]) -> dict[str, Any]:
+    """取 key 并签名的一步封装。"""
+    img_key, sub_key = await fetch_wbi_keys(client)
+    return enc_wbi(params, img_key, sub_key)
+
+
+# ---------------------------------------------------------------------------
+# 通用请求 helper
+# ---------------------------------------------------------------------------
+
+_BILI_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Referer": "https://www.bilibili.com/",
+}
+
+
+def _headers(sessdata: str | None) -> dict[str, str]:
+    headers = dict(_BILI_HEADERS)
+    if sessdata:
+        headers["Cookie"] = f"SESSDATA={sessdata}"
+    return headers
+
+
+async def _get_json(
+    client: httpx.AsyncClient,
+    url: str,
+    params: dict[str, Any],
+    sessdata: str | None,
+) -> dict[str, Any]:
+    """GET 并解析 B 站 JSON envelope；code!=0 时抛对应错误。"""
+    resp = await client.get(url, params=params, headers=_headers(sessdata))
+    if resp.status_code == 412:
+        raise UpstreamError("B 站风控拦截（412），请提供 SESSDATA 或稍后再试")
+    resp.raise_for_status()
+    payload = resp.json()
+    code = payload.get("code")
+    if code == -101:
+        raise AuthError(f"登录态失效或未登录（code=-101）：{payload.get('message')}")
+    if code != 0:
+        raise UpstreamError(f"B 站接口 code={code}: {payload.get('message')}")
+    return payload.get("data") or {}
+
+
+# ---------------------------------------------------------------------------
+# 视频信息（Bilibili_crawler.py 中的 view 接口）
+# ---------------------------------------------------------------------------
+
+_VIEW_API = "https://api.bilibili.com/x/web-interface/view"
+
+
+async def fetch_video_info(client: httpx.AsyncClient, bvid: str) -> dict[str, Any]:
+    """抓取视频元信息（view 接口），返回常用字段的扁平 dict。"""
+    data = await _get_json(client, _VIEW_API, {"bvid": bvid}, None)
+    stat = data.get("stat") or {}
+    owner = data.get("owner") or {}
+    return {
+        "bvid": data.get("bvid", bvid),
+        "aid": data.get("aid"),
+        "title": data.get("title", ""),
+        "desc": data.get("desc", ""),
+        "owner_mid": owner.get("mid"),
+        "owner_name": owner.get("name", ""),
+        "pubdate": data.get("pubdate"),
+        "duration": data.get("duration"),
+        "view": stat.get("view"),
+        "danmaku": stat.get("danmaku"),
+        "reply": stat.get("reply"),
+        "favorite": stat.get("favorite"),
+        "coin": stat.get("coin"),
+        "share": stat.get("share"),
+        "like": stat.get("like"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# 评论爬取（Bilibili_crawler.py 的两级评论逻辑）
+# ---------------------------------------------------------------------------
+
+_REPLY_MAIN_API = "https://api.bilibili.com/x/v2/reply/main"
+_REPLY_SUB_API = "https://api.bilibili.com/x/v2/reply/reply"
+
+
+def _format_comment_time(ctime: int) -> str:
+    """评论时间戳 → 北京时间字符串（原脚本按 UTC 展示，这里改为 +08:00）。"""
+    import datetime
+
+    dt = datetime.datetime.fromtimestamp(ctime, datetime.timezone(datetime.timedelta(hours=8)))
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _normalize_reply(reply: dict[str, Any]) -> dict[str, Any]:
+    """抽取原脚本关注的字段：昵称/性别/时间/点赞/评论/IP属地/等级/uid/rpid。"""
+    member = reply.get("member") or {}
+    control = reply.get("reply_control") or {}
+    location = control.get("location") or "未知"
+    if isinstance(location, str):
+        location = location.replace("IP属地：", "")
+    return {
+        "rpid": str(reply.get("rpid", "")),
+        "name": member.get("uname", ""),
+        "sex": member.get("sex", ""),
+        "time": _format_comment_time(reply.get("ctime", 0)),
+        "like": reply.get("like", 0),
+        "message": (reply.get("content") or {}).get("message", ""),
+        "location": location,
+        "level": (member.get("level_info") or {}).get("current_level", 0),
+        "mid": str(member.get("mid", "")),
+        "reply_count": reply.get("rcount", 0),
+    }
+
+
+async def _fetch_sub_replies(
+    client: httpx.AsyncClient,
+    oid: str,
+    type_: int,
+    root_rpid: str,
+    ps: int,
+    sessdata: str | None,
+) -> list[dict[str, Any]]:
+    """楼中楼：按 root rpid 翻 /x/v2/reply/reply。"""
+    total_pages = None
+    replies: list[dict[str, Any]] = []
+    page = 1
+    while total_pages is None or page <= total_pages:
+        data = await _get_json(
+            client,
+            _REPLY_SUB_API,
+            {"type": type_, "oid": oid, "ps": ps, "pn": page, "root": root_rpid},
+            sessdata,
+        )
+        page_replies = data.get("replies") or []
+        replies.extend(_normalize_reply(r) for r in page_replies)
+        if total_pages is None:
+            count = data.get("page", {}).get("count", 0)
+            total_pages = -(-count // ps) if count else 1  # ceil
+        page += 1
+        if not page_replies:
+            break
+        await asyncio_sleep_small()
+    return replies
+
+
+async def asyncio_sleep_small() -> None:
+    """页间隔小睡，降低风控概率（原脚本 0.3-0.4s，这里稍短）。"""
+    import asyncio
+
+    await asyncio.sleep(random.uniform(0.1, 0.2))
+
+
+async def fetch_comments(
+    client: httpx.AsyncClient,
+    oid: str,
+    type_: int = 1,
+    ps: int = 20,
+    pages: int = 1,
+    include_replies: bool = True,
+    sessdata: str | None = None,
+) -> dict[str, Any]:
+    """爬取两级评论。
+
+    Args:
+        oid: 目标 id（type=1 视频为 aid，type=17 动态为动态 id）
+        type_: 评论区类型（1=视频 17=动态，见 bilibili-API-collect）
+        ps: 每页条数（上游上限 49？常用 20/30）
+        pages: 抓取的一级评论页数
+        include_replies: 是否抓取楼中楼
+        sessdata: 可选登录态
+    """
+    comments: list[dict[str, Any]] = []
+    for page in range(1, pages + 1):
+        data = await _get_json(
+            client,
+            _REPLY_MAIN_API,
+            {"next": page, "type": type_, "oid": oid, "ps": ps, "mode": 3},
+            sessdata,
+        )
+        replies = data.get("replies") or []
+        if not replies:
+            break
+        for reply in replies:
+            item = _normalize_reply(reply)
+            item["replies"] = []
+            if include_replies and item["reply_count"] > 0:
+                item["replies"] = await _fetch_sub_replies(
+                    client, oid, type_, item["rpid"], ps, sessdata
+                )
+            comments.append(item)
+        await asyncio_sleep_small()
+
+    cursor = data.get("cursor") if pages else None  # 保留最后一页的游标信息
+    return {
+        "oid": oid,
+        "type": type_,
+        "pages_fetched": pages,
+        "total": len(comments),
+        "is_end": bool((cursor or {}).get("is_end")) if cursor else None,
+        "items": comments,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 用户空间动态（bili_user_space.py 的 feed/space offset 翻页）
+# ---------------------------------------------------------------------------
+
+_SPACE_FEED_API = "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space"
+
+
+async def fetch_user_space(
+    client: httpx.AsyncClient,
+    mid: str,
+    max_pages: int = 3,
+    sessdata: str | None = None,
+) -> dict[str, Any]:
+    """抓取 UP 主动态列表，抽取每条的 comment_id_str / comment_type（原脚本用途：
+    得到可爬评论的 oid/type 对），附带标题摘要。"""
+    items: list[dict[str, Any]] = []
+    offset = ""
+    has_more = True
+    pages_fetched = 0
+    while has_more and pages_fetched < max_pages:
+        params: dict[str, Any] = {"host_mid": mid}
+        if offset:
+            params["offset"] = offset
+        data = await _get_json(client, _SPACE_FEED_API, params, sessdata)
+        pages_fetched += 1
+        for module in data.get("items") or []:
+            modules = module.get("modules") or {}
+            basic = modules.get("module_basic") or module.get("basic") or {}
+            major = (modules.get("module_dynamic") or {}).get("major") or {}
+            items.append(
+                {
+                    "comment_id_str": str(basic.get("comment_id_str", "")),
+                    "comment_type": basic.get("comment_type"),
+                    "dyn_type": module.get("dyn_type"),
+                    "title": (major.get("archive") or {}).get("title", ""),
+                }
+            )
+        offset = data.get("offset") or ""
+        has_more = bool(data.get("has_more")) and bool(offset)
+        if has_more:
+            await asyncio_sleep_small()
+
+    return {"mid": mid, "pages_fetched": pages_fetched, "total": len(items), "items": items}
