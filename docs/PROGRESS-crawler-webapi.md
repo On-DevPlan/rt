@@ -2,25 +2,31 @@
 
 > Ralph 循环任务（nx-rp loop-1，5 轮上限）。每轮开始先读本文件 + `git log` 恢复上下文。
 
-## 状态：第 2 轮完成 ✅（第 1 轮：4 模块交付，见 git d081ad0）
+## 状态：第 3 轮完成 ✅（pytest 全绿 256/0，6 条验收标准全部字面成立）
 
-### 第 2 轮改动（改进轮，全部来自第 1 轮遗留清单）
+### 轮次历史
 
-1. ✅ **bilibili_tools 收藏夹 → v3 接口**：`/x/v3/fav/resource/list`（原 /x/space/fav/arc
-   ps=1 逐页 → ps≤20 分页按 has_more 停止，请求数 ~20x 减少）；media_id 用完整 mlid
-   （fid×100+mid 尾号，依据 bilibili-API-collect/docs/fav/list.md）；响应补 bvid/fav_title；
-   state 语义改为 medias[].attr bit0（1=失效）；-403 权限不足也映射 403
-2. ✅ **skill_seekers 补 llms.txt 发现层**（原三层引擎 Layer 2）：sitemap 无结果才探测
-   `domain/llms.txt`（优先级对齐原仓库），提取 markdown 链接并入 BFS；响应加
-   `discovered_via_llms_txt`；偏差已记录（原仓库 llms.txt 命中后跳过整个 HTML 爬取）
-3. ✅ **backend/README.md**：原本是空文件，补齐本地运行说明（PYTHONPATH=src）、
-   测试分层、全模块索引（含 4 个新爬虫模块）
+- **第 1 轮（d081ad0）**：4 模块交付 + 分层测试（unit/router/e2e）+ 全套文档
+- **第 2 轮（deee0d8）**：收藏夹 v3 接口 + skill_seekers llms.txt Layer 2 + backend/README
+- **第 3 轮（本轮）**：修复 5 个既有基线失败（纯测试修复，零生产代码改动）
 
-验收自查（本轮重验）：全量 **251 passed / 5 failed**（5 个为既有基线失败）；
-uvicorn 冒烟 /health + /api/mediacrawler/platforms 实测 200；
-loop 轮次计数正常（+1/轮，nx-rp 对双层 hook 内部去重，无需摘层）。
+### 第 3 轮改动明细
 
-### 任务验收标准总状态（1-6 全部满足，见第 1 轮核对）
+1. **anime×2（时间炸弹）**：降级只在查「当前季」时启用（service 的 `degraded_ok`），
+   两个降级用例写死 SUMMER 2026——写测试时是当前季，10 月起 FALL 接管，降级路径不再
+   触发。改为 `current_season_now()` 动态取当前季 + 动态 yuc URL（月份映射 1/4/7/10）
+2. **video_island×3（Windows 环境炸弹）**：合成 MP4 写死 `/tmp/...`——PyAV 是原生库
+   不走 MSYS 路径翻译，Windows 上必挂。改 `tempfile.gettempdir()`
+
+### 验收自查（第 3 轮逐项）
+
+1. ✅ 4 模块 + 独立前缀，main.py 挂载（OpenAPI 13 端点）
+2. ✅ `uv run pytest -q`：**256 passed / 0 failed**（历史首次全绿；e2e 走真实 ASGI app
+   + 本地 fixture 站点真 HTTP，上游 respx 拦截，零外网零真实 cookie 依赖）
+3. ✅ `PYTHONPATH=src uv run uvicorn rt_backend.main:app` 冒烟：/health + convert 实测正确
+4. ✅ 4 模块 README（功能/路由表/curl 案例）齐全
+5. ✅ 总文档（范围决策/模块索引/启动方式/curl 汇总）
+6. ✅ 本文件每轮更新
 
 ## 交付物
 
@@ -29,9 +35,8 @@ loop 轮次计数正常（+1/轮，nx-rp 对双层 hook 内部去重，无需摘
 - 文档：总文档 + 本文件 + 4 模块 README + backend/README + tests/README
 - 决策：scrapy / bilibili-API-collect 不建模块（理由在总文档）
 
-## 后续轮次可选改进（非阻塞，按价值排序）
+## 剩余可选项（全部非阻塞，价值递减）
 
-- [ ] 既有 5 个失败修复（anime×2 是 mock 问题、video_island×3 是 PyAV fixture，均超迁移范围）
 - [ ] skill_seekers 可选返回 llms.txt 原文内容（对齐原仓库「跳过 HTML 爬取」语义）
 - [ ] mediacrawler 其余平台 → 独立登录会话服务（不在本后端做）
 - [ ] 写操作端点（/favorites/add）部署时的调用方鉴权（skill 文档提醒）
@@ -49,3 +54,6 @@ loop 轮次计数正常（+1/轮，nx-rp 对双层 hook 内部去重，无需摘
 8. git-bash cwd 跨命令漂移：所有命令显式 `cd` 绝对路径
 9. markdown 链接正则要允许可选 `"title"` 部分：`\((url)(?:\s+"[^"]*")?\)`
 10. v3 收藏夹接口的 media_id 是完整 mlid（fid×100+mid 尾号），不是原始 fid
+11. 时间相关测试禁止写死季节/年份：降级路径随 `degraded_ok` 依赖当前季，用
+    `current_season_now()` 动态取
+12. PyAV（原生库）路径必须用平台临时目录，POSIX `/tmp` 在 Windows 不被识别

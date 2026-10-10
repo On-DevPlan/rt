@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from httpx import Response
 
 from rt_backend.anime_season.router import build_router
+from rt_backend.anime_season.service import current_season_now
 from rt_backend.core.config import Settings
 from rt_backend.core.http import HttpClientHolder
 
@@ -16,6 +17,18 @@ FIXTURE = Path(__file__).parent / "fixtures" / "yuc_sample.html"
 
 YUC_URL = "http://yuc.wiki/202607/"
 BGM_URL = "https://api.bgm.tv/calendar"
+
+_SEASON_MONTH = {"WINTER": 1, "SPRING": 4, "SUMMER": 7, "FALL": 10}
+
+
+def _current_yuc_url() -> tuple[str, str, int]:
+    """返回 (当前季 yuc URL, season, year)。
+
+    降级源只在查「当前季」时启用（service.degraded_ok），测试写死季节会随
+    时间推移失效（原 SUMMER 2026 用例在 10 月起挂）——必须动态取当前季。
+    """
+    season, year = current_season_now()
+    return f"http://yuc.wiki/{year}{_SEASON_MONTH[season]:02d}/", season, year
 
 
 def _build_app(settings: Settings):
@@ -75,11 +88,12 @@ async def test_season_falls_back_to_bangumi_when_yuc_fails():
             ],
         }
     ]
+    yuc_url, season, year = _current_yuc_url()
     with respx.mock() as router:
-        router.get(YUC_URL).mock(return_value=Response(502, text="upstream bad"))
+        router.get(yuc_url).mock(return_value=Response(502, text="upstream bad"))
         router.get(BGM_URL).mock(return_value=Response(200, text=json.dumps(bgm_body)))
         with TestClient(app) as client:
-            r = client.get("/api/v1/anime/season?season=SUMMER&year=2026")
+            r = client.get(f"/api/v1/anime/season?season={season}&year={year}")
     assert r.status_code == 200, r.text
     items = r.json()["items"]
     assert any(i["title"] == "降级测试番" and i["weekday"] == 7 for i in items)
@@ -93,11 +107,12 @@ async def test_season_both_upstreams_fail_returns_error_shape():
     settings = Settings(anime_cache_ttl_sec=0)
     app, holder = _build_app(settings)
     await holder.start()
+    yuc_url, season, year = _current_yuc_url()
     with respx.mock() as router:
-        router.get(YUC_URL).mock(return_value=Response(500, text="x"))
+        router.get(yuc_url).mock(return_value=Response(500, text="x"))
         router.get(BGM_URL).mock(return_value=Response(500, text="x"))
         with TestClient(app) as client:
-            r = client.get("/api/v1/anime/season?season=SUMMER&year=2026")
+            r = client.get(f"/api/v1/anime/season?season={season}&year={year}")
     assert r.status_code == 502
     body = r.json()
     assert "error" in body and "code" in body["error"]

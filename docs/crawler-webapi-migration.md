@@ -59,11 +59,13 @@
 
 ```bash
 cd D:\code\a_js\proj\rt\backend
-uv run uvicorn rt_backend.main:app --port 8080   # http://127.0.0.1:8080/docs 看 OpenAPI
+PYTHONPATH=src uv run uvicorn rt_backend.main:app --port 8080   # http://127.0.0.1:8080/docs 看 OpenAPI
 uv run pytest -q                                  # 全量（unit/ + router/ + e2e/ + 既有平铺测试）
 ```
 
-既有 5 个失败（anime×2、video_island×3）为迁移前就存在的 Windows 环境问题，与本次无关。
+全量测试 256 passed / 0 failed（2026-10-10）。原基线的 5 个既有失败已顺手修复：
+anime×2 是时间炸弹（降级用例写死 SUMMER 2026，季节轮转后不再触发降级路径，改为动态当前季）；
+video_island×3 是 PyAV 原生库不识别 POSIX `/tmp`（改 `tempfile.gettempdir()`）。
 
 ## curl 案例速查（完整版见各模块 README）
 

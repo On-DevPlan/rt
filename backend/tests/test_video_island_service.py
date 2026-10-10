@@ -87,9 +87,14 @@ def test_make_preview_png_returns_png_three_tiles():
 
 def _encode_synthetic_mp4(frames_rgb, fps=12):
     """用 av 写一个最简单的 mp4（H.264 在某些 CI 不可用，回退 rawvideo）。"""
+    import tempfile
+    from pathlib import Path
+
     av = pytest.importorskip("av")
-    out_path = "/tmp/_synth_island_video.mp4"
-    container = av.open(out_path, "w")
+    # PyAV 是原生库：Windows 上不识别 POSIX 的 /tmp（不会走 MSYS 路径翻译），
+    # 必须用 tempfile.gettempdir() 拿平台临时目录
+    out_path = Path(tempfile.gettempdir()) / "_synth_island_video.mp4"
+    container = av.open(str(out_path), "w")
     try:
         stream = container.add_stream("mpeg4", rate=fps)
         stream.width, stream.height = frames_rgb[0].shape[1], frames_rgb[0].shape[0]
@@ -102,8 +107,7 @@ def _encode_synthetic_mp4(frames_rgb, fps=12):
             container.mux(p)
     finally:
         container.close()
-    import pathlib
-    return pathlib.Path(out_path).read_bytes()
+    return out_path.read_bytes()
 
 
 def test_process_video_end_to_end_synthetic_mp4():

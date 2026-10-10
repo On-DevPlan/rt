@@ -26,8 +26,10 @@ uv run pytest tests/router -q        # 模块路由层（respx 拦上游）
 uv run pytest tests/e2e -q           # 真实 app 端到端（本地 fixture 站点）
 ```
 
-分层约定见 `tests/README.md`。已知基线：anime×2、video_island×3 五个失败为
-Windows 检出的既有问题（PyAV fixture 缺文件），与本目录新增模块无关。
+分层约定见 `tests/README.md`。全量测试 256 passed / 0 failed（2026-10-10 第 3 轮修复：
+anime 两个用例改为动态当前季——原写死 SUMMER 2026 的降级用例随季节轮转失效；
+video_island 三个用例的合成 MP4 改用 `tempfile.gettempdir()`——PyAV 原生库不识别
+POSIX `/tmp`）。
 
 ## 模块索引
 
