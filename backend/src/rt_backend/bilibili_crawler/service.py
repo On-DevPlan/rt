@@ -1,6 +1,6 @@
 """Bilibili crawler core logic.
 
-Extracted from ``.claude/repo/Bilibili_crawler``（requests 脚本）并改写为
+Extracted from ``.claudi/repo/Bilibili_crawler``（requests 脚本）并改写为
 httpx.AsyncClient 版本：
 
 - WBI 签名（原 ``b站使用wbi签名的爬取方式.py``：mixinKeyEncTab + md5）
@@ -10,6 +10,7 @@ httpx.AsyncClient 版本：
 - 用户空间动态列表（原 ``bili_user_space.py``：
   /x/polymer/web-dynamic/v1/feed/space 的 offset 翻页，抽取 comment_id_str/comment_type）
 """
+import asyncio
 import random
 import time
 from hashlib import md5
@@ -84,6 +85,11 @@ _MIXIN_KEY_ENC_TAB = [
 ]
 
 _NAV_API = "https://api.bilibili.com/x/web-interface/nav"
+_WBI_TTL_SECONDS = 3600  # 1 hour, reused per client instance
+
+# WBI key cache: process-wide, reused per client, 1h TTL against key rotation
+_wbi_cache: dict[int, tuple[float, str, str]] = {}
+_wbi_lock = asyncio.Lock()
 
 
 def get_mixin_key(orig: str) -> str:
@@ -108,23 +114,40 @@ def enc_wbi(params: dict[str, Any], img_key: str, sub_key: str) -> dict[str, Any
 
 
 async def fetch_wbi_keys(client: httpx.AsyncClient) -> tuple[str, str]:
-    """从 nav 接口取最新的 img_key / sub_key。"""
-    resp = await client.get(
-        _NAV_API,
-        headers={"Referer": "https://www.bilibili.com/"},
-    )
-    resp.raise_for_status()
-    payload = resp.json()
-    if payload.get("code") != 0 or not payload.get("data"):
-        raise UpstreamError(f"nav 接口返回异常: code={payload.get('code')}")
-    wbi_img = payload["data"].get("wbi_img") or {}
-    img_url: str = wbi_img.get("img_url", "")
-    sub_url: str = wbi_img.get("sub_url", "")
-    if not img_url or not sub_url:
-        raise UpstreamError("nav 接口缺少 wbi_img 字段")
-    img_key = img_url.rsplit("/", 1)[1].split(".")[0]
-    sub_key = sub_url.rsplit("/", 1)[1].split(".")[0]
-    return img_key, sub_key
+    """从 nav 接口取最新的 img_key / sub_key（同 client 实例内 1 小时缓存）。"""
+    cid = id(client)
+    now = asyncio.get_event_loop().time()
+    cached = _wbi_cache.get(cid)
+    if cached is not None:
+        expires, img_key, sub_key = cached
+        if now < expires:
+            return img_key, sub_key
+
+    async with _wbi_lock:
+        # double-check after lock (another coroutine may have written it)
+        cached = _wbi_cache.get(cid)
+        if cached is not None:
+            expires, img_key, sub_key = cached
+            if now < expires:
+                return img_key, sub_key
+
+        resp = await client.get(
+            _NAV_API,
+            headers={"Referer": "https://www.bilibili.com/"},
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        if payload.get("code") != 0 or not payload.get("data"):
+            raise UpstreamError(f"nav 接口返回异常: code={payload.get('code')}")
+        wbi_img = payload["data"].get("wbi_img") or {}
+        img_url: str = wbi_img.get("img_url", "")
+        sub_url: str = wbi_img.get("sub_url", "")
+        if not img_url or not sub_url:
+            raise UpstreamError("nav 接口缺少 wbi_img 字段")
+        img_key = img_url.rsplit("/", 1)[1].split(".")[0]
+        sub_key = sub_url.rsplit("/", 1)[1].split(".")[0]
+        _wbi_cache[cid] = (now + _WBI_TTL_SECONDS, img_key, sub_key)
+        return img_key, sub_key
 
 
 async def sign_params(client: httpx.AsyncClient, params: dict[str, Any]) -> dict[str, Any]:
@@ -405,8 +428,6 @@ async def _fetch_sub_replies(
 
 async def asyncio_sleep_small() -> None:
     """页间隔小睡，降低风控概率（原脚本 0.3-0.4s，这里稍短）。"""
-    import asyncio
-
     await asyncio.sleep(random.uniform(0.1, 0.2))
 
 

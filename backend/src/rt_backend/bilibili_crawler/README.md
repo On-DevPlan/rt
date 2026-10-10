@@ -8,7 +8,7 @@
 
 | 能力 | 原脚本 | 本模块实现 |
 |---|---|---|
-| WBI 签名 | `b站使用wbi签名的爬取方式.py`（mixinKeyEncTab + md5） | `service.py: enc_wbi / sign_params`，实时取 nav 接口的 img/sub key |
+| WBI 签名 | `b站使用wbi签名的爬取方式.py`（mixinKeyEncTab + md5） | `service.py: enc_wbi / sign_params`，nav 接口的 img/sub key **同 client 实例内 1 小时缓存**（`_wbi_cache` + asyncio.Lock 双检），签名扇出不再逐请求打 nav（防风控） |
 | av↔bv 互转 | `bv2oid.py`（NEWBV 编码） | `service.py: av2bv / bv2av`，纯计算 |
 | 视频完整详情 | `MediaCrawler get_video_info`（`/x/web-interface/view/detail`，aid/bvid 二选一、免签名） | `service.py: fetch_video_detail`，含分P `pages[]`（page/part/cid） |
 | 播放直链 + 清晰度 | `MediaCrawler get_video_play_url` + `BilibiliDownloader baseModels getQualities/getPlayurl` | `service.py: fetch_play_url`，WBI 签名 playurl（avid/cid/qn/fnval/platform），qn 语义表见 schemas |

@@ -89,3 +89,72 @@ class TestWbiSign:
             await client.aclose()
         assert img_key == "aaaa1111"
         assert sub_key == "bbbb2222"
+
+
+class TestWbiKeyCache:
+    """WBI key 缓存（1 小时 TTL，同一 client 实例内复用）。"""
+
+    @pytest.fixture(autouse=True)
+    def clear_wbi_cache(self, monkeypatch):
+        """每个测试前清空缓存，避免跨测试污染。"""
+        monkeypatch.setattr("rt_backend.bilibili_crawler.service._wbi_cache", {})
+
+    def _nav_response(self, img="img1", sub="sub1"):
+        return {
+            "code": 0,
+            "data": {
+                "wbi_img": {
+                    "img_url": f"https://i0.hdslb.com/bfs/wbi/{img}.png",
+                    "sub_url": f"https://i0.hdslb.com/bfs/wbi/{sub}.png",
+                }
+            },
+        }
+
+    @pytest.mark.asyncio
+    async def test_cache_hit_avoids_second_nav_request(self):
+        """同一 client 的第二次调用命中缓存，不发第二个 nav 请求。"""
+        nav_calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal nav_calls
+            nav_calls += 1
+            return httpx.Response(200, json=self._nav_response())
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            k1 = await fetch_wbi_keys(client)
+            k2 = await fetch_wbi_keys(client)
+            k3 = await fetch_wbi_keys(client)
+        finally:
+            await client.aclose()
+
+        assert nav_calls == 1
+        assert k1 == k2 == k3 == ("img1", "sub1")
+
+    @pytest.mark.asyncio
+    async def test_different_clients_each_hit_nav(self):
+        """不同 client 实例各有独立缓存项，各自只发一次 nav。"""
+        nav_calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal nav_calls
+            nav_calls += 1
+            return httpx.Response(
+                200, json=self._nav_response(img=f"img{nav_calls}", sub=f"sub{nav_calls}")
+            )
+
+        client1 = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        client2 = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            k1 = await fetch_wbi_keys(client1)
+            k2 = await fetch_wbi_keys(client2)
+            # client1 第二次不重发
+            k1b = await fetch_wbi_keys(client1)
+        finally:
+            await client1.aclose()
+            await client2.aclose()
+
+        assert nav_calls == 2
+        assert k1 == ("img1", "sub1")
+        assert k2 == ("img2", "sub2")
+        assert k1b == ("img1", "sub1")
