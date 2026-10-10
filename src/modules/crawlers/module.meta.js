@@ -23,6 +23,7 @@ export default defineModule({
       entry: './pages/BilibiliCrawlerPage.jsx',
       summary: 'WBI 签名、av↔bv 互转、视频信息、两级评论、UP 主空间动态。',
       order: 10,
+      showcase: false,
       tags: ['bilibili', 'wbi', 'comments']
     }),
     definePage({
@@ -32,6 +33,7 @@ export default defineModule({
       entry: './pages/BilibiliToolsPage.jsx',
       summary: '收藏夹枚举与批量收藏、音频区（单曲 / 歌单 / UP 主歌曲）。',
       order: 20,
+      showcase: false,
       tags: ['bilibili', 'favorites', 'audio']
     }),
     definePage({
@@ -41,6 +43,7 @@ export default defineModule({
       entry: './pages/SkillSeekersPage.jsx',
       summary: '文档站 BFS 爬虫（sitemap + llms.txt 发现 + 正文提取）。',
       order: 30,
+      showcase: false,
       tags: ['docs', 'bfs', 'scrape']
     }),
     definePage({
@@ -50,6 +53,7 @@ export default defineModule({
       entry: './pages/MediacrawlerPage.jsx',
       summary: '多平台能力矩阵 + B 站关键词搜索（免登录核心）。',
       order: 40,
+      showcase: false,
       tags: ['mediacrawler', 'search', 'platforms']
     })
   ]
