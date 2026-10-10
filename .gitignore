@@ -14,6 +14,9 @@ dist
 !.claude/repo/_self/
 !.claude/repo/_self/**
 
+# git remote 提取脚本的运行产物（sl-git-standard）
+.claude/www/
+
 .playwright-mcp
 .venv
 *.db
