@@ -70,10 +70,18 @@ class SongInfoResponse(BaseModel):
 class MenuSongsResponse(BaseModel):
     menu_sid: str
     total: int
+    page_count: int = Field(default=1, description="上游总页数（pageCount）")
+    truncated: bool = Field(
+        default=False, description="True=因 max_pages 截断，total 不是全量"
+    )
     items: list[SongItem]
 
 
 class UserSongsResponse(BaseModel):
     uid: str
     total: int
+    page_count: int = Field(default=1, description="上游总页数（pageCount）")
+    truncated: bool = Field(
+        default=False, description="True=因 max_pages 截断，total 不是全量"
+    )
     items: list[SongItem]

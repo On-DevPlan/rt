@@ -27,7 +27,7 @@ export const bilibiliToolsEndpoints = [
   {
     id: 'favorites-add',
     title: '批量添加收藏（写操作 ⚠️）',
-    description: '把多个 av 号加入指定收藏夹。需要 SESSDATA + bili_jct（csrf）。逐个返回结果：0=成功，11007/11201=已收藏，10003=稿件不存在。生产环境务必置于鉴权层后。',
+    description: '把多个 av 号加入指定收藏夹。需要 SESSDATA + bili_jct（csrf）。逐个返回结果：pattern 0=成功/已收藏，1=稿件不存在，2=限流（-503/-509 服务端已自动退避重试），-1=凭证或网络错误（此时保留已完成批次，对比 ok_count 与 requested 可知是否全部成功）。生产环境务必置于鉴权层后。',
     method: 'POST',
     path: '/api/bilibili-tools/favorites/add',
     inputs: [
@@ -66,7 +66,7 @@ export const bilibiliToolsEndpoints = [
   {
     id: 'menu-songs',
     title: '音频区 · 歌单歌曲',
-    description: '歌单（am{id}）内全部歌曲列表，按 pageCount==curPage 停止翻页。',
+    description: '歌单（am{id}）内全部歌曲列表，按 pageCount==curPage 停止翻页。truncated=true 表示因 max_pages 截断（对照 page_count 总页数），total 只是已抓条数。',
     method: 'GET',
     path: '/api/bilibili-tools/audio/playlist/{sid}',
     inputs: [
@@ -79,7 +79,7 @@ export const bilibiliToolsEndpoints = [
   {
     id: 'user-songs',
     title: '音频区 · UP 主歌曲',
-    description: 'UP 主上传的歌曲列表。uid 或 link（space 链接）二选一。',
+    description: 'UP 主上传的歌曲列表。uid 或 link（space 链接）二选一；uid 也可直接传纯数字或 space 链接。truncated=true 表示因 max_pages 截断（对照 page_count 总页数）。',
     method: 'GET',
     path: '/api/bilibili-tools/audio/user',
     inputs: [

@@ -652,6 +652,7 @@ async def scrape_docs(
         "discovered_via_sitemap": sitemap_count,
         "discovered_via_llms_txt": llms_count,
         "pages_scraped": len(visited),
+        "limit_hit": len(visited) >= max_pages,  # 抓满上限：结果可能不是全量
         "pages_saved": 0 if dry_run else len(pages),
         "skipped": skipped,
         "pages": pages,

@@ -10,6 +10,7 @@
 |---|---|---|---|---|
 | 1 | ✅ 14 条差距（0 高/6 中/8 低；三桶：生产加固/功能完备/文档测试对齐） | G7 WBI key 缓存 + G11 服务层单测补齐（bilibili_tools/mediacrawler） | ✅ 322/0 + build | ✅ |
 | 2 | ✅ 11 条遗留验证（G3 修正：-503 是 HTTP 200 envelope，request_with_retry 看不见）+ 新增 N1-N4（WBI 缓存失效缺失/WeakKeyDictionary/锁粒度/时钟） | G3 favorites/add 节流+限流重试+部分结果保留 + N1/N2/N4 WBI 失效换 key 重试 + G10 cookbook §3.8/§3.9 | ✅ 328/0 + build | ✅ |
+| 3 | ✅ 8 条遗留全复核 + 前端 specs 同步检查（端点↔卡片 16/16 全覆盖）+ e2e 缺口盘点（bilibili-tools 1/5、bilibili-crawler 2/8） | G2 歌曲列表截断可感知（page_count+truncated）+ G12 limit_hit + e2e 补齐（风控换 key/favorites-add/音频三件套/mediacrawler 前缀） | ✅ 332/0 + build | ✅ |
 | 2 | | | | |
 | 3 | | | | |
 | 4 | | | | |
@@ -67,6 +68,37 @@ N2（id() 键缓存应换 WeakKeyDictionary）、N4（锁后重取时钟）。
 **下轮候选**：G2 audio 列表截断可感知（total=pageCount + truncated 标志）、G12 limit_hit、
 G6 support_formats/timelength、G1 魔法 mid 文档化。
 
+## 第 3 轮记录（2026-10-11）
+
+**sub agent 报告结论**：8 条遗留全复核仍有效；前端 specs 与后端 16 端点一一对应无卡片缺口
+（仅描述性欠缺：favorites-add 重试语义、menu/user-songs 截断语义）；e2e 结构性缺口最大——
+bilibili-tools 仅 1/5 端点、bilibili-crawler 2/8，r1-r2 的两个高价值行为（写路径加固、
+风控换 key 重试）都没有 e2e 级回归保护；`test_all_crawler_prefixes_mounted` 漏 /api/mediacrawler。
+
+**本轮实现**（G2 + G12 + e2e 补齐）：
+
+1. **G2 截断可感知**（`bilibili_tools/service.py` + `schemas.py`）：
+   - `_fetch_song_list` 返回 `(songs, page_count, truncated)` 三元组（for-else 判定翻满未到最后一页）
+   - MenuSongsResponse/UserSongsResponse 新增 `page_count`（上游总页数）+ `truncated`（因 max_pages 截断）
+   - 新测试 `test_menu_songs_truncation_flag`（pageCount=3 + max_pages=1 → truncated=true，只打 1 次）
+2. **G12 limit_hit**（`skill_seekers/service.py` + `schemas.py`）：ScrapeResponse 新增
+   `limit_hit = pages_scraped >= max_pages`，50 页上限触顶不再靠推断
+3. **e2e 补齐**（`tests/e2e/test_crawler_modules_e2e.py` +3 用例、1 处修正）：
+   - `test_play_url_risk_control_key_refresh_through_real_app`：真实 app 全链路 -352 → 失效缓存
+     重签 → 成功（playurl 恰好 2 次；nav 缓存可能被同 session 前序用例预热，断言 ≥1）
+   - `test_bilibili_tools_favorites_add_through_real_app`：写操作 -503 → 退避重试 → 成功
+   - `test_bilibili_tools_audio_trio_through_real_app`：单曲信息/歌单/UP 主歌曲三端点一次覆盖
+   - 前缀断言补 `/api/mediacrawler`
+4. **前端 specs 描述同步**：favorites-add（pattern 语义 + 部分结果保留）、menu-songs/user-songs
+   （truncated/page_count 解读、uid 纯数字）
+
+**验证**：backend pytest **332 passed / 0 failed**（+4），11.3s；`pnpm build` 通过。
+
+**下轮候选**：G6 play-url support_formats/timelength、G4 视频详情 staff、G5 user-space
+pub_time/view、G1 魔法 mid 文档化、G8 BFS 降级警告、G9 code 截断文档化。
+
+
+
 ## 遗留候选（未实现项，供后续轮次）
 
 - [ ] 收藏夹旧接口 /x/space/fav/arc 兼容开关（loop-1 遗留，低优先）
@@ -74,7 +106,10 @@ G6 support_formats/timelength、G1 魔法 mid 文档化。
 - [ ] G6 play-url support_formats/timelength
 - [ ] G13 评论 wbi 变体端点（维持文档化决策）
 - [x] ~~G10 cookbook favorites/add + wbi/sign 场景~~（r2 完成）
-- [ ] G12 skill_seekers limit_hit 暴露
+- [x] ~~G12 skill_seekers limit_hit 暴露~~（r3 完成）
 - [ ] G8 全域 BFS 警告
-- [ ] G2 audio 列表截断可感知（pageCount/truncated）
+- [x] ~~G2 audio 列表截断可感知（pageCount/truncated）~~（r3 完成）
 - [ ] G1 song_info 魔法 mid=8047632 文档化
+- [ ] G4 视频详情 staff/is_cooperation
+- [ ] G5 user-space items 补 pub_time/view
+- [ ] G9 code_samples 截断不对称（HTML 2000 / .md 无上限）文档化

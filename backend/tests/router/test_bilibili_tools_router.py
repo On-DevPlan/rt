@@ -282,6 +282,29 @@ def test_menu_songs_paging(client):
     assert body["total"] == 2
     assert body["items"][0]["sid"] == "1"
     assert menu_route.call_count == 2  # pageCount==curPage 后停止
+    assert body["page_count"] == 2
+    assert body["truncated"] is False  # 抓到最后一页
+
+
+def test_menu_songs_truncation_flag(client):
+    """pageCount=3 但 max_pages=1 → truncated=true（截断可感知）。"""
+    page1 = {
+        "code": 0,
+        "data": {
+            "data": [{"id": 1, "title": "歌一", "author": "a"}],
+            "pageCount": 3,
+            "curPage": 1,
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        menu_route = router.get(MENU_URL).mock(return_value=Response(200, json=page1))
+        r = client.get("/api/bilibili-tools/audio/playlist/am76105", params={"max_pages": 1})
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["page_count"] == 3
+    assert body["truncated"] is True
+    assert menu_route.call_count == 1  # 上限卡住，未继续翻
 
 
 def test_user_songs(client):

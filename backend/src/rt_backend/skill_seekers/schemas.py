@@ -64,6 +64,9 @@ class ScrapeResponse(BaseModel):
     discovered_via_sitemap: int
     discovered_via_llms_txt: int = 0
     pages_scraped: int
+    limit_hit: bool = Field(
+        default=False, description="True=已抓满 max_pages 上限，结果可能不是站点全量"
+    )
     pages_saved: int
     skipped: int
     elapsed_sec: float

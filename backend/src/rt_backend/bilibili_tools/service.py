@@ -322,9 +322,15 @@ async def _fetch_song_list(
     url: str,
     params_fn,  # Callable[[int], dict]  pn → params
     max_pages: int,
-) -> list[dict[str, Any]]:
-    """歌单/UP 主歌曲的通用翻页（原脚本按 pageCount==curPage 停止）。"""
+) -> tuple[list[dict[str, Any]], int, bool]:
+    """歌单/UP 主歌曲的通用翻页（原脚本按 pageCount==curPage 停止）。
+
+    返回 (songs, page_count 上游总页数, truncated 是否因 max_pages 截断)——
+    截断必须可感知，否则调用方会把残缺列表当全量。
+    """
     songs: list[dict[str, Any]] = []
+    page_count = 1
+    truncated = False
     for pn in range(1, max_pages + 1):
         data = await _get_json(client, url, params=params_fn(pn), headers=_UA_FIREFOX)
         # envelope 的 data 即 {"data": [rows], "pageCount": .., "curPage": ..}
@@ -341,26 +347,41 @@ async def _fetch_song_list(
                     "cover": song.get("cover", ""),
                 }
             )
+        page_count = int(data.get("pageCount") or 1)
         if data.get("pageCount") == data.get("curPage"):
             break
-    return songs
+    else:
+        truncated = page_count > max_pages  # 翻满 max_pages 仍未到最后一页
+    return songs, page_count, truncated
 
 
 async def fetch_menu_songs(
     client: httpx.AsyncClient, sid: str, max_pages: int = 3
 ) -> dict[str, Any]:
     """歌单（am{id}）内全部歌曲。"""
-    songs = await _fetch_song_list(
+    songs, page_count, truncated = await _fetch_song_list(
         client, _MENU_SONGS_API, lambda pn: {"ps": 100, "sid": sid, "pn": pn}, max_pages
     )
-    return {"menu_sid": sid, "total": len(songs), "items": songs}
+    return {
+        "menu_sid": sid,
+        "total": len(songs),
+        "page_count": page_count,
+        "truncated": truncated,
+        "items": songs,
+    }
 
 
 async def fetch_user_songs(
     client: httpx.AsyncClient, uid: str, order: int = 1, max_pages: int = 3
 ) -> dict[str, Any]:
     """UP 主上传的歌曲列表。"""
-    songs = await _fetch_song_list(
+    songs, page_count, truncated = await _fetch_song_list(
         client, _UPPER_SONGS_API, lambda pn: {"ps": 30, "uid": uid, "order": order, "pn": pn}, max_pages
     )
-    return {"uid": uid, "total": len(songs), "items": songs}
+    return {
+        "uid": uid,
+        "total": len(songs),
+        "page_count": page_count,
+        "truncated": truncated,
+        "items": songs,
+    }

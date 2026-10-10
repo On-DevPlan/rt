@@ -18,12 +18,13 @@ def test_health(real_app_client):
 
 
 def test_all_crawler_prefixes_mounted(real_app_client):
-    """四个新模块 + 既有模块都在真实 app 的 OpenAPI 里，前缀互不重叠。"""
+    """五个新模块 + 既有模块都在真实 app 的 OpenAPI 里，前缀互不重叠。"""
     paths = set(real_app_client.get("/openapi.json").json()["paths"])
     for prefix in (
         "/api/bilibili-crawler",
         "/api/bilibili-tools",
         "/api/skill-seekers",
+        "/api/mediacrawler",
         "/api/bilibili",
         "/api/tts",
     ):
@@ -222,3 +223,106 @@ def test_mediacrawler_search_through_real_app(real_app_client):
     body = r.json()
     assert body["num_results"] == 42
     assert body["items"][0]["title"] == "e2e搜索"  # 高亮标签剥除
+
+
+def test_play_url_risk_control_key_refresh_through_real_app(real_app_client):
+    """全链路风控换 key：签名请求首次 -352 → 失效 WBI 缓存重签 → 第二次成功。
+
+    nav 至少被取一次（真实 app 的 client 缓存可能已被前面的 e2e 预热），
+    playurl 恰好两次（失败 + 重试）。
+    """
+    def _nav() -> dict:
+        return {
+            "code": 0,
+            "data": {
+                "wbi_img": {
+                    "img_url": f"https://i0.hdslb.com/bfs/wbi/{'a' * 32}.png",
+                    "sub_url": f"https://i0.hdslb.com/bfs/wbi/{'b' * 32}.png",
+                }
+            },
+        }
+
+    playurl_ok = {
+        "code": 0,
+        "data": {
+            "quality": 80,
+            "format": "mp4",
+            "accept_quality": [80],
+            "accept_description": ["高清 1080P"],
+            "timelength": 300000,
+            "durl": [{"url": "http://cdn/x.mp4", "backup_url": None, "size": 1}],
+        },
+    }
+    with respx.mock(base_url=BILI) as router:
+        nav_route = router.get("/x/web-interface/nav").mock(side_effect=[Response(200, json=_nav()), Response(200, json=_nav())])
+        play_route = router.get("/x/player/wbi/playurl").mock(
+            side_effect=[
+                Response(200, json={"code": -352, "message": "风控拦截"}),
+                Response(200, json=playurl_ok),
+            ]
+        )
+        r = real_app_client.post(
+            "/api/bilibili-crawler/play-url",
+            json={"aid": 170001, "cid": 9001, "qn": 80},
+        )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["quality"] == 80
+    assert body["durl"][0]["url"] == "http://cdn/x.mp4"
+    assert play_route.call_count == 2  # -352 失败一次 + 换 key 重试成功
+    assert nav_route.call_count >= 1
+
+
+def test_bilibili_tools_favorites_add_through_real_app(monkeypatch, real_app_client):
+    """写操作全链路：-503 envelope 限流 → 自动退避重试 → 第二次成功。"""
+    import rt_backend.bilibili_tools.service as svc
+
+    monkeypatch.setattr(svc, "_FAV_ADD_THROTTLE", 0.0)
+    monkeypatch.setattr(svc, "_FAV_ADD_RETRY_DELAYS", (0.0, 0.0))
+    with respx.mock(base_url=BILI) as router:
+        add_route = router.post("/x/v2/fav/video/add").mock(
+            side_effect=[
+                Response(200, json={"code": -503, "message": "调用速度过快"}),
+                Response(200, json={"code": 0, "message": "0"}),
+            ]
+        )
+        r = real_app_client.post(
+            "/api/bilibili-tools/favorites/add",
+            json={"sessdata": "sd", "bili_jct": "jct", "fid": "123", "aids": ["170001"]},
+        )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ok_count"] == 1
+    assert add_route.call_count == 2
+
+
+def test_bilibili_tools_audio_trio_through_real_app(real_app_client):
+    """音频区三端点全链路（单曲信息 / 歌单 / UP 主歌曲）。"""
+    info = {"code": 0, "data": {"title": "e2e歌", "author": "唱见", "lyric": "http://l.lrc", "cover": "http://c.jpg"}}
+    urls = {"code": 0, "data": {"cdns": ["http://cdn/song.m4a"]}}
+    menu = {
+        "code": 0,
+        "data": {"data": [{"id": 1, "title": "歌一", "author": "a"}], "pageCount": 1, "curPage": 1},
+    }
+    upper = {
+        "code": 0,
+        "data": {"data": [{"id": 2, "title": "歌二", "uname": "b"}], "pageCount": 1, "curPage": 1},
+    }
+    with respx.mock(base_url=BILI) as router:
+        router.get("/audio/music-service-c/web/song/info").mock(return_value=Response(200, json=info))
+        router.get("/audio/music-service-c/url").mock(return_value=Response(200, json=urls))
+        router.get("/audio/music-service-c/web/song/of-menu").mock(return_value=Response(200, json=menu))
+        router.get("/audio/music-service/web/song/upper").mock(return_value=Response(200, json=upper))
+
+        r1 = real_app_client.get("/api/bilibili-tools/audio/au241921", params={"quality": 1})
+        r2 = real_app_client.get("/api/bilibili-tools/audio/playlist/am76105")
+        r3 = real_app_client.get("/api/bilibili-tools/audio/user", params={"uid": "2932528"})
+
+    assert r1.status_code == 200, r1.text
+    assert r1.json()["cdns"] == ["http://cdn/song.m4a"]
+    assert r2.status_code == 200, r2.text
+    assert r2.json()["total"] == 1 and r2.json()["truncated"] is False
+    assert r3.status_code == 200, r3.text
+    assert r3.json()["items"][0]["author"] == "b"  # uname 归一为 author
