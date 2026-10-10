@@ -415,7 +415,8 @@ def extract_markdown_page(text: str, url: str, is_valid_fn) -> dict[str, Any]:
         code = m.group(2)
         if len(code.strip()) > 10:
             page["code_samples"].append(
-                {"code": code.strip(), "language": m.group(1) or "unknown"}
+                # 与 HTML 路径一致截断到 2000 字符（schemas.CodeSample.code 注明的上限）
+                {"code": code.strip()[:2000], "language": m.group(1) or "unknown"}
             )
 
     no_code = re.sub(r"```.*?```", "", text, flags=re.DOTALL)

@@ -10,7 +10,7 @@
 |---|---|---|
 | WBI 签名 | `b站使用wbi签名的爬取方式.py`（mixinKeyEncTab + md5） | `service.py: enc_wbi / sign_params`，nav 接口的 img/sub key **同 client 实例内 1 小时缓存**（`WeakKeyDictionary` + asyncio.Lock 双检），签名扇出不再逐请求打 nav（防风控）；签名请求遇风控自动失效缓存换 key 重试一次（`_signed_get_json`） |
 | av↔bv 互转 | `bv2oid.py`（NEWBV 编码） | `service.py: av2bv / bv2av`，纯计算 |
-| 视频完整详情 | `MediaCrawler get_video_info`（`/x/web-interface/view/detail`，aid/bvid 二选一、免签名） | `service.py: fetch_video_detail`，含分P `pages[]`（page/part/cid） |
+| 视频完整详情 | `MediaCrawler get_video_info`（`/x/web-interface/view/detail`，aid/bvid 二选一、免签名） | `service.py: fetch_video_detail`，含分P `pages[]`（page/part/cid）与合作视频 `staff[]`/`is_cooperation` |
 | 播放直链 + 清晰度 | `MediaCrawler get_video_play_url` + `BilibiliDownloader baseModels getQualities/getPlayurl` | `service.py: fetch_play_url`，WBI 签名 playurl（avid/cid/qn/fnval/platform），qn 语义表见 schemas |
 | 分P弹幕 | `BilibiliDownloader dmApi`（`/x/v1/dm/list.so?oid={cid}`，上游只落盘原始 XML） | `service.py: fetch_danmaku`，按 B 站标准 dm XML 解析为 `{time, mode, text}` |
 | 两级评论爬取 | `Bilibili_crawler.py`（reply/main 分页 + reply/reply 楼中楼） | `service.py: fetch_comments`，字段抽取与原脚本对齐（昵称/性别/时间/点赞/评论/IP属地/等级/uid/rpid） |

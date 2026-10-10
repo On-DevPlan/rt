@@ -278,6 +278,12 @@ async def fetch_video_detail(
         "pic": view.get("pic", ""),
         "owner_mid": owner.get("mid"),
         "owner_name": owner.get("name", ""),
+        # 合作视频：staff[] 在 View 顶层（非合作视频无此项），is_cooperation 在 View.rights
+        "is_cooperation": bool((view.get("rights") or {}).get("is_cooperation")),
+        "staff": [
+            {"mid": m.get("mid"), "name": m.get("name", ""), "title": m.get("title", "")}
+            for m in view.get("staff") or []
+        ],
         "pubdate": view.get("pubdate"),
         "duration": view.get("duration"),
         "pages": pages,

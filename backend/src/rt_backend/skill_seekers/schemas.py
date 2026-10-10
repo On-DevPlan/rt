@@ -27,7 +27,7 @@ class Heading(BaseModel):
 
 
 class CodeSample(BaseModel):
-    code: str
+    code: str = Field(default="", description="代码文本（HTML 与 .md 路径统一截断到 2000 字符）")
     language: str = ""
     confidence: float = Field(default=0.0, description="语言判定置信度（class 命中=1.0）")
 

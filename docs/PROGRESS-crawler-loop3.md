@@ -12,6 +12,11 @@
 | 2 | ✅ 11 条遗留验证（G3 修正：-503 是 HTTP 200 envelope，request_with_retry 看不见）+ 新增 N1-N4（WBI 缓存失效缺失/WeakKeyDictionary/锁粒度/时钟） | G3 favorites/add 节流+限流重试+部分结果保留 + N1/N2/N4 WBI 失效换 key 重试 + G10 cookbook §3.8/§3.9 | ✅ 328/0 + build | ✅ |
 | 3 | ✅ 8 条遗留全复核 + 前端 specs 同步检查（端点↔卡片 16/16 全覆盖）+ e2e 缺口盘点（bilibili-tools 1/5、bilibili-crawler 2/8） | G2 歌曲列表截断可感知（page_count+truncated）+ G12 limit_hit + e2e 补齐（风控换 key/favorites-add/音频三件套/mediacrawler 前缀） | ✅ 332/0 + build | ✅ |
 | 4 | ✅ G6/G4/G5/G1/G8/G9 全复核（两处修正：is_cooperation 在 View.rights；pub_time 在 module_author 且无 view 字段只有 stat.play）+ 6 处 stale 文档定位 | G6 play-url 补 timelength+support_formats + G5 user-space 补 pub_time/pub_ts/play + G1 魔法 mid 注释 + 6 处 stale 文档修复 | ✅ 332/0 + build | ✅ |
+| 5 | ✅ 收官检查：4 个 README 路由表 ↔ 路由器全一致（8/5/1/2）、cookbook §1 对 16 端点 GET/POST 全对、前端单模块结构 PASS、无 closure blocker；landing 页 3 处 stale 数字（13→16、×6→×9）+ G8 判定为 moot | G4 视频详情补 staff/is_cooperation + landing 页数字修正 + G9 .md 截断对齐 2000 + 进度清单同步 | ✅ 332/0 + build | ✅ |
+
+**loop-3 收官结论**：迁移闭环完成。332 测试全绿 + build 通过；4 模块 README 路由表与实现一一对应；
+cookbook §3.1-§3.9 全部端点/字段为最新；前端 16 端点卡片与路由器 1:1；遗留仅 G13（评论 wbi
+变体，维持文档化决策）与 /x/space/fav/arc 兼容开关（低优先 backlog）。
 | 2 | | | | |
 | 3 | | | | |
 | 4 | | | | |
@@ -126,17 +131,40 @@ pub_time/view、G1 魔法 mid 文档化、G8 BFS 降级警告、G9 code 截断�
 **下轮候选**（loop-3 收官）：G4 staff/is_cooperation、G8 discovery_degraded、G9 .md 截断对齐、
 G13 维持文档化决策——均为低优先，收官轮以全量回归 + 文档终检为主。
 
+## 第 5 轮记录（2026-10-11，收官）
+
+**sub agent 报告结论**：无 closure blocker。4 个 README 路由表与路由器全一致
+（bilibili_crawler 8 / bilibili_tools 5 / skill_seekers 1 / mediacrawler 2，含
+`/audio/{sid}` 通配路由顺序注记）；cookbook §1 速查表对 16 端点 GET/POST 划分全对；
+前端单模块结构 PASS（16 卡片 1:1、无断链）；G8 判定 moot（discovered_via_* 计数
+已可推断降级，flag 冗余）；landing 页遗留 3 处 stale 数字（自相矛盾：hero 说 13
+端点、卡片合计 16）。
+
+**本轮实现**（G4 + landing 修正 + G9 ride-along）：
+
+1. **G4**（`bilibili_crawler/service.py` + `schemas.py`）：视频详情补
+   `is_cooperation`（View.rights.is_cooperation）+ `staff[]`（View 顶层成员
+   mid/name/title，新 `StaffMember` 模型）——合作视频归属不再只有 owner
+2. **landing 页修正**（`CrawlersHomePage.jsx`）：端点数 13→16（速查表行 + hero），
+   场景 ×6→×9 并补全 §3.7/§3.8/§3.9 枚举
+3. **G9 ride-along**（`skill_seekers/service.py` + `schemas.py`）：.md 路径
+   code_samples 截断对齐 HTML 路径的 2000 字符 + CodeSample.code 注明上限
+4. **文档**：README 视频详情行、cookbook §3.7 补 staff/is_cooperation；本文件
+   遗留清单同步勾选（G6/G5/G1/G4/G9 完成，G8 moot 关闭）
+
+**验证**：backend pytest **332 passed / 0 failed**，11.5s；`pnpm build` 通过。
+
 ## 遗留候选（未实现项，供后续轮次）
 
 - [ ] 收藏夹旧接口 /x/space/fav/arc 兼容开关（loop-1 遗留，低优先）
 - [x] ~~G3 favorites/add 重试+节流~~（r2 完成）
-- [ ] G6 play-url support_formats/timelength
+- [x] ~~G6 play-url support_formats/timelength~~（r4 完成）
 - [ ] G13 评论 wbi 变体端点（维持文档化决策）
 - [x] ~~G10 cookbook favorites/add + wbi/sign 场景~~（r2 完成）
 - [x] ~~G12 skill_seekers limit_hit 暴露~~（r3 完成）
-- [ ] G8 全域 BFS 警告
+- [x] ~~G8 全域 BFS 警告~~（r5 判定 moot：discovered_via_* 计数已可推断，关闭）
 - [x] ~~G2 audio 列表截断可感知（pageCount/truncated）~~（r3 完成）
-- [ ] G1 song_info 魔法 mid=8047632 文档化
-- [ ] G4 视频详情 staff/is_cooperation
-- [ ] G5 user-space items 补 pub_time/view
-- [ ] G9 code_samples 截断不对称（HTML 2000 / .md 无上限）文档化
+- [x] ~~G1 song_info 魔法 mid=8047632 文档化~~（r4 完成）
+- [x] ~~G4 视频详情 staff/is_cooperation~~（r5 完成）
+- [x] ~~G5 user-space items 补 pub_time/view~~（r4 完成，按上游实态命名 pub_time/pub_ts/play）
+- [x] ~~G9 code_samples 截断不对称（HTML 2000 / .md 无上限）~~（r5 完成：.md 对齐 2000 + schema 注明）

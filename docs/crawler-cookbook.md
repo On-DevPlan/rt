@@ -166,7 +166,7 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
   curl "http://127.0.0.1:8080/api/bilibili-crawler/danmaku/9001"
   ```
 - **UI**：`/crawlers/bilibili-crawler` 三张卡片接力：「视频完整详情」→「播放直链」/「分P弹幕」。
-- **返回解读**：`pages[].cid` 是第二步的入参；`durl[].url` 直链**有时效 + Referer 校验**（下载 `curl -H "Referer: https://www.bilibili.com/"`）；`accept_quality[]` 是当前可用的清晰度集合；`timelength` 片长（毫秒）；`support_formats[]` 是各清晰度明细（format/codecs，DASH 场景 durl 为空时靠它选流）；`durl` 段数 >1 表示整片被切分需按序拼接。
+- **返回解读**：`pages[].cid` 是第二步的入参；合作视频 `is_cooperation=true` 且 `staff[]` 列出各成员分工（owner 只是投稿者）；`durl[].url` 直链**有时效 + Referer 校验**（下载 `curl -H "Referer: https://www.bilibili.com/"`）；`accept_quality[]` 是当前可用的清晰度集合；`timelength` 片长（毫秒）；`support_formats[]` 是各清晰度明细（format/codecs，DASH 场景 durl 为空时靠它选流）；`durl` 段数 >1 表示整片被切分需按序拼接。
 - **常见错误**：qn=116/112/80 等高清晰度无 SESSDATA 时上游会降档或 CDN 403 → 带 sessdata；`fnval=4048` 时 `dash=true` 且无 durl（DASH 音视频分离，需自行合流）；aid/cid 不匹配 → 上游非 0 code → 502。
 
 ### 3.8 批量收藏一条龙（枚举 → 加收藏）

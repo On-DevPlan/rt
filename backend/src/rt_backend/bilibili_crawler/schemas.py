@@ -35,6 +35,12 @@ class VideoPage(BaseModel):
     cid: int | None = None
 
 
+class StaffMember(BaseModel):
+    mid: int | None = None
+    name: str = ""
+    title: str = ""  # 分工（如 配音/出品）
+
+
 class VideoInfoResponse(BaseModel):
     bvid: str
     aid: int | None = None
@@ -44,6 +50,12 @@ class VideoInfoResponse(BaseModel):
     pic: str = ""
     owner_mid: int | None = None
     owner_name: str
+    is_cooperation: bool = Field(
+        default=False, description="合作视频（View.rights.is_cooperation）；合作时成员看 staff[]"
+    )
+    staff: list[StaffMember] = Field(
+        default=[], description="合作视频成员列表（非合作视频为空；owner 只是投稿者）"
+    )
     pubdate: int | None = None
     duration: int | None = None
     pages: list[VideoPage] = []

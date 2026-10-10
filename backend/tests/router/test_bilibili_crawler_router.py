@@ -113,6 +113,11 @@ async def test_video_info_success():
                 "desc": "描述",
                 "pic": "http://i0.hdslb.com/cover.jpg",
                 "owner": {"mid": 42, "name": "up主"},
+                "rights": {"is_cooperation": 1},
+                "staff": [
+                    {"mid": 42, "name": "up主", "title": "出品"},
+                    {"mid": 7, "name": "成员乙", "title": "配音"},
+                ],
                 "pubdate": 1700000000,
                 "duration": 300,
                 "pages": [
@@ -142,6 +147,8 @@ async def test_video_info_success():
     body = r.json()
     assert body["title"] == "测试视频"
     assert body["owner_name"] == "up主"
+    assert body["is_cooperation"] is True  # View.rights.is_cooperation
+    assert body["staff"][1] == {"mid": 7, "name": "成员乙", "title": "配音"}
     assert body["view"] == 1000
     assert body["like"] == 60
     assert body["cid"] == 9001
