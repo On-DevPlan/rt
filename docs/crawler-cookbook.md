@@ -125,7 +125,7 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
     -d '{"base_url": "https://docs.example.com/guide/", "max_pages": 20, "dry_run": true}'
   ```
 - **UI**：`/crawlers/skill-seekers` → 填 base_url → 先 `dry_run=true` 看会抓哪些页 → 再关掉 dry_run 实抓。
-- **返回解读**：`discovered_via_sitemap/llms_txt` 发现来源计数；`pages_saved` 真正存正文的页数；`skipped` 空内容页；`pages[].content` 段落文本（>20 字符）、`code_samples[]` 带语言与置信度、`pages[].patterns[]` 是用法示例（Usage/Example 段落 + 邻近代码）。**加 `categorize: true` 可拿聚合结果**：`categories`（{分类: [url]}，可用 `categories` 参数自定义关键词，缺省按 URL 段推断）+ `quick_reference`（跨页去重的高信号用法示例 ≤15 条，适合直接喂 LLM）。
+- **返回解读**：`discovered_via_sitemap/llms_txt` 发现来源计数；`pages_saved` 真正存正文的页数；`skipped` 空内容页；`limit_hit=true` 表示已抓满 max_pages（结果可能不是站点全量）；`pages[].content` 段落文本（>20 字符）、`code_samples[]` 带语言与置信度、`pages[].patterns[]` 是用法示例（Usage/Example 段落 + 邻近代码）。**加 `categorize: true` 可拿聚合结果**：`categories`（{分类: [url]}，可用 `categories` 参数自定义关键词，缺省按 URL 段推断）+ `quick_reference`（跨页去重的高信号用法示例 ≤15 条，适合直接喂 LLM）。
 - **常见错误**：50 页硬上限；SPA 站点（正文靠 JS 渲染）抓不到——本模块不执行 JS；`base_url` 的目录前缀决定范围（`.../guide/` 只抓 guide 子树）。
 
 ### 3.6 UP 主全量投稿 → 全量视频评论链路
@@ -166,7 +166,7 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
   curl "http://127.0.0.1:8080/api/bilibili-crawler/danmaku/9001"
   ```
 - **UI**：`/crawlers/bilibili-crawler` 三张卡片接力：「视频完整详情」→「播放直链」/「分P弹幕」。
-- **返回解读**：`pages[].cid` 是第二步的入参；`durl[].url` 直链**有时效 + Referer 校验**（下载 `curl -H "Referer: https://www.bilibili.com/"`）；`accept_quality[]` 是当前可用的清晰度集合；`durl` 段数 >1 表示整片被切分需按序拼接。
+- **返回解读**：`pages[].cid` 是第二步的入参；`durl[].url` 直链**有时效 + Referer 校验**（下载 `curl -H "Referer: https://www.bilibili.com/"`）；`accept_quality[]` 是当前可用的清晰度集合；`timelength` 片长（毫秒）；`support_formats[]` 是各清晰度明细（format/codecs，DASH 场景 durl 为空时靠它选流）；`durl` 段数 >1 表示整片被切分需按序拼接。
 - **常见错误**：qn=116/112/80 等高清晰度无 SESSDATA 时上游会降档或 CDN 403 → 带 sessdata；`fnval=4048` 时 `dash=true` 且无 durl（DASH 音视频分离，需自行合流）；aid/cid 不匹配 → 上游非 0 code → 502。
 
 ### 3.8 批量收藏一条龙（枚举 → 加收藏）

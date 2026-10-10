@@ -297,6 +297,8 @@ async def fetch_song_info(client: httpx.AsyncClient, sid: str, quality: int = 2)
         client,
         _AUDIO_URL_API,
         params={
+            # 原样继承 BilibiliAudioGet songDownloader 的魔法客户端 mid（匿名可用，
+            # 非登录态请求固定值即可；见 README「已知限制」）
             "mid": 8047632,
             "mobi_app": "iphone",
             "platform": "ios",

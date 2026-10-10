@@ -326,6 +326,8 @@ async def fetch_play_url(
         "format": data.get("format"),
         "accept_quality": data.get("accept_quality") or [],
         "accept_description": data.get("accept_description") or [],
+        "timelength": data.get("timelength"),  # 片长 ms
+        "support_formats": data.get("support_formats") or [],  # 各清晰度 format/codecs 透传
         "durl": durl,
         "dash": bool(data.get("dash")),
     }
@@ -563,13 +565,22 @@ async def fetch_user_space(
         for module in data.get("items") or []:
             modules = module.get("modules") or {}
             basic = modules.get("module_basic") or module.get("basic") or {}
-            major = (modules.get("module_dynamic") or {}).get("major") or {}
+            dynamic = modules.get("module_dynamic") or {}
+            major = dynamic.get("major") or {}
+            author = modules.get("module_author") or {}
+            archive = major.get("archive") or {}
+            stat_play = (archive.get("stat") or {}).get("play")
             items.append(
                 {
                     "comment_id_str": str(basic.get("comment_id_str", "")),
                     "comment_type": basic.get("comment_type"),
                     "dyn_type": module.get("dyn_type"),
-                    "title": (major.get("archive") or {}).get("title", ""),
+                    "title": archive.get("title", ""),
+                    # module_author 的展示时间与 unix 秒（space.md:217-218）
+                    "pub_time": author.get("pub_time", ""),
+                    "pub_ts": author.get("pub_ts"),
+                    # 播放数在 archive.stat.play（字符串），与 user-videos 的 play 命名对齐
+                    "play": int(stat_play) if isinstance(stat_play, str) and stat_play.isdigit() else stat_play,
                 }
             )
         offset = data.get("offset") or ""

@@ -23,8 +23,8 @@
 |---|---|---|---|
 | GET | `/favorites` | query: `link`（完整收藏夹链接）或 `mid`+`fid`；`limit≤200` | `{mid, fid, total, items:[{aid,title,pic,state}]}` |
 | POST | `/favorites/add` | body: `{sessdata, bili_jct, fid, aids[]}` | 逐个 av 的 `{code, ok, pattern, message}` |
-| GET | `/audio/playlist/{sid}` | 路径: `am{id}` 或纯数字；`max_pages≤10` | `{menu_sid, total, items:[{sid,title,author,...}]}` |
-| GET | `/audio/user` | query: `uid` 或 `link`（space 链接）；`order`（1=最新发布 2=最多播放 3=最多收藏）、`max_pages` | `{uid, total, items:[...]}` |
+| GET | `/audio/playlist/{sid}` | 路径: `am{id}` 或纯数字；`max_pages≤10` | `{menu_sid, total, page_count, truncated, items:[{sid,title,author,...}]}` |
+| GET | `/audio/user` | query: `uid` 或 `link`（space 链接）；`order`（1=最新发布 2=最多播放 3=最多收藏）、`max_pages` | `{uid, total, page_count, truncated, items:[...]}` |
 | GET | `/audio/{sid}` | 路径: `au{id}` 或纯数字；query: `quality`（0=128K 1=192K 2=320K） | 歌曲信息（含 `cover`/`lyric`/`quality`）+ `cdns[]` 直链 |
 
 注意：`/audio/{sid}` 是通配路由，必须注册在 `/audio/playlist`、`/audio/user` 之后（FastAPI 按注册顺序匹配）。
@@ -73,3 +73,4 @@ cd backend && uv run pytest tests/test_bilibili_tools_router.py -v
 - 收藏夹响应在原字段（aid/title/pic/state）上补充了 `bvid` 与收藏夹标题 `fav_title`；`state=1` 表示已失效视频（medias[].attr bit0）
 - 音频 CDN 直链有时效与 Referer 校验，客户端下载时需带 B 站 Referer
 - 批量收藏单次上限 100 个 av 号
+- `/audio/{sid}` 的 CDN 请求固定带 `mid=8047632`（原 BilibiliAudioGet songDownloader 继承的魔法客户端 mid，匿名请求可用；非登录态下这是上游实测可行值）

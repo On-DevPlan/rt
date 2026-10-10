@@ -34,7 +34,7 @@
 
 | 方法 | 路径 | 参数 | 响应 |
 |---|---|---|---|
-| POST | `/scrape` | body: `{base_url, max_pages=10(≤50), rate_limit=0.2, include_patterns[], exclude_patterns[], selector?, use_sitemap=true, use_llms_txt=true, dry_run=false, categorize=false, categories?}` | `{base_url, dry_run, discovered_via_sitemap, discovered_via_llms_txt, pages_scraped, pages_saved, skipped, elapsed_sec, pages[], categories?, quick_reference?}` |
+| POST | `/scrape` | body: `{base_url, max_pages=10(≤50), rate_limit=0.2, include_patterns[], exclude_patterns[], selector?, use_sitemap=true, use_llms_txt=true, dry_run=false, categorize=false, categories?}` | `{base_url, dry_run, discovered_via_sitemap, discovered_via_llms_txt, pages_scraped, limit_hit（已抓满 max_pages，结果可能非全量）, pages_saved, skipped, elapsed_sec, pages[], categories?, quick_reference?}` |
 
 `pages[]` 元素：正常页 `{url, title, headings[], content, code_samples[], links[]}`；
 dry-run 页 `{url, links[], dry_run: true}`（仍会抓页做链接发现，原仓库语义）。

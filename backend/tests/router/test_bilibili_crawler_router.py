@@ -217,6 +217,10 @@ async def test_play_url_signed_request_and_durl():
             "format": "mp4",
             "accept_quality": [116, 80, 32, 16],
             "accept_description": ["高清 1080P60", "高清 1080P", "清晰 480P", "流畅 360P"],
+            "timelength": 300000,
+            "support_formats": [
+                {"quality": 80, "format": "mp4", "new_description": "高清 1080P", "codecs": ["avc"]},
+            ],
             "durl": [
                 {
                     "url": "http://cdn/upv/1.mp4",
@@ -243,6 +247,8 @@ async def test_play_url_signed_request_and_durl():
     assert body["quality"] == 80
     assert body["format"] == "mp4"
     assert body["accept_quality"] == [116, 80, 32, 16]
+    assert body["timelength"] == 300000  # 片长 ms 透传
+    assert body["support_formats"][0]["new_description"] == "高清 1080P"  # 明细透传
     assert len(body["durl"]) == 2
     assert body["durl"][0]["url"] == "http://cdn/upv/1.mp4"
     assert body["durl"][0]["backup_url"] == "http://cdn-backup/1.mp4"
@@ -402,7 +408,15 @@ async def test_user_space_offset_paging():
             "dyn_type": 8,
             "basic": {"comment_id_str": cid, "comment_type": ctype},
             "modules": {
-                "module_dynamic": {"major": {"archive": {"title": title}}},
+                "module_dynamic": {
+                    "major": {
+                        "archive": {
+                            "title": title,
+                            "stat": {"play": "12345"},
+                        }
+                    }
+                },
+                "module_author": {"pub_time": "27分钟前", "pub_ts": 1700000000},
             },
         }
 
@@ -438,6 +452,9 @@ async def test_user_space_offset_paging():
     assert body["total"] == 2
     assert body["items"][0]["comment_id_str"] == "111"
     assert body["items"][0]["title"] == "视频一"
+    assert body["items"][0]["pub_time"] == "27分钟前"
+    assert body["items"][0]["pub_ts"] == 1700000000
+    assert body["items"][0]["play"] == 12345  # archive.stat.play 字符串 → int
     assert body["items"][1]["comment_type"] == 17
     # 第二页 has_more=False → 停止
     assert space_route.call_count == 2

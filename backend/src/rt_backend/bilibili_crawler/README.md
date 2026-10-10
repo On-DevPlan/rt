@@ -30,7 +30,7 @@
 | GET | `/danmaku/{cid}` | 路径: 分P cid | `{cid, total, items:[{time, mode, text}]}` |
 | POST | `/comments` | body: `{oid, type=1, ps=20, pages=1, include_replies=true, mode=3, sessdata?}` | 规范化评论列表（含楼中楼；置顶评论置顶并带 `pinned: true`，按 rpid 去重） |
 | POST | `/user-space` | body: `{mid, max_pages=3, sessdata?}` | 动态列表（comment_id_str/comment_type/title） |
-| POST | `/user-videos` | body: `{mid, pn=1, ps=30, order=pubdate, sessdata?}` | 全量投稿列表（aid/bvid/title/created/play/length + count 总数） |
+| POST | `/user-videos` | body: `{mid, pn=1, ps=30, order=pubdate, sessdata?}` | 全量投稿列表（aid/bvid/title/created/play/video_review/length + count 总数） |
 
 ## curl 案例
 

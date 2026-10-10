@@ -11,6 +11,7 @@
 | 1 | ✅ 14 条差距（0 高/6 中/8 低；三桶：生产加固/功能完备/文档测试对齐） | G7 WBI key 缓存 + G11 服务层单测补齐（bilibili_tools/mediacrawler） | ✅ 322/0 + build | ✅ |
 | 2 | ✅ 11 条遗留验证（G3 修正：-503 是 HTTP 200 envelope，request_with_retry 看不见）+ 新增 N1-N4（WBI 缓存失效缺失/WeakKeyDictionary/锁粒度/时钟） | G3 favorites/add 节流+限流重试+部分结果保留 + N1/N2/N4 WBI 失效换 key 重试 + G10 cookbook §3.8/§3.9 | ✅ 328/0 + build | ✅ |
 | 3 | ✅ 8 条遗留全复核 + 前端 specs 同步检查（端点↔卡片 16/16 全覆盖）+ e2e 缺口盘点（bilibili-tools 1/5、bilibili-crawler 2/8） | G2 歌曲列表截断可感知（page_count+truncated）+ G12 limit_hit + e2e 补齐（风控换 key/favorites-add/音频三件套/mediacrawler 前缀） | ✅ 332/0 + build | ✅ |
+| 4 | ✅ G6/G4/G5/G1/G8/G9 全复核（两处修正：is_cooperation 在 View.rights；pub_time 在 module_author 且无 view 字段只有 stat.play）+ 6 处 stale 文档定位 | G6 play-url 补 timelength+support_formats + G5 user-space 补 pub_time/pub_ts/play + G1 魔法 mid 注释 + 6 处 stale 文档修复 | ✅ 332/0 + build | ✅ |
 | 2 | | | | |
 | 3 | | | | |
 | 4 | | | | |
@@ -98,6 +99,32 @@ bilibili-tools 仅 1/5 端点、bilibili-crawler 2/8，r1-r2 的两个高价值�
 pub_time/view、G1 魔法 mid 文档化、G8 BFS 降级警告、G9 code 截断文档化。
 
 
+
+## 第 4 轮记录（2026-10-11）
+
+**sub agent 报告结论**：G6/G4/G5/G1/G8/G9 全部复核有效，两处上游字段修正——`is_cooperation`
+在 `View.rights`（非 View 顶层）；`pub_time/pub_ts` 在 `module_author`，无字面 `view` 字段
+（播放数是 `module_dynamic.major.archive.stat.play` 字符串）。另定位 6 处 stale 文档
+（r3 字段上线时 README/cookbook 没跟上）。
+
+**本轮实现**（G6 + G5 + G1 + stale 文档）：
+
+1. **G6**（`bilibili_crawler/service.py` + `schemas.py`）：play-url 响应补 `timelength`（片长 ms）
+   + `support_formats[]`（各清晰度 quality/format/new_description/display_desc/codecs 上游透传）——
+   DASH 场景（fnval=16/4048）durl 为空时这是唯一有信息量的载荷
+2. **G5**（同文件）：user-space items 补 `pub_time`/`pub_ts`（module_author）+ `play`
+   （archive.stat.play 字符串转 int；命名与 user-videos 对齐）
+3. **G1**（`bilibili_tools/service.py` + README）：魔法 mid=8047632 加注释 + 已知限制条目
+4. **stale 文档 6 处**：skill_seekers README 补 limit_hit；bilibili_tools README 两行 audio
+   路由补 page_count/truncated；bilibili_crawler README user-videos 补 video_review；
+   cookbook §3.5 补 limit_hit、§3.7 补 timelength/support_formats；play-url spec 描述同步
+5. **测试**：play-url 载具加 timelength/support_formats 断言；user-space 载具加
+   module_author/stat.play 断言（play 字符串→int）
+
+**验证**：backend pytest **332 passed / 0 failed**，11.2s；`pnpm build` 通过。
+
+**下轮候选**（loop-3 收官）：G4 staff/is_cooperation、G8 discovery_degraded、G9 .md 截断对齐、
+G13 维持文档化决策——均为低优先，收官轮以全量回归 + 文档终检为主。
 
 ## 遗留候选（未实现项，供后续轮次）
 

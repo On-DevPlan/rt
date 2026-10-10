@@ -56,7 +56,7 @@ export const bilibiliCrawlerEndpoints = [
   {
     id: 'play-url',
     title: '播放直链 + 清晰度',
-    description: 'WBI 签名 playurl。aid/cid 从「视频完整详情」的 pages[] 拿。qn：120=4K 116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高的多需 SESSDATA）。fnval=1 返回 mp4 合一直链（durl）；16=仅 DASH；4048=全部 DASH（无直链）。直链下载需带 B 站 Referer。',
+    description: 'WBI 签名 playurl。aid/cid 从「视频完整详情」的 pages[] 拿。qn：120=4K 116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高的多需 SESSDATA）。fnval=1 返回 mp4 合一直链（durl）；16=仅 DASH；4048=全部 DASH（无直链）。直链下载需带 B 站 Referer。响应含 timelength（片长 ms）与 support_formats[]（各清晰度 codecs 明细，DASH 选流用）。',
     method: 'POST',
     path: '/api/bilibili-crawler/play-url',
     inputs: [

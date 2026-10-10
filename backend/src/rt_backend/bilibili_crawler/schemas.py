@@ -85,6 +85,11 @@ class PlayUrlResponse(BaseModel):
     format: str | None = None
     accept_quality: list[int] = []
     accept_description: list[str] = []
+    timelength: int | None = Field(default=None, description="片长（毫秒）")
+    support_formats: list[dict[str, Any]] = Field(
+        default=[],
+        description="各清晰度明细（上游透传）：quality/format/new_description/display_desc/codecs[]",
+    )
     durl: list[DurlItem] = []
     dash: bool = False
 
@@ -160,6 +165,9 @@ class UserSpaceItem(BaseModel):
     comment_type: int | None = None
     dyn_type: int | None = None
     title: str = ""
+    pub_time: str = Field(default="", description="发布时间展示串（如 27分钟前）")
+    pub_ts: int | None = Field(default=None, description="发布 unix 秒")
+    play: int | None = Field(default=None, description="播放数（视频类动态；与 user-videos 的 play 对齐）")
 
 
 class UserSpaceResponse(BaseModel):
