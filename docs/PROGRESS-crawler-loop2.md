@@ -10,8 +10,9 @@
 |---|---|---|---|---|
 | 1 | ✅ 12 条差距（Top3：置顶评论+排序 / 视频元数据包 / UP 全量投稿） | Top1 + Top3 + 测试补充 | ✅ 264/0 + build | ✅ |
 | 2 | ✅ 上游行为实证（A-E 五节：view/playurl/弹幕XML/sitemap递归/md解析） | 视频元数据包（#4+#2+#10）+ sitemap index 递归（#7） | ✅ 269/0 + build | ✅ |
-| 3 | ⏳（建议：.md 直链解析 + doc_scraper patterns/分类） | — | — | — |
-| 4-5 | 未开始 | | | |
+| 3 | ✅ doc_scraper 增值特征规则实证（patterns/低信号/描述规范化/分类/quick_ref/SKILL 管线边界） | .md 解析（#8）+ patterns/语言启发式（#6 页级）+ categorize 聚合开关 | ✅ 290/0 + build | ✅ |
+| 4 | ⏳（建议：HTTP 重试退避（#9）+ cookbook 场景补齐与语义标签（#11）） | — | — | — |
+| 5 | 未开始 | | | |
 
 ## 第 1 轮记录（2026-10-11，commit 2fbb126）
 
@@ -28,6 +29,30 @@ doc_scraper patterns+分类(中) / sitemap index 不递归(中) / .md 直链解�
 5. 闭环同步：前端 specs + landing + README + cookbook §1/§3.6
 
 **验证**：264 passed / 0 failed（+7）；`pnpm build` 通过。
+
+## 第 3 轮记录（2026-10-11）
+
+**sub agent 报告结论**（9 节实证）：patterns 关键词 4 清单（example:/pattern:/usage:/typical use
+子串匹配）；低信号五条判定（黑名单/单标识符/裸赋值/短单行无结构）；描述规范化七步（剥编号/
+前缀/首句/垃圾判定/150 截断）；smart_categorize 3-2-1 打分 + 阈值 2 + max 唯一归属 + other 兜底；
+infer_categories 段频计数 Top8 + ≥3 次门槛 + tutorials/api 兜底；quick_ref 折叠代码去重 + <300 +
+上限 15；references/SKILL.md 生成属构建管线不进 API（agent 明确建议）。
+
+**本轮实现**（差距 #8、#6）：
+1. `.md` 直链解析：`extract_markdown_page`（title=# 行 / headings=#{2,6} / fenced code>10 /
+   content 去码后 >20 字符段 / links 仅 .md 且 is_valid）+ BFS 分支（path.endswith(".md")）
+2. patterns 页级抽取：`extract_patterns`（4 关键词 → find_next(pre) → 低信号过滤 → 描述规范化 → ≤5）
+3. 语言启发式兜底：`detect_language_heuristic`（8 语言关键词计分，confidence=min(score/10,1)，<0.5→unknown），
+   `code_samples[].confidence` 新字段
+4. categorize 聚合开关：`ScrapeRequest.categorize/categories` → 响应 `categories`/`quick_reference`
+   （smart_categorize + infer_categories + generate_quick_reference 全套原版语义）
+5. 测试 +21（低信号 5/描述规范化 4/clean_text/patterns 3/md 2/分类 3/quick_ref 2 + router categorize 聚合）
+6. 闭环同步：specs（categorize/categories 输入）、README 功能表与路由表、cookbook §3.5 返回解读
+
+**验证**：backend pytest **290 passed / 0 failed**（+21）；`pnpm build` 通过。
+
+**下轮建议**：HTTP 重试指数退避（#9，在 core/http 或 _get_json 包装，2-3 次退避仅 5xx/412，
+respx side_effect 模拟 502→200）+ cookbook 场景补齐与 order/quality 语义标签（#11）。
 
 ## 第 2 轮记录（2026-10-11）
 
@@ -52,8 +77,6 @@ doc_scraper patterns+分类(中) / sitemap index 不递归(中) / .md 直链解�
 
 ## 遗留候选（sub agent 报告未实现项，供后续轮次）
 
-- [ ] .md 直链页面 markdown 解析（#8，建议轮 3）
-- [ ] doc_scraper patterns 抽取 / 语言启发式 / smart_categorize 聚合开关（#6，建议轮 3）
 - [ ] HTTP 重试指数退避（#9，动 core/http.py 需回归全部模块）
 - [ ] cookbook 场景覆盖补齐 + order/quality 语义标签（#11）
 - [ ] 收藏夹旧接口 /x/space/fav/arc 兼容开关（loop-1 遗留，低优先）

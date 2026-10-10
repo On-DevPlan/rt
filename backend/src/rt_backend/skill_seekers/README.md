@@ -18,6 +18,10 @@
 | URL 规范化 | `_normalize_url` + sanitize | `normalize_url`（去 #fragment、去 utm_*/fbclid/gclid/msclkid，保留有意义 query 如 ?lang=） |
 | URL 有效性 | `is_valid_url` | `is_valid_url`（base_url **目录前缀** + include/exclude 子串；index.html 取所在目录，兄弟页可命中） |
 | 正文提取 | `extract_content` + `_find_main_content` | `extract_content`（selector → 9 级回退链，**不回退 body**；整页 DOM 收集链接；标题/headings/代码块/段落） |
+| patterns 抽取 | `extract_patterns`（4 关键词 + 邻近 pre + 低信号过滤 + 上限5） | `service.py: extract_patterns`，每页 `patterns[]`（描述已规范化） |
+| 语言启发式 | `language_detector`（class 置信度 1.0 / 关键词计分兜底） | `service.py: detect_language_heuristic`（精简 8 语言），`code_samples[].confidence` |
+| .md 直链解析 | `_has_md_extension` + `_extract_markdown_content` legacy 规则 | `service.py: extract_markdown_page`（仅保留 .md 链接的爬取语义） |
+| 分类聚合 | `smart_categorize`（URL+3/标题+2/正文+1、阈值2、max 归属、other 兜底）+ `infer_categories`（段频 Top8/≥3 次）+ `generate_quick_reference`（去重 ≤15） | `scrape_docs(categorize=true)` → 响应 `categories` / `quick_reference` |
 | 空内容页 | pages_skipped 计数 | `skipped` 字段（<20 字符段落过滤与原仓库一致） |
 
 **未迁移**（重量级/与 Web 服务场景无关，见总文档决策记录）：Playwright SPA 渲染层
@@ -30,7 +34,7 @@
 
 | 方法 | 路径 | 参数 | 响应 |
 |---|---|---|---|
-| POST | `/scrape` | body: `{base_url, max_pages=10(≤50), rate_limit=0.2, include_patterns[], exclude_patterns[], selector?, use_sitemap=true, use_llms_txt=true, dry_run=false}` | `{base_url, dry_run, discovered_via_sitemap, discovered_via_llms_txt, pages_scraped, pages_saved, skipped, elapsed_sec, pages[]}` |
+| POST | `/scrape` | body: `{base_url, max_pages=10(≤50), rate_limit=0.2, include_patterns[], exclude_patterns[], selector?, use_sitemap=true, use_llms_txt=true, dry_run=false, categorize=false, categories?}` | `{base_url, dry_run, discovered_via_sitemap, discovered_via_llms_txt, pages_scraped, pages_saved, skipped, elapsed_sec, pages[], categories?, quick_reference?}` |
 
 `pages[]` 元素：正常页 `{url, title, headings[], content, code_samples[], links[]}`；
 dry-run 页 `{url, links[], dry_run: true}`（仍会抓页做链接发现，原仓库语义）。

@@ -18,7 +18,19 @@ export const skillSeekersEndpoints = [
       { name: 'selector', label: '正文 CSS selector（可选，缺省走回退链）', type: 'text', placeholder: 'div.theme-doc-markdown' },
       { name: 'use_sitemap', label: '探测 sitemap.xml', type: 'bool', default: true },
       { name: 'use_llms_txt', label: 'sitemap 无结果时探测 llms.txt', type: 'bool', default: true },
-      { name: 'dry_run', label: 'dry-run（只发现不保存正文）', type: 'bool', default: false }
+      { name: 'dry_run', label: 'dry-run（只发现不保存正文）', type: 'bool', default: false },
+      {
+        name: 'categorize',
+        label: '分类聚合（响应附带 categories + quick_reference）',
+        type: 'bool',
+        default: false
+      },
+      {
+        name: 'categories',
+        label: '分类配置 JSON（可选；缺省走 URL 段推断）',
+        type: 'json',
+        placeholder: '{"guide": ["guide", "入门"], "api": ["api", "reference"]}'
+      }
     ],
     buildCurl: (v) =>
       `curl -X POST "${BASE}/scrape" -H "Content-Type: application/json" -d '${JSON.stringify(v)}'`,

@@ -115,7 +115,7 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
     -d '{"base_url": "https://docs.example.com/guide/", "max_pages": 20, "dry_run": true}'
   ```
 - **UI**：`/crawlers/skill-seekers` → 填 base_url → 先 `dry_run=true` 看会抓哪些页 → 再关掉 dry_run 实抓。
-- **返回解读**：`discovered_via_sitemap/llms_txt` 发现来源计数；`pages_saved` 真正存正文的页数；`skipped` 空内容页；`pages[].content` 段落文本（>20 字符）、`code_samples[]` 带语言。
+- **返回解读**：`discovered_via_sitemap/llms_txt` 发现来源计数；`pages_saved` 真正存正文的页数；`skipped` 空内容页；`pages[].content` 段落文本（>20 字符）、`code_samples[]` 带语言与置信度、`pages[].patterns[]` 是用法示例（Usage/Example 段落 + 邻近代码）。**加 `categorize: true` 可拿聚合结果**：`categories`（{分类: [url]}，可用 `categories` 参数自定义关键词，缺省按 URL 段推断）+ `quick_reference`（跨页去重的高信号用法示例 ≤15 条，适合直接喂 LLM）。
 - **常见错误**：50 页硬上限；SPA 站点（正文靠 JS 渲染）抓不到——本模块不执行 JS；`base_url` 的目录前缀决定范围（`.../guide/` 只抓 guide 子树）。
 
 ### 3.6 UP 主全量投稿 → 全量视频评论链路

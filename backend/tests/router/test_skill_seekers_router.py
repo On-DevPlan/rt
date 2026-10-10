@@ -294,3 +294,60 @@ async def test_scrape_sitemap_index_recursion():
     urls = [p["url"] for p in body["pages"]]
     assert any(u.endswith("i1.html") for u in urls)
     assert any(u.endswith("i2.html") for u in urls)
+
+
+@pytest.mark.asyncio
+async def test_scrape_categorize_aggregation():
+    """categorize=true：响应附带 categories + quick_reference（patterns 聚合去重）。"""
+    client = await _make_client()
+
+    def _page_html(title: str, url_hint: str) -> str:
+        return f"""
+        <html><head><title>{title}</title></head><body>
+        <article>
+          <h1>{title}</h1>
+          <p>{LONG}</p>
+          <p>Usage: create a client with the base url for {url_hint}.</p>
+          <pre><code>def make_{url_hint}():
+    return Client()</code></pre>
+          <a href="/guide/a.html">A</a><a href="/guide/b.html">B</a>
+        </article>
+        </body></html>
+        """
+
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        router.get("/guide/").mock(
+            return_value=Response(
+                200,
+                html=_page_html(
+                    "Alpha Index",
+                    "alpha",
+                ),
+            )
+        )
+        router.get("/guide/a.html").mock(return_value=Response(200, html=_page_html("Beta page", "beta")))
+        router.get("/guide/b.html").mock(return_value=Response(200, html=_page_html("Gamma page", "gamma")))
+        with client as c:
+            r = c.post(
+                "/api/skill-seekers/scrape",
+                json={
+                    "base_url": "https://docs.test/guide/",
+                    "rate_limit": 0,
+                    "categorize": True,
+                    "categories": {"manual": ["alpha"], "ref": ["beta", "gamma"]},
+                },
+            )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["categories"] is not None
+    # 打分归类（title 命中 +2 过阈值）：alpha 页 → manual；beta/gamma 页 → ref
+    assert "https://docs.test/guide/" in body["categories"]["manual"]
+    assert set(body["categories"]["ref"]) == {
+        "https://docs.test/guide/a.html",
+        "https://docs.test/guide/b.html",
+    }
+    # patterns 聚合：3 页各自一条 usage pattern（代码不同不去重）
+    assert body["quick_reference"] is not None
+    assert len(body["quick_reference"]) == 3
+    assert all(qr["description"] for qr in body["quick_reference"])

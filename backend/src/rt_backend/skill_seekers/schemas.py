@@ -12,6 +12,13 @@ class ScrapeRequest(BaseModel):
     use_sitemap: bool = Field(default=True, description="先探测 sitemap.xml 发现页面")
     use_llms_txt: bool = Field(default=True, description="sitemap 无结果时探测 llms.txt 发现页面")
     dry_run: bool = Field(default=False, description="只做链接发现，不保存正文")
+    categorize: bool = Field(
+        default=False, description="聚合开关：响应附带 categories（3/2/1 关键词打分归类）与 quick_reference"
+    )
+    categories: dict[str, list[str]] | None = Field(
+        default=None,
+        description="分类配置 {分类名: [关键词...]}；缺省走 URL 段推断（段频 Top8、≥3 页、tutorials/api 兜底）",
+    )
 
 
 class Heading(BaseModel):
@@ -22,6 +29,17 @@ class Heading(BaseModel):
 class CodeSample(BaseModel):
     code: str
     language: str = ""
+    confidence: float = Field(default=0.0, description="语言判定置信度（class 命中=1.0）")
+
+
+class PatternItem(BaseModel):
+    description: str = ""
+    code: str
+
+
+class QuickRefItem(BaseModel):
+    description: str
+    code: str
 
 
 class PageData(BaseModel):
@@ -30,6 +48,7 @@ class PageData(BaseModel):
     headings: list[Heading] = []
     content: str = ""
     code_samples: list[CodeSample] = []
+    patterns: list[PatternItem] = []
     links: list[str] = []
 
 
@@ -49,3 +68,9 @@ class ScrapeResponse(BaseModel):
     skipped: int
     elapsed_sec: float
     pages: list[PageData | DryRunPage]
+    categories: dict[str, list[str]] | None = Field(
+        default=None, description="categorize=true 时返回：{分类名: [url,...]}"
+    )
+    quick_reference: list[QuickRefItem] | None = Field(
+        default=None, description="categorize=true 时返回：跨页 patterns 去重聚合（≤15）"
+    )

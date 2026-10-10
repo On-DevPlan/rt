@@ -203,13 +203,14 @@ def find_main_content(soup: Any, selector: str | None) -> Any:
 
 
 def extract_content(soup: Any, url: str, selector: str | None = None) -> dict[str, Any]:
-    """提取标题/headings/段落/代码块 + 整页链接（原仓库语义：链接收集不限正文区）。"""
+    """提取标题/headings/段落/代码块/patterns + 整页链接（原仓库语义：链接收集不限正文区）。"""
     page: dict[str, Any] = {
         "url": url,
         "title": "",
         "headings": [],
         "content": "",
         "code_samples": [],
+        "patterns": [],
         "links": [],
     }
 
@@ -237,14 +238,22 @@ def extract_content(soup: Any, url: str, selector: str | None = None) -> dict[st
     for code in main.select("pre code"):
         text = code.get_text()
         if len(text.strip()) > 10:
-            # 语言取 class 里的 language-xxx（原仓库 detect_language 的简版）
+            # 语言：class 优先（Tier 1），否则关键词启发式（Tier 2 精简版）
             classes = " ".join(code.get("class") or [])
             lang = ""
             for cls in classes.split():
                 if cls.startswith("language-"):
                     lang = cls[len("language-"):]
                     break
-            page["code_samples"].append({"code": text.strip()[:2000], "language": lang})
+                if cls.startswith("lang-"):
+                    lang = cls[len("lang-"):]
+                    break
+            lang, confidence = detect_language_heuristic(text, css_lang=lang)
+            page["code_samples"].append(
+                {"code": text.strip()[:2000], "language": lang, "confidence": round(confidence, 2)}
+            )
+
+    page["patterns"] = extract_patterns(main)
 
     paragraphs = []
     for p in main.find_all("p"):
@@ -257,16 +266,284 @@ def extract_content(soup: Any, url: str, selector: str | None = None) -> dict[st
 
 
 # ---------------------------------------------------------------------------
+# 增值特征（doc_scraper.py: patterns / 语言启发式 / clean_text / 分类聚合）
+# ---------------------------------------------------------------------------
+
+_WHITESPACE_RE = re.compile(r"\s+")
+
+# extract_patterns 的 4 个触发关键词（原 805 行清单，子串匹配、大小写不敏感）
+_PATTERN_KEYWORDS = ("example:", "pattern:", "usage:", "typical use")
+# _is_low_signal_code_snippet 的黑名单（原 831-841 行）
+_LOW_SIGNAL_BLACKLIST = {
+    "true", "false", "none", "null", "options", "status_code",
+    "success=false", "success=true", "on_page_context_created",
+}
+_IDENT_RE = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
+_SCALAR_ASSIGN_RE = re.compile(r"[a-z_][a-z0-9_]*\s*=\s*(true|false|none|null|-?\d+(\.\d+)?|\"[^\"]*\"|'[^']*')")
+_CODE_CHARS = ("(", ".", "[", "{", ":")
+
+
+def clean_text(text: str) -> str:
+    """空白折叠：\\s+ → 单空格，掐头去尾（原 921-923 行）。"""
+    return _WHITESPACE_RE.sub(" ", text).strip()
+
+
+def is_low_signal_code_snippet(code: str) -> bool:
+    """低信号代码判定（原 823-861 行，按序）：空 / 黑名单精确命中 / 单标识符 /
+    裸标量赋值 / 短单行无结构字符。"""
+    folded = clean_text(code)
+    if not folded:
+        return True
+    if folded.lower() in _LOW_SIGNAL_BLACKLIST:
+        return True
+    if _IDENT_RE.fullmatch(folded):
+        return True
+    if _SCALAR_ASSIGN_RE.fullmatch(folded.lower()):
+        return True
+    if "\n" not in code and len(folded) < 16 and not any(ch in code for ch in _CODE_CHARS):
+        return True
+    return False
+
+
+def normalize_pattern_description(description: str) -> str | None:
+    """pattern 描述规范化（原 863-894 行七步），残留垃圾返回 None。"""
+    text = clean_text(description)
+    if not text:
+        return None
+    text = re.sub(r"^\s*\d+[\).:\-\s]+", "", text)  # 剥前导编号
+    text = re.sub(r"(example|usage|pattern)\s*:", "", text, flags=re.IGNORECASE)  # 剥前缀
+    text = text.strip(" -:")
+    if not text:
+        return None
+    first = re.split(r"(?<=[.!?])\s+", text, maxsplit=1)[0]
+    if len(first) >= 8:
+        text = first  # 首句足够长则只用首句
+    junk = {"example", "usage", "pattern", "what", "note"}
+    if text.lower().strip(" .:") in junk or text.isdigit() or len(text) < 8:
+        return None
+    if len(text) > 150:
+        text = text[:147] + "..."
+    return text
+
+
+# 简版语言启发式（原 detect_language 的 Tier 2 子集：关键词计分，confidence=min(score/10,1)）
+_LANG_HINTS: dict[str, tuple[str, ...]] = {
+    "python": ("def ", "import ", "from ", "print(", "self.", "__init__"),
+    "javascript": ("const ", "let ", "function ", "=>", "console.log", "require("),
+    "typescript": (": string", ": number", "interface ", "type ", "export const"),
+    "bash": ("#!/bin/", "echo ", "sudo ", "apt ", "$ ", " && "),
+    "json": ('": ', "{\n", "[\n"),
+    "sql": ("select ", "insert into", "create table", "where "),
+    "html": ("<!doctype", "<div", "<span", "</"),
+    "css": ("{", "}", ":hover", "px;", "display:"),
+}
+
+
+def detect_language_heuristic(code: str, css_lang: str = "") -> tuple[str, float]:
+    """语言检测两级：class 已知 → (lang, 1.0)；否则关键词计分启发式，
+    confidence = min(score/10, 1)，< 0.5 归 unknown（原 Tier 2 语义的精简版）。"""
+    if css_lang:
+        return css_lang, 1.0
+    stripped = code.strip()
+    if len(stripped) < 10:
+        return "unknown", 0.0
+    lower = stripped.lower()
+    best, best_score = "unknown", 0
+    for lang, hints in _LANG_HINTS.items():
+        score = sum(lower.count(h.lower()) for h in hints)
+        if score > best_score:
+            best, best_score = lang, score
+    confidence = min(best_score / 10.0, 1.0)
+    if confidence < 0.5:
+        return "unknown", confidence
+    return best, confidence
+
+
+def extract_patterns(main: Any) -> list[dict[str, str]]:
+    """pattern 抽取（原 794-821 行）：4 关键词子串命中的 p/div → 文档序下一个
+    pre（内嵌 code 优先）→ 低信号过滤 → 规范化描述 → 上限 5。"""
+    patterns: list[dict[str, str]] = []
+    for elem in main.find_all(["p", "div"]):
+        text = elem.get_text()
+        if not any(kw in text.lower() for kw in _PATTERN_KEYWORDS):
+            continue
+        pre = elem.find_next("pre")
+        if pre is None:
+            continue
+        code_elem = pre.find("code")
+        code = (code_elem if code_elem is not None else pre).get_text().strip()
+        if not code or is_low_signal_code_snippet(code):
+            continue
+        description = normalize_pattern_description(text)
+        entry = {"code": code}
+        if description:
+            entry["description"] = description
+        patterns.append(entry)
+        if len(patterns) >= 5:  # 原仓库 patterns[:5]
+            break
+    return patterns
+
+
+def extract_markdown_page(text: str, url: str, is_valid_fn) -> dict[str, Any]:
+    """.md 直链解析（原 _extract_markdown_content 的 legacy 兜底规则，632-701 行）。
+
+    title = 首个 "# " 行；headings = #{2,6}；代码 = ```lang\\n...```（>10 字符）；
+    content = 去码后按空行切、保留 >20 字符且非 # 开头的段；
+    links = markdown 链接 → 绝对化/剥锚点，仅保留 .md 结尾且 is_valid 的（原版语义：
+    md 页面只顺着其他 md 链接爬）。
+    """
+    page: dict[str, Any] = {
+        "url": url,
+        "title": "",
+        "headings": [],
+        "content": "",
+        "code_samples": [],
+        "patterns": [],
+        "links": [],
+    }
+
+    for line in text.splitlines():
+        if line.startswith("# "):
+            page["title"] = line[2:].strip()
+            break
+
+    for m in re.finditer(r"^(#{2,6})\s+(.+)$", text, re.MULTILINE):
+        t = m.group(2).strip()
+        page["headings"].append({"level": f"h{len(m.group(1))}", "text": t})
+
+    for m in re.finditer(r"```(\w+)?\n(.*?)```", text, re.DOTALL):
+        code = m.group(2)
+        if len(code.strip()) > 10:
+            page["code_samples"].append(
+                {"code": code.strip(), "language": m.group(1) or "unknown"}
+            )
+
+    no_code = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    paragraphs = [
+        seg.strip()
+        for seg in no_code.split("\n\n")
+        if len(seg.strip()) > 20 and not seg.strip().startswith("#")
+    ]
+    page["content"] = "\n\n".join(paragraphs)
+
+    seen: set[str] = set()
+    # md 链接用全量匹配（原 legacy 规则：任意 href，相对路径 urljoin 绝对化）
+    for m in re.finditer(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)", text):
+        href = m.group(1)
+        if href.startswith("#"):
+            continue
+        absolute = href if href.startswith("http") else urljoin(url, href)
+        absolute = absolute.split("#")[0]
+        if absolute in seen:
+            continue
+        if absolute.endswith(".md") and is_valid_fn(absolute):
+            seen.add(absolute)
+            page["links"].append(absolute)
+    return page
+
+
+def infer_categories(pages: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """无 config 时的 URL 段推断（原 1967-1996 行）：path 段按出现次数计数 Top8、
+    ≥3 次门槛、tutorials/api 兜底。"""
+    from collections import Counter
+
+    seg_counts: Counter[str] = Counter()
+    for p in pages:
+        path = urlparse(p.get("url", "")).path
+        for seg in path.split("/"):
+            if seg and seg not in ("en", "stable", "latest", "docs"):
+                seg_counts[seg] += 1
+    top = [seg for seg, _ in seg_counts.most_common(8)]
+    categories = {seg: [seg] for seg in top if seg_counts[seg] >= 3}
+    all_urls = " ".join(p.get("url", "") for p in pages)
+    if "tutorial" in all_urls and "tutorials" not in categories:
+        categories["tutorials"] = ["tutorial", "guide", "getting-started"]
+    if ("api" in all_urls or "reference" in all_urls) and "api" not in categories:
+        categories["api"] = ["api", "reference", "class"]
+    return categories
+
+
+def smart_categorize(
+    pages: list[dict[str, Any]], categories: dict[str, list[str]] | None = None
+) -> dict[str, list[str]]:
+    """分类聚合（原 1917-1965 行）：关键词子串打分 URL+3/标题+2/正文+1（正文预览
+    500 字符），阈值 ≥2，取最高分唯一归属，无命中归 other，空类剔除。"""
+    if not categories:
+        categories = infer_categories(pages)
+    lowered = {name: [k.lower() for k in kws] for name, kws in categories.items()}
+    lowered.setdefault("other", [])
+    buckets: dict[str, list[str]] = {name: [] for name in lowered}
+
+    for page in pages:
+        url_l = (page.get("url") or "").lower()
+        title_l = (page.get("title") or "").lower()
+        content_l = (page.get("content") or "").lower()[:500]
+        scores = {}
+        for name, kws in lowered.items():
+            if name == "other" or not kws:
+                continue
+            score = 0
+            for kw in kws:
+                if kw in url_l:
+                    score += 3
+                if kw in title_l:
+                    score += 2
+                if kw in content_l:
+                    score += 1
+            scores[name] = score
+        best = max(scores, key=lambda n: scores[n]) if scores else "other"
+        buckets[best if scores and scores[best] >= 2 else "other"].append(page.get("url", ""))
+
+    return {name: urls for name, urls in buckets.items() if urls}
+
+
+def generate_quick_reference(pages: list[dict[str, Any]]) -> list[dict[str, str]]:
+    """quick_reference 聚合（原 1998-2025 行）：跨页 patterns 汇总，规范化描述 +
+    折叠代码去重 + len<300 + 非低信号，上限 15。"""
+    quick_ref: list[dict[str, str]] = []
+    seen_codes: set[str] = set()
+    for page in pages:
+        for pattern in page.get("patterns") or []:
+            code = pattern.get("code", "")
+            folded = clean_text(code)
+            description = normalize_pattern_description(pattern.get("description", ""))
+            if (
+                description
+                and folded
+                and folded not in seen_codes
+                and len(code) < 300
+                and not is_low_signal_code_snippet(code)
+            ):
+                seen_codes.add(folded)
+                quick_ref.append({"description": description, "code": code.strip()})
+            if len(quick_ref) >= 15:
+                return quick_ref
+    return quick_ref
+
+
+# ---------------------------------------------------------------------------
 # BFS 主循环（doc_scraper.py: scrape_all）
 # ---------------------------------------------------------------------------
 
 
 async def _fetch_and_extract(
-    client: httpx.AsyncClient, url: str, selector: str | None, discover_only: bool
+    client: httpx.AsyncClient,
+    url: str,
+    selector: str | None,
+    discover_only: bool,
+    is_valid_fn=None,
 ) -> dict[str, Any]:
-    """抓一页；discover_only（dry-run）只返回链接不解析正文。"""
+    """抓一页；discover_only（dry-run）只返回链接不解析正文；.md 结尾的 URL 走
+    markdown 解析（原仓库 _has_md_extension 分支）。"""
     resp = await client.get(url, timeout=30.0)
     resp.raise_for_status()
+    if urlparse(url).path.endswith(".md"):
+        # .md 直链：markdown 解析（原仓库分支），HTML 响应兜底走普通提取
+        body = resp.text.lstrip()
+        if discover_only:
+            page = extract_markdown_page(body, url, is_valid_fn or (lambda u: True))
+            return {"url": url, "links": page["links"], "dry_run": True}
+        return extract_markdown_page(body, url, is_valid_fn or (lambda u: True))
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -294,12 +571,16 @@ async def scrape_docs(
     use_sitemap: bool = True,
     use_llms_txt: bool = True,
     dry_run: bool = False,
+    categorize: bool = False,
+    categories: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
     """文档站爬取：sitemap/llms.txt 发现（可选）+ BFS 抓取，返回页面 JSON 列表。
 
     发现顺序对齐原仓库三层引擎：Layer 1 sitemap → Layer 2 llms.txt（sitemap
     无结果时才试）。参数语义与原仓库 doc_scraper 对齐：max_pages 截断、
     rate_limit 限速、include/exclude 子串过滤、dry_run 只做链接发现。
+    categorize=true 时附带分类聚合（smart_categorize/infer_categories 语义）
+    与 quick_reference（跨页 patterns 去重，上限 15）。
     """
     include = include_patterns or []
     exclude = exclude_patterns or []
@@ -315,18 +596,21 @@ async def scrape_docs(
             enqueued.add(url)
             pending.append(url)
 
+    def _is_valid(url: str) -> bool:
+        return is_valid_url(url, base_url, include, exclude)
+
     enqueue(base_url)
     sitemap_count = 0
     llms_count = 0
     if use_sitemap:
         for url in await try_sitemap(client, base_url):
-            if is_valid_url(url, base_url, include, exclude):
+            if _is_valid(url):
                 enqueue(url)
         sitemap_count = len(pending) - 1
     if use_llms_txt and sitemap_count == 0:
         # Layer 2：sitemap 无结果才试 llms.txt（原仓库优先级语义）
         for url in await try_llms_txt(client, base_url):
-            if is_valid_url(url, base_url, include, exclude):
+            if _is_valid(url):
                 enqueue(url)
         llms_count = len(pending) - 1 - sitemap_count
 
@@ -338,14 +622,16 @@ async def scrape_docs(
             continue
         visited.add(url)
         try:
-            data = await _fetch_and_extract(client, url, selector, discover_only=dry_run)
+            data = await _fetch_and_extract(
+                client, url, selector, discover_only=dry_run, is_valid_fn=_is_valid
+            )
         except Exception as e:  # noqa: BLE001 — 单页失败不中断爬取（原仓库行为）
             logger.warning("scrape failed %s: %s", url, e)
             skipped += 1
             continue
 
         for link in data["links"]:
-            if is_valid_url(link, base_url, include, exclude):
+            if _is_valid(link):
                 enqueue(link)
 
         if dry_run:
@@ -358,7 +644,7 @@ async def scrape_docs(
         if rate_limit > 0:
             await asyncio.sleep(rate_limit)
 
-    return {
+    result = {
         "base_url": base_url,
         "dry_run": dry_run,
         "discovered_via_sitemap": sitemap_count,
@@ -367,8 +653,14 @@ async def scrape_docs(
         "pages_saved": 0 if dry_run else len(pages),
         "skipped": skipped,
         "pages": pages,
+        "categories": None,
+        "quick_reference": None,
         "elapsed_sec": None,  # 由 router 层填充
     }
+    if categorize and not dry_run and pages:
+        result["categories"] = smart_categorize(pages, categories)
+        result["quick_reference"] = generate_quick_reference(pages)
+    return result
 
 
 def started_at() -> float:

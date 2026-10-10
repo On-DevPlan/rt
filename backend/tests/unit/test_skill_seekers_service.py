@@ -152,3 +152,184 @@ class TestExtractContent:
         # 与 Skill_Seekers doc_scraper 的回退语义一致：不包含 body
         assert "body" not in FALLBACK_MAIN_SELECTORS
         assert FALLBACK_MAIN_SELECTORS[0] == "main"
+
+
+# ---------------------------------------------------------------------------
+# loop-2 第 3 轮：patterns / 低信号 / 描述规范化 / .md 解析 / 分类聚合
+# ---------------------------------------------------------------------------
+
+from rt_backend.skill_seekers.service import (  # noqa: E402
+    clean_text,
+    extract_markdown_page,
+    extract_patterns,
+    generate_quick_reference,
+    infer_categories,
+    is_low_signal_code_snippet,
+    normalize_pattern_description,
+    smart_categorize,
+)
+from bs4 import BeautifulSoup  # noqa: E402
+
+
+class TestLowSignal:
+    def test_blacklist_exact(self):
+        assert is_low_signal_code_snippet("success=false")
+        assert is_low_signal_code_snippet("None")
+
+    def test_single_identifier(self):
+        assert is_low_signal_code_snippet("getUserById")
+
+    def test_scalar_assign(self):
+        assert is_low_signal_code_snippet("x = 42")
+        assert is_low_signal_code_snippet('name = "hello"')
+
+    def test_short_single_line_no_structure(self):
+        assert is_low_signal_code_snippet("justtext")
+
+    def test_real_code_passes(self):
+        assert not is_low_signal_code_snippet("def f(x):\n    return x + 1")
+        assert not is_low_signal_code_snippet("obj.method().chain()")
+
+
+class TestNormalizePatternDescription:
+    def test_strips_numbering_and_prefix(self):
+        assert normalize_pattern_description("1. Example: create a client") == "create a client"
+
+    def test_first_sentence(self):
+        assert (
+            normalize_pattern_description("Usage: Make the thing. Then more words here.")
+            == "Make the thing."
+        )
+
+    def test_junk_returns_none(self):
+        assert normalize_pattern_description("Example:") is None
+        assert normalize_pattern_description("42") is None
+        assert normalize_pattern_description("short") is None
+
+    def test_truncation(self):
+        out = normalize_pattern_description("x" * 200)
+        assert out is not None and len(out) == 150 and out.endswith("...")
+
+
+class TestCleanText:
+    def test_folds_whitespace(self):
+        assert clean_text("  a\n\nb\t c  ") == "a b c"
+
+
+class TestExtractPatterns:
+    def _soup(self, body: str):
+        return BeautifulSoup(body, "html.parser")
+
+    def test_usage_paragraph_yields_pattern(self):
+        html = """
+        <article>
+          <p>Usage: create a client with the base url.</p>
+          <pre><code class="language-python">client = Client(base_url)</code></pre>
+        </article>
+        """
+        patterns = extract_patterns(self._soup(html).select_one("article"))
+        assert len(patterns) == 1
+        assert patterns[0]["description"] == "create a client with the base url."
+        assert "Client(base_url)" in patterns[0]["code"]
+
+    def test_low_signal_code_skipped(self):
+        html = """
+        <article>
+          <p>Example: an option.</p>
+          <pre><code>true</code></pre>
+        </article>
+        """
+        assert extract_patterns(self._soup(html).select_one("article")) == []
+
+    def test_cap_five(self):
+        blocks = "".join(
+            f"<p>Usage: pattern number {i} with enough words.</p>"
+            f"<pre><code>def f{i}():\n    return {i}</code></pre>"
+            for i in range(8)
+        )
+        patterns = extract_patterns(self._soup(f"<article>{blocks}</article>"))
+        assert len(patterns) == 5
+
+
+class TestMarkdownPage:
+    MD = """# 标题在此
+## 安装
+
+正文第一段，长度必须超过二十个字符才能被保留下来哦。
+
+正文第二段，同样需要超过二十个字符的长度阈值。
+
+```python
+print("hello world sample")
+```
+
+[下一章](./next.md) [外站](https://other.com/x.md)
+"""
+
+    def test_full_extraction(self):
+        page = extract_markdown_page(self.MD, "https://e.com/docs/readme.md", lambda u: True)
+        assert page["title"] == "标题在此"
+        assert page["headings"] == [{"level": "h2", "text": "安装"}]
+        assert "正文第一段" in page["content"]
+        assert page["code_samples"][0]["language"] == "python"
+        # 原版规则：仅保留 .md 结尾且 is_valid 的链接（外站 .md 也保留）
+        assert page["links"] == [
+            "https://e.com/docs/next.md",
+            "https://other.com/x.md",
+        ]
+
+    def test_invalid_md_link_filtered(self):
+        page = extract_markdown_page(self.MD, "https://e.com/docs/readme.md", lambda u: False)
+        assert page["links"] == []
+
+
+def _page(url: str, title: str, content: str) -> dict:
+    return {"url": url, "title": title, "content": content, "patterns": []}
+
+
+class TestCategorize:
+    def test_url_score_three_and_threshold(self):
+        pages = [
+            _page("https://e.com/guide/a", "任意", "x" * 30),
+            _page("https://e.com/guide/b", "任意", "x" * 30),
+            _page("https://e.com/api/c", "任意", "x" * 30),
+        ]
+        cats = smart_categorize(pages, categories={"guide": ["guide"], "api": ["api"]})
+        assert cats["guide"] == [
+            "https://e.com/guide/a",
+            "https://e.com/guide/b",
+        ]
+        assert cats["api"] == ["https://e.com/api/c"]
+
+    def test_other_fallback_when_below_threshold(self):
+        pages = [_page("https://e.com/misc/a", "无关键词", "x" * 30)]
+        cats = smart_categorize(pages, categories={"guide": ["guide"]})
+        assert cats == {"other": ["https://e.com/misc/a"]}
+
+    def test_infer_categories_segments(self):
+        pages = [
+            _page("https://e.com/guide/x", "", "") for _ in range(3)
+        ] + [_page("https://e.com/api/y", "", "") for _ in range(3)]
+        cats = infer_categories(pages)
+        assert cats.get("guide") == ["guide"]
+        assert cats.get("api") == ["api"]
+
+
+class TestQuickReference:
+    def test_dedup_and_limit(self):
+        pattern = {"description": "create a client.", "code": "c = Client()"}
+        pages = [{**_page(f"https://e.com/{i}", "t", "x" * 30), "patterns": [pattern]} for i in range(20)]
+        qr = generate_quick_reference(pages)
+        assert len(qr) == 1  # 同码去重
+
+    def test_cap_fifteen(self):
+        pages = []
+        for i in range(20):
+            pages.append(
+                {
+                    **_page(f"https://e.com/{i}", "t", "x" * 30),
+                    "patterns": [{"description": f"desc number {i} here.", "code": f"code_{i} = make({i})"}],
+                }
+            )
+        qr = generate_quick_reference(pages)
+        assert len(qr) == 15

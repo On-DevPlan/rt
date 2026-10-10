@@ -32,6 +32,8 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
                 use_sitemap=req.use_sitemap,
                 use_llms_txt=req.use_llms_txt,
                 dry_run=req.dry_run,
+                categorize=req.categorize,
+                categories=req.categories,
             )
         except ScraperError as e:
             raise HTTPException(status_code=502, detail=str(e))
