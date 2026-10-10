@@ -3,8 +3,10 @@
 Extracted from ``.claude/repo/BilibiliTools``（requests 脚本集）并改写为
 httpx.AsyncClient 版本：
 
-- 收藏夹视频枚举（原 ``BilibiliGetFavorite/BiliFavDownLd.py``：
-  /x/space/fav/arc 逐页抓取，私有收藏夹错误码 11004/11010/53013）
+- 收藏夹视频枚举（原 ``BilibiliGetFavorite/BiliFavDownLd.py`` 的现代化：
+  原 /x/space/fav/arc ps=1 逐页 → 现 /x/v3/fav/resource/list ps=20 分页，
+  media_id 为完整 mlid = fid×100 + 创建者 mid 尾号 2 位，
+  字段参照 bilibili-API-collect/docs/fav/list.md）
 - 批量添加收藏（原 ``BiliBiliAddFavorite/AutoAddFav.py``：
   /x/v2/fav/video/add + csrf，原脚本带结果码表）
 - 音频区：歌曲信息 / 播放 CDN（原 ``BilibiliAudioGet.py`` 的 songDownloader）
@@ -31,7 +33,7 @@ class AuthError(BilibiliToolsError):
 
 
 class PrivateFolderError(BilibiliToolsError):
-    """收藏夹未公开（code 11004 / 11010 / 53013）。"""
+    """收藏夹未公开 / 访问权限不足（code 11004 / 11010 / 53013 / -403）。"""
 
 
 class UpstreamError(BilibiliToolsError):
@@ -52,6 +54,8 @@ def _check_envelope(payload: dict[str, Any]) -> dict[str, Any]:
         raise AuthError("csrf 校验失败（code=-111）")
     if code in _PRIVATE_FAV_CODES:
         raise PrivateFolderError(f"收藏夹未公开（code={code}），请确认收藏夹已公开")
+    if code == -403:
+        raise PrivateFolderError("访问权限不足（code=-403），收藏夹可能未公开或需要登录")
     raise UpstreamError(f"B 站接口 code={code}: {payload.get('message')}")
 
 
@@ -75,7 +79,17 @@ _UA_CLIENT = {"User-Agent": "BilibiliClient/2.33.3", "Accept": "*/*", "Connectio
 # 收藏夹枚举（BiliFavDownLd.py）
 # ---------------------------------------------------------------------------
 
-_FAV_ARC_API = "https://api.bilibili.com/x/space/fav/arc"
+_FAV_ARC_API = "https://api.bilibili.com/x/space/fav/arc"  # 旧接口，保留给兼容场景
+_FAV_RESOURCE_API = "https://api.bilibili.com/x/v3/fav/resource/list"
+
+
+def fav_mlid(mid: str, fid: str) -> int:
+    """收藏夹完整 mlid = 原始 fid × 100 + 创建者 mid 尾号 2 位。
+
+    v3 接口的 media_id 参数要求完整 id（bilibili-API-collect/docs/fav/list.md：
+    例 fid=10526220 + mid=686127 → mlid=1052622027）。
+    """
+    return int(fid) * 100 + int(mid) % 100
 
 
 def parse_fav_link(link: str) -> tuple[str, str]:
@@ -96,28 +110,54 @@ def parse_fav_link(link: str) -> tuple[str, str]:
 async def fetch_favorites(
     client: httpx.AsyncClient, mid: str, fid: str, limit: int = 20
 ) -> dict[str, Any]:
-    """枚举公开收藏夹里的视频（aid/title/pic/state），逐页抓取（原脚本 ps=1）。"""
+    """枚举收藏夹内容（v3 接口，ps≤20 分页，按 has_more 停止）。
+
+    字段对齐原脚本的 aid/title/pic/state 语义：state 用 medias[].attr 的
+    bit0（1=已失效视频）；额外补充 bvid 与收藏夹标题。
+    """
     items: list[dict[str, Any]] = []
-    for pn in range(1, limit + 1):
+    fav_title = ""
+    pn = 1
+    while len(items) < limit:
         data = await _get_json(
             client,
-            _FAV_ARC_API,
-            params={"vmid": mid, "ps": 1, "fid": fid, "pn": pn},
+            _FAV_RESOURCE_API,
+            params={
+                "media_id": fav_mlid(mid, fid),
+                "pn": pn,
+                "ps": min(20, limit - len(items)),
+                "platform": "web",
+            },
             headers=_UA_FIREFOX,
         )
-        archives = data.get("archives") or []
-        if not archives:
-            break  # 翻到头了
-        arc = archives[0]
-        items.append(
-            {
-                "aid": str(arc.get("aid", "")),
-                "title": str(arc.get("title", "")),
-                "pic": str(arc.get("pic", "")),
-                "state": arc.get("state", 0),
-            }
-        )
-    return {"mid": mid, "fid": fid, "total": len(items), "items": items}
+        info = data.get("info") or {}
+        fav_title = fav_title or str(info.get("title", ""))
+        medias = data.get("medias") or []
+        if not medias:
+            break
+        for m in medias:
+            attr = m.get("attr") or 0
+            items.append(
+                {
+                    "aid": str(m.get("id", "")),
+                    "bvid": m.get("bvid", ""),
+                    "title": str(m.get("title", "")),
+                    "pic": str(m.get("cover", "")),
+                    "state": 1 if attr & 0x1 else 0,  # bit0=1 已失效
+                }
+            )
+            if len(items) >= limit:
+                break
+        if not data.get("has_more"):
+            break
+        pn += 1
+    return {
+        "mid": mid,
+        "fid": fid,
+        "fav_title": fav_title,
+        "total": len(items),
+        "items": items,
+    }
 
 
 # ---------------------------------------------------------------------------

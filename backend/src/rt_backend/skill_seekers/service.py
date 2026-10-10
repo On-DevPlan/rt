@@ -4,6 +4,9 @@ Extracted from ``.claude/repo/Skill_Seekers`` 的 ``doc_scraper.py``
 （DocToSkillConverter）并精简改写为 httpx.AsyncClient 版本：
 
 - 三层发现引擎的 Layer 1：sitemap.xml 探测（``_try_sitemap``）
+- 三层发现引擎的 Layer 2：llms.txt 发现（``_try_llms_txt`` 的发现源化——
+  原仓库 llms.txt 命中后直接跳过 HTML 爬取；本模块为保持统一响应结构，
+  把 llms.txt 当 URL 发现源并入 BFS。差异记录在模块 README）
 - BFS 抓取主循环：pending_urls 队列 + visited/enqueued 双 set O(1) 去重
 - URL 规范化：去 #fragment、去跟踪参数（utm_*/fbclid），保留有意义 query
 - URL 有效性：base_url 目录前缀 + include/exclude 子串 pattern
@@ -15,6 +18,7 @@ checkpoint 断点续传、多线程/asyncio 并行、SKILL.md 构建管线。
 """
 import asyncio
 import logging
+import re
 import time
 from collections import deque
 from typing import Any
@@ -129,6 +133,37 @@ async def try_sitemap(client: httpx.AsyncClient, base_url: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# llms.txt 发现（doc_scraper.py: _try_llms_txt 的 Layer 2）
+# ---------------------------------------------------------------------------
+
+_LLMS_TXT_URL = "{domain}/llms.txt"
+# [text](url "optional title") —— 允许 markdown 可选 title 部分
+_MD_LINK_RE = re.compile(r"\[[^\]]*\]\((https?://[^\s)]+)(?:\s+\"[^\"]*\")?\)")
+
+
+def parse_llms_txt_links(text: str) -> list[str]:
+    """从 llms.txt（markdown 格式）提取全部链接 URL。"""
+    return [m.group(1) for m in _MD_LINK_RE.finditer(text)]
+
+
+async def try_llms_txt(client: httpx.AsyncClient, base_url: str) -> list[str]:
+    """探测 domain 根的 llms.txt，返回其中发现的 URL（探测失败静默降级）。"""
+    parsed = urlparse(base_url)
+    domain = f"{parsed.scheme}://{parsed.netloc}"
+    try:
+        resp = await client.get(_LLMS_TXT_URL.format(domain=domain), timeout=SITEMAP_PROBE_TIMEOUT)
+        if resp.status_code != 200:
+            return []
+        links = parse_llms_txt_links(resp.text)
+        if links:
+            logger.info("llms.txt: %d links", len(links))
+        return links
+    except Exception as e:  # noqa: BLE001 — 探测失败静默降级（原仓库行为）
+        logger.debug("llms.txt check failed for %s: %s", domain, e)
+        return []
+
+
+# ---------------------------------------------------------------------------
 # 内容提取（doc_scraper.py: _find_main_content / extract_content）
 # ---------------------------------------------------------------------------
 
@@ -236,12 +271,14 @@ async def scrape_docs(
     exclude_patterns: list[str] | None = None,
     selector: str | None = None,
     use_sitemap: bool = True,
+    use_llms_txt: bool = True,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    """文档站爬取：sitemap 发现（可选）+ BFS 抓取，返回页面 JSON 列表。
+    """文档站爬取：sitemap/llms.txt 发现（可选）+ BFS 抓取，返回页面 JSON 列表。
 
-    参数语义与原仓库 doc_scraper 对齐：max_pages 截断、rate_limit 限速、
-    include/exclude 子串过滤、dry_run 只做链接发现。
+    发现顺序对齐原仓库三层引擎：Layer 1 sitemap → Layer 2 llms.txt（sitemap
+    无结果时才试）。参数语义与原仓库 doc_scraper 对齐：max_pages 截断、
+    rate_limit 限速、include/exclude 子串过滤、dry_run 只做链接发现。
     """
     include = include_patterns or []
     exclude = exclude_patterns or []
@@ -259,11 +296,18 @@ async def scrape_docs(
 
     enqueue(base_url)
     sitemap_count = 0
+    llms_count = 0
     if use_sitemap:
         for url in await try_sitemap(client, base_url):
             if is_valid_url(url, base_url, include, exclude):
                 enqueue(url)
         sitemap_count = len(pending) - 1
+    if use_llms_txt and sitemap_count == 0:
+        # Layer 2：sitemap 无结果才试 llms.txt（原仓库优先级语义）
+        for url in await try_llms_txt(client, base_url):
+            if is_valid_url(url, base_url, include, exclude):
+                enqueue(url)
+        llms_count = len(pending) - 1 - sitemap_count
 
     pages: list[dict[str, Any]] = []
     skipped = 0
@@ -297,6 +341,7 @@ async def scrape_docs(
         "base_url": base_url,
         "dry_run": dry_run,
         "discovered_via_sitemap": sitemap_count,
+        "discovered_via_llms_txt": llms_count,
         "pages_scraped": len(visited),
         "pages_saved": 0 if dry_run else len(pages),
         "skipped": skipped,

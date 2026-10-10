@@ -108,6 +108,63 @@ async def test_scrape_sitemap_discovery_layer():
 
 
 @pytest.mark.asyncio
+async def test_scrape_llms_txt_layer_when_sitemap_missing():
+    """Layer 2：sitemap 没有结果才探测 llms.txt，发现链接并入 BFS。"""
+    client = await _make_client()
+    llms = """# Docs
+
+- [A 页](https://docs.test/guide/a.html)
+- [站外](https://other.test/x)
+"""
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        # sitemap 不存在（404）
+        router.get("/sitemap.xml").mock(return_value=Response(404))
+        router.get("/llms.txt").mock(return_value=Response(200, text=llms))
+        router.get("/guide/").mock(return_value=Response(200, html=_page("GuideHome")))
+        a_calls = router.get("/guide/a.html").mock(return_value=Response(200, html=_page("A")))
+        outside = router.get("/x").mock(return_value=Response(200, html=_page("X")))
+        with client as c:
+            r = c.post(
+                "/api/skill-seekers/scrape",
+                json={"base_url": "https://docs.test/guide/", "rate_limit": 0},
+            )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["discovered_via_sitemap"] == 0
+    # llms.txt 2 个链接，目录前缀过滤后剩 1 个（a.html）
+    assert body["discovered_via_llms_txt"] == 1
+    assert a_calls.call_count == 1
+    assert outside.call_count == 0  # 站外链接不入队
+
+
+@pytest.mark.asyncio
+async def test_scrape_llms_txt_skipped_when_sitemap_hit():
+    """Layer 优先级：sitemap 已有结果就不探测 llms.txt（原仓库语义）。"""
+    client = await _make_client()
+    sitemap = """<?xml version="1.0"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url><loc>https://docs.test/guide/a.html</loc></url>
+    </urlset>"""
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        router.get("/sitemap.xml").mock(
+            return_value=Response(200, text=sitemap, headers={"content-type": "application/xml"})
+        )
+        llms_calls = router.get("/llms.txt").mock(return_value=Response(200, text="# x"))
+        router.get("/guide/").mock(return_value=Response(200, html=_page("GuideHome")))
+        router.get("/guide/a.html").mock(return_value=Response(200, html=_page("A")))
+        with client as c:
+            r = c.post(
+                "/api/skill-seekers/scrape",
+                json={"base_url": "https://docs.test/guide/", "rate_limit": 0},
+            )
+
+    assert r.status_code == 200
+    assert r.json()["discovered_via_sitemap"] == 1
+    assert llms_calls.call_count == 0  # sitemap 命中 → llms.txt 不探测
+
+
+@pytest.mark.asyncio
 async def test_scrape_exclude_patterns():
     client = await _make_client()
     with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:

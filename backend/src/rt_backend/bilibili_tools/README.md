@@ -8,7 +8,7 @@
 
 | 能力 | 原工具 | 本模块实现 |
 |---|---|---|
-| 收藏夹视频枚举 | `BilibiliGetFavorite/BiliFavDownLd.py`（`/x/space/fav/arc` 逐页） | `service.py: fetch_favorites`，私有收藏夹（11004/11010/53013）→ 403 |
+| 收藏夹视频枚举 | `BilibiliGetFavorite/BiliFavDownLd.py` | `service.py: fetch_favorites`——现代化为 v3 接口 `/x/v3/fav/resource/list`（原 ps=1 逐页 → ps≤20 分页按 `has_more` 停止；media_id= fid×100+mid 尾号）；私有/无权限（11004/11010/53013/-403）→ 403 |
 | 批量添加收藏 | `BiliBiliAddFavorite/AutoAddFav.py`（含结果码表） | `service.py: add_favorites`，逐个 av 返回 pattern 结果 |
 | 歌曲信息 + 播放 CDN | `BilibiliAudioGet.py` 的 `songDownloader` | `service.py: fetch_song_info`（BilibiliClient UA 的 url 接口） |
 | 歌单/UP 主歌曲列表 | 同文件 `playlistDownloader` / `userDownloader` | `service.py: fetch_menu_songs / fetch_user_songs`，按 pageCount==curPage 停止翻页 |
@@ -69,6 +69,6 @@ cd backend && uv run pytest tests/test_bilibili_tools_router.py -v
 
 ## 已知限制
 
-- 收藏夹枚举沿用原脚本的 `ps=1` 逐页模式，`limit` 大时请求数多（对 B 站限速友好但慢）
+- 收藏夹响应在原字段（aid/title/pic/state）上补充了 `bvid` 与收藏夹标题 `fav_title`；`state=1` 表示已失效视频（medias[].attr bit0）
 - 音频 CDN 直链有时效与 Referer 校验，客户端下载时需带 B 站 Referer
 - 批量收藏单次上限 100 个 av 号

@@ -7,14 +7,16 @@ from pydantic import BaseModel, Field
 
 class FavoriteItem(BaseModel):
     aid: str
+    bvid: str = ""
     title: str
     pic: str
-    state: int = 0
+    state: int = 0  # 1=已失效（medias[].attr bit0）
 
 
 class FavoritesResponse(BaseModel):
     mid: str
     fid: str
+    fav_title: str = ""
     total: int
     items: list[FavoriteItem]
 

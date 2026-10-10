@@ -117,15 +117,20 @@ def test_bilibili_crawler_comments_through_real_app(real_app_client):
 def test_bilibili_tools_favorites_through_real_app(real_app_client):
     payload = {
         "code": 0,
-        "data": {"archives": [{"aid": 5, "title": "e2e 视频", "pic": "http://p/5.jpg", "state": 0}]},
+        "data": {
+            "info": {"title": "e2e 收藏夹"},
+            "medias": [{"id": 5, "bvid": "BV1e2e", "title": "e2e 视频", "cover": "http://p/5.jpg", "attr": 0}],
+            "has_more": False,
+        },
     }
     with respx.mock(base_url=BILI) as router:
-        router.get("/x/space/fav/arc").mock(return_value=Response(200, json=payload))
+        router.get("/x/v3/fav/resource/list").mock(return_value=Response(200, json=payload))
         r = real_app_client.get("/api/bilibili-tools/favorites", params={"mid": "42", "fid": "1", "limit": 1})
 
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["total"] == 1
+    assert body["fav_title"] == "e2e 收藏夹"
     assert body["items"][0]["title"] == "e2e 视频"
 
 

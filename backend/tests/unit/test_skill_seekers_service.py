@@ -8,6 +8,7 @@ from rt_backend.skill_seekers.service import (
     find_main_content,
     is_valid_url,
     normalize_url,
+    parse_llms_txt_links,
 )
 
 
@@ -57,6 +58,27 @@ class TestSitemapParsing:
 
     def test_invalid_xml_returns_empty(self):
         assert _parse_sitemap_locs("not xml at all <<<") == []
+
+
+class TestLlmsTxtParsing:
+    def test_markdown_links_extracted(self):
+        text = """# Docs
+
+- [快速开始](https://e.com/docs/start): 入门
+- [API 参考](https://e.com/docs/api "title 属性")
+- 非链接行
+"""
+        assert parse_llms_txt_links(text) == [
+            "https://e.com/docs/start",
+            "https://e.com/docs/api",
+        ]
+
+    def test_no_links_returns_empty(self):
+        assert parse_llms_txt_links("# only heading\nplain text") == []
+
+    def test_relative_links_ignored(self):
+        # 发现层只收绝对 URL（原仓库 downloader 语义），相对路径交给 BFS 链接扩展
+        assert parse_llms_txt_links("[rel](/docs/x)") == []
 
 
 _HTML = """

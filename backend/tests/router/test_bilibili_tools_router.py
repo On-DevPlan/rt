@@ -12,7 +12,7 @@ from httpx import Response
 from rt_backend.bilibili_tools.router import build_router
 from rt_backend.core.http import HttpClientHolder
 
-FAV_ARC_URL = "/x/space/fav/arc"
+FAV_LIST_URL = "/x/v3/fav/resource/list"
 FAV_ADD_URL = "/x/v2/fav/video/add"
 SONG_INFO_URL = "/audio/music-service-c/web/song/info"
 AUDIO_URL_API = "/audio/music-service-c/url"
@@ -37,40 +37,87 @@ async def client():
 _HOLDER = HttpClientHolder(timeout=5.0)
 
 
-def test_favorites_via_link(client):
+def test_favorites_via_link_v3_api(client):
+    """收藏夹枚举走 v3 接口：media_id= fid×100+mid尾号，ps≤20 分页按 has_more 停止。"""
     page1 = {
         "code": 0,
-        "data": {"archives": [{"aid": 111, "title": "视频一", "pic": "http://p/1.jpg", "state": 0}]},
+        "data": {
+            "info": {"title": "我的收藏"},
+            "medias": [
+                {"id": 111, "bvid": "BV1a", "title": "视频一", "cover": "http://p/1.jpg", "attr": 0},
+                {"id": 222, "bvid": "BV1b", "title": "已失效视频", "cover": "http://p/2.jpg", "attr": 1},
+            ],
+            "has_more": True,
+        },
     }
-    page2 = {"code": 0, "data": {"archives": []}}
+    page2 = {
+        "code": 0,
+        "data": {
+            "info": {"title": "我的收藏"},
+            "medias": [{"id": 333, "bvid": "BV1c", "title": "视频三", "cover": "http://p/3.jpg", "attr": 0}],
+            "has_more": False,
+        },
+    }
 
     with respx.mock(base_url="https://api.bilibili.com") as router:
-        fav_route = router.get(FAV_ARC_URL).mock(
+        fav_route = router.get(FAV_LIST_URL).mock(
             side_effect=[Response(200, json=page1), Response(200, json=page2)]
         )
-        r = client.get(
-            "/api/bilibili-tools/favorites",
-            params={"link": "https://space.bilibili.com/42/favlist?fid=12345"},
-        )
+        with client as c:
+            r = c.get(
+                "/api/bilibili-tools/favorites",
+                params={"link": "https://space.bilibili.com/42/favlist?fid=12345"},
+            )
 
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["mid"] == "42" and body["fid"] == "12345"
-    assert body["total"] == 1
-    assert body["items"][0]["aid"] == "111"
-    assert body["items"][0]["title"] == "视频一"
-    # 第二页空 → 停止翻页
+    assert body["fav_title"] == "我的收藏"
+    assert body["total"] == 3
+    # attr bit0 → 失效标记
+    assert body["items"][0]["state"] == 0
+    assert body["items"][1]["state"] == 1
+    assert body["items"][0]["bvid"] == "BV1a"
+    # media_id = 12345*100 + 42%100 = 1234542
+    sent_p1 = dict(fav_route.calls[0].request.url.params)
+    assert sent_p1["media_id"] == "1234542"
+    assert sent_p1["ps"] == "20"
+    # has_more=False → 停止翻页
     assert fav_route.call_count == 2
+
+
+def test_favorites_limit_stops_early(client):
+    page1 = {
+        "code": 0,
+        "data": {
+            "info": {"title": "t"},
+            "medias": [
+                {"id": i, "bvid": f"BV{i}", "title": f"v{i}", "cover": "", "attr": 0}
+                for i in range(5)
+            ],
+            "has_more": True,
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        fav_route = router.get(FAV_LIST_URL).mock(return_value=Response(200, json=page1))
+        with client as c:
+            r = c.get("/api/bilibili-tools/favorites", params={"mid": "42", "fid": "7", "limit": 3})
+
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] == 3  # limit 截断
+    assert fav_route.call_count == 1  # 不再多翻页
 
 
 def test_favorites_private_folder_maps_403(client):
     with respx.mock(base_url="https://api.bilibili.com") as router:
-        router.get(FAV_ARC_URL).mock(
-            return_value=Response(200, json={"code": 11004, "message": "收藏夹未公开"})
+        router.get(FAV_LIST_URL).mock(
+            return_value=Response(200, json={"code": -403, "message": "访问权限不足"})
         )
-        r = client.get("/api/bilibili-tools/favorites", params={"mid": "42", "fid": "999"})
+        with client as c:
+            r = c.get("/api/bilibili-tools/favorites", params={"mid": "42", "fid": "999"})
     assert r.status_code == 403
-    assert "公开" in r.json()["detail"]
+    assert "权限" in r.json()["detail"]
 
 
 def test_favorites_validation_requires_ids(client):

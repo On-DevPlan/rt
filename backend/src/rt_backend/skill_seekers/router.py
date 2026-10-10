@@ -30,6 +30,7 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
                 exclude_patterns=req.exclude_patterns,
                 selector=req.selector,
                 use_sitemap=req.use_sitemap,
+                use_llms_txt=req.use_llms_txt,
                 dry_run=req.dry_run,
             )
         except ScraperError as e:
