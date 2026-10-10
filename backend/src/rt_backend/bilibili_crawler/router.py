@@ -7,7 +7,10 @@ from ..core.http import HttpClientHolder
 from .schemas import (
     CommentsRequest,
     CommentsResponse,
+    DanmakuResponse,
     IdConvertResponse,
+    PlayUrlRequest,
+    PlayUrlResponse,
     UserSpaceRequest,
     UserSpaceResponse,
     UserVideosRequest,
@@ -23,9 +26,11 @@ from .service import (
     av2bv,
     bv2av,
     fetch_comments,
+    fetch_danmaku,
+    fetch_play_url,
     fetch_user_space,
     fetch_user_videos,
-    fetch_video_info,
+    fetch_video_detail,
     sign_params,
 )
 
@@ -67,14 +72,23 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
         except (ValueError, IndexError) as e:
             raise HTTPException(status_code=422, detail=f"非法 id：{e}")
 
-    @router.get("/video/{bvid}", response_model=VideoInfoResponse)
+    @router.get("/video/{video_id}", response_model=VideoInfoResponse)
     async def video_info(
-        bvid: str,
+        video_id: str,
         http: HttpClientHolder = Depends(http_provider),
+        sessdata: str | None = None,
     ):
-        """抓取视频元信息（标题/UP 主/各维度统计）。"""
+        """视频完整详情（view/detail）：aid 或 bvid 自适应入参，含分P pages[]（每P cid）。"""
+        if video_id.startswith("BV"):
+            aid, bvid = None, video_id
+        elif video_id.isdigit():
+            aid, bvid = int(video_id), None
+        else:
+            raise HTTPException(status_code=422, detail=f"video_id 须为 aid（纯数字）或 bvid（BV 开头）：{video_id!r}")
         try:
-            info = await fetch_video_info(http.client, bvid)
+            info = await fetch_video_detail(http.client, aid=aid, bvid=bvid, sessdata=sessdata)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
         except AuthError as e:
             raise HTTPException(status_code=401, detail=str(e))
         except UpstreamError as e:
@@ -82,6 +96,41 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
         except BilibiliCrawlerError as e:
             raise HTTPException(status_code=500, detail=str(e))
         return VideoInfoResponse(**info)
+
+    @router.post("/play-url", response_model=PlayUrlResponse)
+    async def play_url(
+        req: PlayUrlRequest,
+        http: HttpClientHolder = Depends(http_provider),
+    ):
+        """播放直链 + 清晰度枚举（WBI 签名 playurl；aid/cid 从 /video/{id} 的 pages[] 拿）。"""
+        try:
+            data = await fetch_play_url(
+                http.client,
+                aid=req.aid,
+                cid=req.cid,
+                qn=req.qn,
+                fnval=req.fnval,
+                fourk=req.fourk,
+                sessdata=req.sessdata,
+            )
+        except AuthError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+        except UpstreamError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except BilibiliCrawlerError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        return PlayUrlResponse(**data)
+
+    @router.get("/danmaku/{cid}", response_model=DanmakuResponse)
+    async def danmaku(cid: int, http: HttpClientHolder = Depends(http_provider)):
+        """分P弹幕（dm/list.so XML → 结构化列表；cid 从 /video/{id} 的 pages[] 拿）。"""
+        try:
+            data = await fetch_danmaku(http.client, cid)
+        except UpstreamError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except BilibiliCrawlerError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        return DanmakuResponse(**data)
 
     @router.post("/comments", response_model=CommentsResponse)
     async def comments(

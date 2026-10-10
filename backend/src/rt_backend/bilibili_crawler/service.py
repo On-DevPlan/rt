@@ -174,26 +174,49 @@ async def _get_json(
 
 
 # ---------------------------------------------------------------------------
-# 视频信息（Bilibili_crawler.py 中的 view 接口）
+# 视频详情（MediaCrawler get_video_info 的 /x/web-interface/view/detail 完整版：
+# aid/bvid 二选一、免签名、含分P pages[]）
 # ---------------------------------------------------------------------------
 
-_VIEW_API = "https://api.bilibili.com/x/web-interface/view"
+_VIEW_DETAIL_API = "https://api.bilibili.com/x/web-interface/view/detail"
+_PLAYURL_API = "https://api.bilibili.com/x/player/wbi/playurl"
+_DM_API = "https://api.bilibili.com/x/v1/dm/list.so"
 
 
-async def fetch_video_info(client: httpx.AsyncClient, bvid: str) -> dict[str, Any]:
-    """抓取视频元信息（view 接口），返回常用字段的扁平 dict。"""
-    data = await _get_json(client, _VIEW_API, {"bvid": bvid}, None)
-    stat = data.get("stat") or {}
-    owner = data.get("owner") or {}
+async def fetch_video_detail(
+    client: httpx.AsyncClient,
+    *,
+    aid: int | None = None,
+    bvid: str | None = None,
+    sessdata: str | None = None,
+) -> dict[str, Any]:
+    """视频完整详情：标题/UP 主/统计 + 分P 列表 pages[]（含每P cid，playurl/弹幕的前置）。
+
+    对齐 MediaCrawler get_video_info：aid 优先、免签名、端点为 view/detail。
+    """
+    if not aid and not bvid:
+        raise ValueError("aid 与 bvid 至少提供一个")
+    params: dict[str, Any] = {"aid": aid} if aid else {"bvid": bvid}
+    data = await _get_json(client, _VIEW_DETAIL_API, params, sessdata)
+    view = data.get("View") or {}
+    stat = view.get("stat") or {}
+    owner = view.get("owner") or {}
+    pages = [
+        {"page": p.get("page"), "part": p.get("part", ""), "cid": p.get("cid")}
+        for p in view.get("pages") or []
+    ]
     return {
-        "bvid": data.get("bvid", bvid),
-        "aid": data.get("aid"),
-        "title": data.get("title", ""),
-        "desc": data.get("desc", ""),
+        "bvid": view.get("bvid") or bvid or "",
+        "aid": view.get("aid") or aid,
+        "cid": view.get("cid"),
+        "title": view.get("title", ""),
+        "desc": view.get("desc", ""),
+        "pic": view.get("pic", ""),
         "owner_mid": owner.get("mid"),
         "owner_name": owner.get("name", ""),
-        "pubdate": data.get("pubdate"),
-        "duration": data.get("duration"),
+        "pubdate": view.get("pubdate"),
+        "duration": view.get("duration"),
+        "pages": pages,
         "view": stat.get("view"),
         "danmaku": stat.get("danmaku"),
         "reply": stat.get("reply"),
@@ -202,6 +225,71 @@ async def fetch_video_info(client: httpx.AsyncClient, bvid: str) -> dict[str, An
         "share": stat.get("share"),
         "like": stat.get("like"),
     }
+
+
+async def fetch_play_url(
+    client: httpx.AsyncClient,
+    *,
+    aid: int,
+    cid: int,
+    qn: int = 80,
+    fnval: int = 1,
+    fourk: bool = True,
+    sessdata: str | None = None,
+) -> dict[str, Any]:
+    """播放直链 + 清晰度（MediaCrawler get_video_play_url 的 WBI 签名 playurl 包装）。
+
+    qn 语义（BiliDown.py 原文）：116=1080P60 112=1080P+ 80=1080P 74=720P60
+    64=720P 48=720P MP4 32=480P 16=360P（高 qn 多数需要 SESSDATA）。
+    fnval：1=音视频合一 mp4（返回 durl 直链）；4048=DASH（无 durl，dash=True）。
+    直链交给调用方下载，带 B 站 Referer。
+    """
+    params: dict[str, Any] = {
+        "avid": aid,
+        "cid": cid,
+        "qn": qn,
+        "fourk": 1 if fourk else 0,
+        "fnval": fnval,
+        "platform": "pc",
+    }
+    signed = await sign_params(client, params)
+    data = await _get_json(client, _PLAYURL_API, signed, sessdata)
+    durl = [
+        {"url": u.get("url"), "backup_url": u.get("backup_url"), "size": u.get("size")}
+        for u in data.get("durl") or []
+    ]
+    return {
+        "quality": data.get("quality"),
+        "format": data.get("format"),
+        "accept_quality": data.get("accept_quality") or [],
+        "accept_description": data.get("accept_description") or [],
+        "durl": durl,
+        "dash": bool(data.get("dash")),
+    }
+
+
+async def fetch_danmaku(client: httpx.AsyncClient, cid: int) -> dict[str, Any]:
+    """分P弹幕（BilibiliDownloader dmApi 的 XML 解析版；上游仓库只落盘原始 XML，
+    这里按 B 站标准 dm XML 格式解析 <d p="time,mode,...">text</d>）。"""
+    resp = await client.get(_DM_API, params={"oid": cid}, headers=_BILI_HEADERS)
+    resp.raise_for_status()
+    import xml.etree.ElementTree as ET
+
+    try:
+        root = ET.fromstring(resp.text.lstrip())
+    except ET.ParseError as e:
+        raise UpstreamError(f"弹幕 XML 解析失败: {e}")
+    items: list[dict[str, Any]] = []
+    for d in root.iter("d"):
+        p = (d.get("p") or "").split(",")
+        items.append(
+            {
+                "time": float(p[0]) if p and p[0] else None,
+                "mode": int(p[1]) if len(p) > 1 and p[1].isdigit() else None,
+                "text": (d.text or "").strip(),
+            }
+        )
+    return {"cid": cid, "total": len(items), "items": items}
 
 
 # ---------------------------------------------------------------------------

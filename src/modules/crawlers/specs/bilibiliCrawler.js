@@ -41,13 +41,68 @@ export const bilibiliCrawlerEndpoints = [
   },
   {
     id: 'video-info',
-    title: '视频元信息',
-    description: '标题 / UP 主 / 播放、点赞、投币等统计（view 接口）。',
+    title: '视频完整详情（view/detail）',
+    description: 'aid 或 bvid 自适应。含标题/UP 主/统计 + 分P pages[]（每P 的 cid，是 play-url 与 danmaku 的前置入参）。',
     method: 'GET',
-    path: '/api/bilibili-crawler/video/{bvid}',
-    inputs: [{ name: 'bvid', label: 'bvid', type: 'text', placeholder: 'BV1xx411c7mD', default: 'BV1xx411c7mD' }],
-    buildCurl: (v) => `curl "${BASE}/video/${encodeURIComponent(v.bvid)}"`,
-    submit: (v) => api.videoInfo(v.bvid)
+    path: '/api/bilibili-crawler/video/{video_id}',
+    inputs: [
+      { name: 'video_id', label: '视频 id（BV 号或纯数字 aid）', type: 'text', placeholder: 'BV1xx411c7mD', default: 'BV1xx411c7mD' },
+      { name: 'sessdata', label: 'SESSDATA（可选）', type: 'text', sensitive: true }
+    ],
+    buildCurl: (v) =>
+      `curl "${BASE}/video/${encodeURIComponent(v.video_id)}${v.sessdata ? `?sessdata=${v.sessdata}` : ''}"`,
+    submit: (v) => api.videoInfo(v.video_id, { sessdata: v.sessdata })
+  },
+  {
+    id: 'play-url',
+    title: '播放直链 + 清晰度',
+    description: 'WBI 签名 playurl。aid/cid 从「视频完整详情」的 pages[] 拿。qn：116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高 qn 多需 SESSDATA）。fnval=1 返回 mp4 合一直链（durl）；4048=DASH（无直链）。直链下载需带 B 站 Referer。',
+    method: 'POST',
+    path: '/api/bilibili-crawler/play-url',
+    inputs: [
+      { name: 'aid', label: 'aid', type: 'number', placeholder: '170001' },
+      { name: 'cid', label: '分P cid', type: 'number', placeholder: '9001' },
+      {
+        name: 'qn',
+        label: '清晰度 qn',
+        type: 'select',
+        default: 80,
+        options: [
+          { value: 116, label: '116 — 1080P60（需 SESSDATA）' },
+          { value: 112, label: '112 — 1080P+（需 SESSDATA）' },
+          { value: 80, label: '80 — 1080P' },
+          { value: 74, label: '74 — 720P60（需 SESSDATA）' },
+          { value: 64, label: '64 — 720P' },
+          { value: 32, label: '32 — 480P' },
+          { value: 16, label: '16 — 360P' }
+        ]
+      },
+      {
+        name: 'fnval',
+        label: '格式',
+        type: 'select',
+        default: 1,
+        options: [
+          { value: 1, label: '1 — mp4 合一直链（durl）' },
+          { value: 4048, label: '4048 — DASH（无直链）' }
+        ]
+      },
+      { name: 'fourk', label: '允许 4K', type: 'bool', default: true },
+      { name: 'sessdata', label: 'SESSDATA（高清晰度需要）', type: 'text', sensitive: true }
+    ],
+    buildCurl: (v) =>
+      `curl -X POST "${BASE}/play-url" -H "Content-Type: application/json" -d '${JSON.stringify(v)}'`,
+    submit: (v) => api.playUrl(v)
+  },
+  {
+    id: 'danmaku',
+    title: '分P弹幕',
+    description: 'dm/list.so XML → 结构化列表（time 秒 / mode 类型 / text 内容）。cid 从「视频完整详情」的 pages[] 拿。',
+    method: 'GET',
+    path: '/api/bilibili-crawler/danmaku/{cid}',
+    inputs: [{ name: 'cid', label: '分P cid', type: 'number', placeholder: '9001' }],
+    buildCurl: (v) => `curl "${BASE}/danmaku/${v.cid ?? ''}"`,
+    submit: (v) => api.danmaku(v.cid)
   },
   {
     id: 'comments',

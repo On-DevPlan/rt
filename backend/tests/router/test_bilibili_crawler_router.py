@@ -96,6 +96,7 @@ def test_convert_validation():
 
 @pytest.mark.asyncio
 async def test_video_info_success():
+    """view/detail 完整版：View 包装 + 分P pages[]；bvid/aid 自适应入参。"""
     app = FastAPI()
     holder = _holder()
     await holder.start()
@@ -104,26 +105,36 @@ async def test_video_info_success():
     view_payload = {
         "code": 0,
         "data": {
-            "bvid": "BV1xx411c7mD",
-            "aid": 170001,
-            "title": "测试视频",
-            "desc": "描述",
-            "owner": {"mid": 42, "name": "up主"},
-            "pubdate": 1700000000,
-            "duration": 300,
-            "stat": {
-                "view": 1000,
-                "danmaku": 10,
-                "reply": 20,
-                "favorite": 30,
-                "coin": 40,
-                "share": 50,
-                "like": 60,
-            },
+            "View": {
+                "bvid": "BV1xx411c7mD",
+                "aid": 170001,
+                "cid": 9001,
+                "title": "测试视频",
+                "desc": "描述",
+                "pic": "http://i0.hdslb.com/cover.jpg",
+                "owner": {"mid": 42, "name": "up主"},
+                "pubdate": 1700000000,
+                "duration": 300,
+                "pages": [
+                    {"page": 1, "part": "P1 正片", "cid": 9001},
+                    {"page": 2, "part": "P2 花絮", "cid": 9002},
+                ],
+                "stat": {
+                    "view": 1000,
+                    "danmaku": 10,
+                    "reply": 20,
+                    "favorite": 30,
+                    "coin": 40,
+                    "share": 50,
+                    "like": 60,
+                },
+            }
         },
     }
     with respx.mock(base_url="https://api.bilibili.com") as router:
-        router.get("/x/web-interface/view").mock(return_value=Response(200, json=view_payload))
+        detail_route = router.get("/x/web-interface/view/detail").mock(
+            return_value=Response(200, json=view_payload)
+        )
         with TestClient(app) as client:
             r = client.get("/api/bilibili-crawler/video/BV1xx411c7mD")
 
@@ -133,6 +144,116 @@ async def test_video_info_success():
     assert body["owner_name"] == "up主"
     assert body["view"] == 1000
     assert body["like"] == 60
+    assert body["cid"] == 9001
+    assert body["pages"] == [
+        {"page": 1, "part": "P1 正片", "cid": 9001},
+        {"page": 2, "part": "P2 花絮", "cid": 9002},
+    ]
+    # bvid 入参（BV 前缀自适应）
+    sent = dict(detail_route.calls[0].request.url.params)
+    assert sent == {"bvid": "BV1xx411c7mD"}
+
+    # aid 入参（纯数字自适应）
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        detail2 = router.get("/x/web-interface/view/detail").mock(
+            return_value=Response(200, json=view_payload)
+        )
+        with TestClient(app) as client:
+            r2 = client.get("/api/bilibili-crawler/video/170001")
+    assert r2.status_code == 200
+    assert dict(detail2.calls[0].request.url.params) == {"aid": "170001"}
+
+
+@pytest.mark.asyncio
+async def test_play_url_signed_request_and_durl():
+    """playurl：WBI 签名 + avid 参数名 + durl/accept_quality 规范化。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    play_payload = {
+        "code": 0,
+        "data": {
+            "quality": 80,
+            "format": "mp4",
+            "accept_quality": [116, 80, 32, 16],
+            "accept_description": ["高清 1080P60", "高清 1080P", "清晰 480P", "流畅 360P"],
+            "durl": [
+                {
+                    "url": "http://cdn/upv/1.mp4",
+                    "backup_url": "http://cdn-backup/1.mp4",
+                    "size": 123456,
+                },
+                {"url": "http://cdn/upv/2.mp4", "backup_url": None, "size": 1000},
+            ],
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(NAV_URL).mock(return_value=Response(200, json=_nav_payload()))
+        play_route = router.get("/x/player/wbi/playurl").mock(
+            return_value=Response(200, json=play_payload)
+        )
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/play-url",
+                json={"aid": 170001, "cid": 9001, "qn": 80, "sessdata": "sd"},
+            )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["quality"] == 80
+    assert body["format"] == "mp4"
+    assert body["accept_quality"] == [116, 80, 32, 16]
+    assert len(body["durl"]) == 2
+    assert body["durl"][0]["url"] == "http://cdn/upv/1.mp4"
+    assert body["durl"][0]["backup_url"] == "http://cdn-backup/1.mp4"
+    assert body["durl"][1]["backup_url"] is None  # None 保留（调用方跳过）
+    sent = dict(play_route.calls[0].request.url.params)
+    assert sent["avid"] == "170001"  # 参数名是 avid（MediaCrawler 语义）
+    assert sent["cid"] == "9001"
+    assert sent["qn"] == "80"
+    assert sent["platform"] == "pc"
+    assert sent["fourk"] == "1"
+    assert sent["w_rid"] and sent["wts"]
+    assert play_route.calls[0].request.headers.get("cookie") == "SESSDATA=sd"
+
+
+@pytest.mark.asyncio
+async def test_danmaku_xml_parsing():
+    """dm/list.so XML → 结构化弹幕列表（time/mode 取自 p 属性前两段）。"""
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    dm_xml = """<i>
+      <d p="10.5,1,25,16777215,1700000000,0,1001,1">第一条弹幕</d>
+      <d p="20.0,4,25,16777215,1700000001,0,1002,1">第二条</d>
+    </i>"""
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get("/x/v1/dm/list.so").mock(
+            return_value=Response(200, text=dm_xml, headers={"content-type": "text/xml"})
+        )
+        with TestClient(app) as client:
+            r = client.get("/api/bilibili-crawler/danmaku/9001")
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["cid"] == 9001
+    assert body["total"] == 2
+    assert body["items"][0] == {"time": 10.5, "mode": 1, "text": "第一条弹幕"}
+    assert body["items"][1]["time"] == 20.0
+    assert body["items"][1]["text"] == "第二条"
+
+
+@pytest.mark.asyncio
+async def test_video_info_invalid_id_422():
+    app = FastAPI()
+    app.include_router(build_router(lambda: _holder()))
+    with TestClient(app) as client:
+        r = client.get("/api/bilibili-crawler/video/notanid")
+    assert r.status_code == 422
 
 
 def _reply(rid: str, rcount: int = 0) -> dict:

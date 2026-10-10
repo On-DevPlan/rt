@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 from rt_backend.skill_seekers.service import (
     FALLBACK_MAIN_SELECTORS,
-    _parse_sitemap_locs,
+    _parse_sitemap_xml,
     extract_content,
     find_main_content,
     is_valid_url,
@@ -47,17 +47,32 @@ class TestSitemapParsing:
           <url><loc>https://e.com/a</loc></url>
           <url><loc>https://e.com/b#frag</loc></url>
         </urlset>"""
-        assert _parse_sitemap_locs(xml) == ["https://e.com/a", "https://e.com/b"]
+        children, pages = _parse_sitemap_xml(xml)
+        assert children == []
+        assert pages == ["https://e.com/a", "https://e.com/b"]
 
     def test_sitemap_index(self):
         xml = """<?xml version="1.0"?>
         <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
           <sitemap><loc>https://e.com/sitemap-1.xml</loc></sitemap>
         </sitemapindex>"""
-        assert _parse_sitemap_locs(xml) == ["https://e.com/sitemap-1.xml"]
+        children, pages = _parse_sitemap_xml(xml)
+        assert children == ["https://e.com/sitemap-1.xml"]
+        assert pages == []
+
+    def test_index_with_own_urls_both_collected(self):
+        """索引文档自身含 <url> 时两者叠加（原仓库对同一 root 两遍 findall 的语义）。"""
+        xml = """<?xml version="1.0"?>
+        <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          <sitemap><loc>https://e.com/sm-1.xml</loc></sitemap>
+          <url><loc>https://e.com/root-page</loc></url>
+        </sitemapindex>"""
+        children, pages = _parse_sitemap_xml(xml)
+        assert children == ["https://e.com/sm-1.xml"]
+        assert pages == ["https://e.com/root-page"]
 
     def test_invalid_xml_returns_empty(self):
-        assert _parse_sitemap_locs("not xml at all <<<") == []
+        assert _parse_sitemap_xml("not xml at all <<<") == ([], [])
 
 
 class TestLlmsTxtParsing:

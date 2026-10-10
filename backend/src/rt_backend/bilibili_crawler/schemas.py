@@ -29,15 +29,24 @@ class IdConvertResponse(BaseModel):
 # --- 视频信息 ----------------------------------------------------------------
 
 
+class VideoPage(BaseModel):
+    page: int | None = None
+    part: str = ""
+    cid: int | None = None
+
+
 class VideoInfoResponse(BaseModel):
     bvid: str
     aid: int | None = None
+    cid: int | None = None
     title: str
     desc: str
+    pic: str = ""
     owner_mid: int | None = None
     owner_name: str
     pubdate: int | None = None
     duration: int | None = None
+    pages: list[VideoPage] = []
     view: int | None = None
     danmaku: int | None = None
     reply: int | None = None
@@ -45,6 +54,54 @@ class VideoInfoResponse(BaseModel):
     coin: int | None = None
     share: int | None = None
     like: int | None = None
+
+
+# --- 播放直链 / 清晰度 ----------------------------------------------------------
+
+
+class PlayUrlRequest(BaseModel):
+    aid: int = Field(description="视频 aid（配合分P cid；aid/cid 可从 GET /video/{id} 的响应拿）")
+    cid: int = Field(description="分P cid")
+    qn: int = Field(
+        default=80,
+        description="清晰度：116=1080P60 112=1080P+ 80=1080P 74=720P60 64=720P 32=480P 16=360P（高 qn 多需 SESSDATA）",
+    )
+    fnval: int = Field(
+        default=1,
+        description="格式位掩码：1=音视频合一 mp4（返回 durl 直链）；4048=DASH（无 durl，dash=true）",
+    )
+    fourk: bool = Field(default=True, description="允许 4K")
+    sessdata: str | None = Field(default=None, description="高清晰度需要 SESSDATA")
+
+
+class DurlItem(BaseModel):
+    url: str | None = None
+    backup_url: str | list[str] | None = None
+    size: int | None = None
+
+
+class PlayUrlResponse(BaseModel):
+    quality: int | None = None
+    format: str | None = None
+    accept_quality: list[int] = []
+    accept_description: list[str] = []
+    durl: list[DurlItem] = []
+    dash: bool = False
+
+
+# --- 弹幕 -------------------------------------------------------------------
+
+
+class DanmakuItem(BaseModel):
+    time: float | None = None
+    mode: int | None = None
+    text: str = ""
+
+
+class DanmakuResponse(BaseModel):
+    cid: int
+    total: int
+    items: list[DanmakuItem]
 
 
 # --- 评论 -------------------------------------------------------------------

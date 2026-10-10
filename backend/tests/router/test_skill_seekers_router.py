@@ -248,3 +248,49 @@ async def test_scrape_max_pages_cap():
     assert r.status_code == 200
     body = r.json()
     assert body["pages_scraped"] == 3  # max_pages 截断生效
+
+
+@pytest.mark.asyncio
+async def test_scrape_sitemap_index_recursion():
+    """索引型 sitemap：对每个子 sitemap 拉取一次并提取页面（原仓库一层递归语义）。"""
+    client = await _make_client()
+    index = """<?xml version="1.0"?>
+    <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <sitemap><loc>https://docs.test/sitemap-1.xml</loc></sitemap>
+      <sitemap><loc>https://docs.test/sitemap-2.xml</loc></sitemap>
+    </sitemapindex>"""
+    sm1 = """<?xml version="1.0"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url><loc>https://docs.test/guide/i1.html</loc></url>
+    </urlset>"""
+    sm2 = """<?xml version="1.0"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url><loc>https://docs.test/guide/i2.html</loc></url>
+    </urlset>"""
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        router.get("/sitemap.xml").mock(
+            return_value=Response(200, text=index, headers={"content-type": "application/xml"})
+        )
+        router.get("/sitemap-1.xml").mock(
+            return_value=Response(200, text=sm1, headers={"content-type": "application/xml"})
+        )
+        router.get("/sitemap-2.xml").mock(
+            return_value=Response(200, text=sm2, headers={"content-type": "application/xml"})
+        )
+        # 页面本体（BFS 抓正文）
+        router.get("/guide/").mock(return_value=Response(200, html=_page("GuideHome")))
+        router.get("/guide/i1.html").mock(return_value=Response(200, html=_page("I1")))
+        router.get("/guide/i2.html").mock(return_value=Response(200, html=_page("I2")))
+        with client as c:
+            r = c.post(
+                "/api/skill-seekers/scrape",
+                json={"base_url": "https://docs.test/guide/", "rate_limit": 0},
+            )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    # 索引里的子 sitemap 地址本身不应被当页面（/sitemap-1.xml 不在 guide 前缀内）
+    assert body["discovered_via_sitemap"] == 2
+    urls = [p["url"] for p in body["pages"]]
+    assert any(u.endswith("i1.html") for u in urls)
+    assert any(u.endswith("i2.html") for u in urls)

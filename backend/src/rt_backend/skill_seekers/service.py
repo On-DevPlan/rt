@@ -96,24 +96,37 @@ def is_valid_url(url: str, base_url: str, include: list[str], exclude: list[str]
 # ---------------------------------------------------------------------------
 
 
-def _parse_sitemap_locs(xml_text: str) -> list[str]:
-    """解析 sitemap XML 里的 <loc>（含 sitemap index 的 <sitemap><loc>）。"""
+def _parse_sitemap_xml(xml_text: str) -> tuple[list[str], list[str]]:
+    """解析 sitemap XML，返回 (子 sitemap 地址列表, 页面 URL 列表)。
+
+    忽略命名空间；URL 剥 #fragment。解析失败返回 ([], [])。
+    """
     import xml.etree.ElementTree as ET
 
-    locs: list[str] = []
+    children: list[str] = []
+    pages: list[str] = []
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
-        return locs
+        return children, pages
     for elem in root.iter():
         tag = elem.tag.rsplit("}", 1)[-1]  # 忽略命名空间
-        if tag == "loc" and elem.text:
-            locs.append(elem.text.strip().split("#")[0])
-    return locs
+        if tag not in ("sitemap", "url"):
+            continue
+        for sub in elem.iter():
+            if sub.tag.rsplit("}", 1)[-1] == "loc" and sub.text:
+                loc = sub.text.strip().split("#")[0]
+                (children if tag == "sitemap" else pages).append(loc)
+    return children, pages
 
 
 async def try_sitemap(client: httpx.AsyncClient, base_url: str) -> list[str]:
-    """探测 domain 根的 sitemap.xml / sitemap_index.xml，返回发现的 URL 列表。"""
+    """探测 domain 根的 sitemap.xml / sitemap_index.xml，返回发现的 URL 列表。
+
+    索引型（含 <sitemap><loc>）时对每个子 sitemap 再拉一次并提取其中的页面
+    （固定一层递归，与原仓库 doc_scraper._try_sitemap 一致）；索引文档自身的
+    <url><loc> 也叠加收集。命中候选即返回（set 去重）。
+    """
     parsed = urlparse(base_url)
     domain = f"{parsed.scheme}://{parsed.netloc}"
     for sitemap_url in (f"{domain}/sitemap.xml", f"{domain}/sitemap_index.xml"):
@@ -123,10 +136,18 @@ async def try_sitemap(client: httpx.AsyncClient, base_url: str) -> list[str]:
                 continue
             if "xml" not in resp.headers.get("content-type", ""):
                 continue
-            locs = _parse_sitemap_locs(resp.text)
-            if locs:
-                logger.info("sitemap %s: %d urls", sitemap_url, len(locs))
-                return list(set(locs))
+            children, pages = _parse_sitemap_xml(resp.text)
+            for child in children:
+                try:
+                    cresp = await client.get(child, timeout=SITEMAP_PROBE_TIMEOUT)
+                    if cresp.status_code == 200:
+                        _, child_pages = _parse_sitemap_xml(cresp.text)
+                        pages.extend(child_pages)
+                except Exception as e:  # noqa: BLE001 — 单个子 sitemap 失败不中断（原仓库行为）
+                    logger.debug("child sitemap failed %s: %s", child, e)
+            if pages:
+                logger.info("sitemap %s: %d urls (children=%d)", sitemap_url, len(pages), len(children))
+                return list(set(pages))
         except Exception as e:  # noqa: BLE001 — 探测失败静默降级（原仓库行为）
             logger.debug("sitemap check failed for %s: %s", sitemap_url, e)
     return []

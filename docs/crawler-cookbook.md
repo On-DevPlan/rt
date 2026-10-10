@@ -26,7 +26,7 @@
 
 | 模块 | 前缀 | GET | POST |
 |---|---|---|---|
-| bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{bvid}` | `wbi/sign`、`comments`、`user-space`、`user-videos` |
+| bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{id}`、`danmaku/{cid}` | `wbi/sign`、`comments`、`user-space`、`user-videos`、`play-url` |
 | bilibili-tools | `/api/bilibili-tools` | `favorites`、`audio/{sid}`、`audio/playlist/{sid}`、`audio/user` | `favorites/add` ⚠️写 |
 | skill-seekers | `/api/skill-seekers` | — | `scrape` |
 | mediacrawler | `/api/mediacrawler` | `platforms` | `search` |
@@ -137,6 +137,27 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
 - **UI**：`/crawlers/bilibili-crawler` 先「UP 主全量投稿」后「两级评论」，手动接力。
 - **返回解读**：user-videos 的 `items[].aid` 即评论端点的 `oid`（type=1）；`count` 是投稿总数（翻页终止条件：`pn * ps >= count`）。补充：`user-space`（动态 feed）适合抓**动态**评论区（type=17），两者互补。
 - **常见错误**：order 非法 → 422（pubdate/click/stow）；高频连跑触发风控 → 502，加 SESSDATA + 放慢。评论响应里 `items[].pinned=true` 是置顶评论（已按 rpid 去重，与普通列表重复时只保留置顶份）。
+
+### 3.7 视频直链链路（详情 → 分P cid → 直链 / 弹幕）
+
+- **场景**：拿某视频的播放直链或弹幕内容（元数据三件套：评论 §3.1 / 直链+弹幕本节）。
+- **端点**：`GET /api/bilibili-crawler/video/{id}` → `POST /api/bilibili-crawler/play-url` + `GET /api/bilibili-crawler/danmaku/{cid}`
+- **curl**：
+  ```bash
+  # 第一步：视频详情（bvid 或 aid 自适应），拿分P cid
+  curl "http://127.0.0.1:8080/api/bilibili-crawler/video/BV1xx411c7mD"
+
+  # 第二步：直链（qn 清晰度；fnval=1 返回 mp4 合一 durl，4048=DASH 无直链）
+  curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/play-url" \
+    -H "Content-Type: application/json" \
+    -d '{"aid": 170001, "cid": 9001, "qn": 80}'
+
+  # 第三步（可选）：该分P的弹幕
+  curl "http://127.0.0.1:8080/api/bilibili-crawler/danmaku/9001"
+  ```
+- **UI**：`/crawlers/bilibili-crawler` 三张卡片接力：「视频完整详情」→「播放直链」/「分P弹幕」。
+- **返回解读**：`pages[].cid` 是第二步的入参；`durl[].url` 直链**有时效 + Referer 校验**（下载 `curl -H "Referer: https://www.bilibili.com/"`）；`accept_quality[]` 是当前可用的清晰度集合；`durl` 段数 >1 表示整片被切分需按序拼接。
+- **常见错误**：qn=116/112/80 等高清晰度无 SESSDATA 时上游会降档或 CDN 403 → 带 sessdata；`fnval=4048` 时 `dash=true` 且无 durl（DASH 音视频分离，需自行合流）；aid/cid 不匹配 → 上游非 0 code → 502。
 
 ---
 
