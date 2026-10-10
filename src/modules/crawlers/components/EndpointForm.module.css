@@ -1,0 +1,70 @@
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.row {
+  display: grid;
+  gap: 4px;
+}
+
+.row label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.row input,
+.row select,
+.row textarea {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid rgba(31, 26, 22, 0.18);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: inherit;
+}
+
+.row textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.row input:focus,
+.row select:focus,
+.row textarea:focus {
+  outline: 2px solid rgba(122, 74, 140, 0.35);
+  outline-offset: 1px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.checkRow input {
+  width: 16px;
+  height: 16px;
+}
+
+.submit {
+  justify-self: start;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #7a4a8c;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  background: #683e78;
+}
+
+.submit:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
