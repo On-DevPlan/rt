@@ -351,3 +351,113 @@ async def test_scrape_categorize_aggregation():
     assert body["quick_reference"] is not None
     assert len(body["quick_reference"]) == 3
     assert all(qr["description"] for qr in body["quick_reference"])
+
+
+@pytest.mark.asyncio
+async def test_scrape_archive_returns_zip():
+    """递归抓取 → zip 下载：README 索引 + 每页 md + Content-Disposition。"""
+    import io
+    import zipfile
+
+    client = await _make_client()
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        router.get("/sitemap.xml").mock(return_value=Response(404, text="nf"))
+        router.get("/guide/index.html").mock(
+            return_value=Response(
+                200,
+                text=_page("Index", links='<a href="/guide/start.html">开始</a>'),
+                headers={"content-type": "text/html"},
+            )
+        )
+        router.get("/guide/start.html").mock(return_value=Response(200, text=_page("Start")))
+        r = client.post(
+            "/api/skill-seekers/scrape/archive",
+            json={"base_url": BASE, "max_pages": 5, "rate_limit": 0, "use_sitemap": False},
+        )
+
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/zip"
+    assert "attachment" in r.headers["content-disposition"]
+    assert r.headers["x-scrape-pages"] == "2"
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    assert "README.md" in zf.namelist()
+    page_names = [n for n in zf.namelist() if n.startswith("pages/")]
+    assert len(page_names) == 2
+    assert "超过二十个字符" in zf.read(page_names[0]).decode()
+    readme = zf.read("README.md").decode()
+    assert "pages/guide-start.html.md" in readme
+
+
+@pytest.mark.asyncio
+async def test_scrape_archive_respects_include_patterns():
+    """include_patterns 把包再收窄：不命中的链接不进包。"""
+    import io
+    import zipfile
+
+    client = await _make_client()
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        router.get("/guide/index.html").mock(
+            return_value=Response(
+                200,
+                text=_page(
+                    "Index",
+                    links='<a href="/guide/v2-advance.html">v2</a>'
+                    '<a href="/guide/legacy.html">旧</a>',
+                ),
+            )
+        )
+        router.get("/guide/v2-advance.html").mock(return_value=Response(200, text=_page("V2")))
+        router.get("/guide/legacy.html").mock(return_value=Response(200, text=_page("Legacy")))
+        r = client.post(
+            "/api/skill-seekers/scrape/archive",
+            json={
+                "base_url": BASE,
+                "max_pages": 5,
+                "rate_limit": 0,
+                "use_sitemap": False,
+                "include_patterns": ["v2"],  # 子串语义：v2-advance 命中，legacy 排除
+            },
+        )
+
+    assert r.status_code == 200, r.text
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    joined = " ".join(zf.namelist())
+    assert "v2" in joined
+    assert "legacy" not in joined
+
+
+@pytest.mark.asyncio
+async def test_scrape_archive_auto_scope_widens_leaf_start():
+    """scope=auto：无扩展名叶子起始页放宽到所在目录（兄弟页入包）；strict 不放宽。"""
+    import io
+    import zipfile
+
+    client = await _make_client()
+    leaf = "https://docs.test/guide/introduction"
+    with respx.mock(base_url="https://docs.test", assert_all_called=False) as router:
+        router.get("/guide/introduction").mock(
+            return_value=Response(
+                200,
+                text=_page("Intro", links='<a href="/guide/first-api-call">下一步</a>'),
+            )
+        )
+        router.get("/guide/first-api-call").mock(return_value=Response(200, text=_page("Next")))
+
+        # strict：兄弟页出界 → 包里只有起始页
+        r_strict = client.post(
+            "/api/skill-seekers/scrape/archive",
+            json={"base_url": leaf, "max_pages": 5, "rate_limit": 0, "scope": "strict"},
+        )
+        # auto：放宽到 /guide/ → 兄弟页入包
+        r_auto = client.post(
+            "/api/skill-seekers/scrape/archive",
+            json={"base_url": leaf, "max_pages": 5, "rate_limit": 0, "scope": "auto"},
+        )
+
+    assert r_strict.status_code == 200 and r_auto.status_code == 200
+    zf_strict = zipfile.ZipFile(io.BytesIO(r_strict.content))
+    zf_auto = zipfile.ZipFile(io.BytesIO(r_auto.content))
+    strict_pages = [n for n in zf_strict.namelist() if n.startswith("pages/")]
+    auto_pages = [n for n in zf_auto.namelist() if n.startswith("pages/")]
+    assert strict_pages == ["pages/guide-introduction.md"]
+    assert "pages/guide-first-api-call.md" in auto_pages

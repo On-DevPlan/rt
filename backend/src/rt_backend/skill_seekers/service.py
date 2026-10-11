@@ -576,6 +576,7 @@ async def scrape_docs(
     dry_run: bool = False,
     categorize: bool = False,
     categories: dict[str, list[str]] | None = None,
+    scope_root: str | None = None,
 ) -> dict[str, Any]:
     """文档站爬取：sitemap/llms.txt 发现（可选）+ BFS 抓取，返回页面 JSON 列表。
 
@@ -600,7 +601,9 @@ async def scrape_docs(
             pending.append(url)
 
     def _is_valid(url: str) -> bool:
-        return is_valid_url(url, base_url, include, exclude)
+        # scope_root：范围判定根（archive 端点的 auto 语义用父目录放宽子树）；
+        # BFS 种子仍是 base_url 本身
+        return is_valid_url(url, scope_root or base_url, include, exclude)
 
     enqueue(base_url)
     sitemap_count = 0
@@ -669,3 +672,113 @@ async def scrape_docs(
 
 def started_at() -> float:
     return time.time()
+
+
+# ---------------------------------------------------------------------------
+# 打包导出：递归抓取结果 → markdown → zip 下载
+# ---------------------------------------------------------------------------
+
+
+def _slug_for(url: str, used: set[str]) -> str:
+    """URL → 文件名 slug（路径段拼接，冲突追加序号）。"""
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    path = (parsed.path or "/").strip("/")
+    slug = path.replace("/", "-") or parsed.netloc or "index"
+    slug = "".join(ch if (ch.isalnum() or ch in "-_.") else "_" for ch in slug)[:120] or "page"
+    base = slug
+    n = 2
+    while slug in used:
+        slug = f"{base}-{n}"
+        n += 1
+    used.add(slug)
+    return slug
+
+
+def page_to_markdown(page: dict[str, Any]) -> str:
+    """单页 dict → markdown 文本（frontmatter 头 + 正文 + 代码 + 链接）。"""
+    lines: list[str] = [
+        f"# {page.get('title') or '(untitled)'}",
+        "",
+        f"> source: {page.get('url', '')}",
+    ]
+    for h in page.get("headings") or []:
+        level = h.get("level", "h2")
+        try:
+            depth = min(max(int(str(level).lstrip("h") or 2), 2), 6)
+        except ValueError:
+            depth = 2
+        lines += ["", f"{'#' * depth} {h.get('text', '')}"]
+    content = page.get("content")
+    if content:
+        lines += ["", content]
+    for sample in page.get("code_samples") or []:
+        lang = sample.get("language") or ""
+        lines += ["", f"```{lang}", sample.get("code", ""), "```"]
+    for pat in page.get("patterns") or []:
+        desc = pat.get("description") or ""
+        code = pat.get("code") or ""
+        lines += ["", f"- {desc}"]
+        if code:
+            lines += ["", "```", code, "```"]
+    links = page.get("links") or []
+    if links:
+        lines += ["", "## Links", ""]
+        lines += [f"- {u}" for u in links]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def build_docs_archive(result: dict[str, Any]) -> bytes:
+    """scrape_docs 结果 → zip bytes：README.md 索引 + pages/*.md + categories 等。"""
+    import io
+    import json as _json
+    import zipfile
+
+    pages = [p for p in result.get("pages") or [] if not p.get("dry_run")]
+    used: set[str] = set()
+    entries: list[tuple[str, str, dict[str, Any]]] = []  # (slug, md_text, page)
+    for page in pages:
+        slug = _slug_for(page.get("url", ""), used)
+        entries.append((slug, page_to_markdown(page), page))
+
+    toc_lines = ["# Docs Archive", "", f"- base_url: {result.get('base_url', '')}",
+                 f"- pages_scraped: {result.get('pages_scraped', 0)}",
+                 f"- pages_saved: {result.get('pages_saved', 0)}",
+                 f"- limit_hit: {result.get('limit_hit', False)}",
+                 f"- discovered_via_sitemap: {result.get('discovered_via_sitemap', 0)}",
+                 f"- discovered_via_llms_txt: {result.get('discovered_via_llms_txt', 0)}",
+                 "", "| file | title |", "|---|---|"]
+    for slug, _, page in entries:
+        title = (page.get("title") or "").replace("|", "\|")
+        toc_lines.append(f"| [pages/{slug}.md](pages/{slug}.md) | {title} |")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("README.md", "\n".join(toc_lines).rstrip() + "\n")
+        for slug, md, _page in entries:
+            zf.writestr(f"pages/{slug}.md", md)
+        if result.get("categories"):
+            zf.writestr("categories.json", _json.dumps(result["categories"], ensure_ascii=False, indent=2))
+        quick = result.get("quick_reference") or []
+        if quick:
+            qr_lines = ["# Quick Reference", ""]
+            for item in quick:
+                qr_lines += [f"- {item.get('description', '')}"]
+                if item.get("code"):
+                    qr_lines += ["", "```", item["code"], "```"]
+            zf.writestr("quick_reference.md", "\n".join(qr_lines).rstrip() + "\n")
+    return buf.getvalue()
+
+
+def archive_filename(base_url: str) -> str:
+    """base_url → 下载文件名（host + 路径 slug + 日期）。"""
+    import datetime
+    from urllib.parse import urlparse
+
+    parsed = urlparse(base_url)
+    host = (parsed.netloc or "docs").replace(":", "_")
+    path_slug = parsed.path.strip("/").replace("/", "-")[:60]
+    day = datetime.date.today().isoformat()
+    safe = "".join(ch if (ch.isalnum() or ch in "-_.") else "_" for ch in f"{host}_{path_slug}_{day}")
+    return f"docs-{safe}.zip"

@@ -16,6 +16,16 @@ export default function ResultView({ loading, error, result }) {
 
   if (!result) return null
 
+  // 二进制下载摘要（zip 等已触发浏览器保存）
+  if (result.__download) {
+    const kb = result.size >= 1024 ? `${(result.size / 1024).toFixed(1)} KB` : `${result.size} B`
+    return (
+      <div className={styles.wrap}>
+        <div className={styles.statusLine}>HTTP 200 ✓ 已开始下载：{result.filename}（{kb}）</div>
+      </div>
+    )
+  }
+
   if (!result.ok) {
     const msg = extractErrorMessage(result.data) || '(无响应体)'
     const trace = result.data?.trace_id ? ` · trace_id=${result.data.trace_id}` : ''

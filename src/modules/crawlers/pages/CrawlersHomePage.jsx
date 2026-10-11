@@ -22,8 +22,8 @@ const MODULES = [
     route: '/crawlers/skill-seekers',
     name: 'skill-seekers',
     title: 'Skill Seekers',
-    desc: '文档站 BFS 爬取：sitemap → llms.txt 两层发现 + selector 回退链正文提取。',
-    endpoints: '1 个端点',
+    desc: '文档站 BFS 爬取：sitemap → llms.txt 两层发现 + selector 回退链正文提取；可递归抓完直接打包 zip 下载。',
+    endpoints: '2 个端点',
     source: 'Skill_Seekers'
   },
   {
@@ -38,9 +38,9 @@ const MODULES = [
 
 const COOKBOOK_SECTIONS = [
   '0. 阅读对象与前置（后端启动命令）',
-  '1. 端点速查表（4 模块 16 端点）',
+  '1. 端点速查表（4 模块 17 端点）',
   '2. 错误信封与排障规则（401/403/422/502 → 动作）',
-  '3. 实用场景 ×9：两级评论 / 收藏夹导出 / 音频 CDN / 关键词搜索 / 文档站快照 / UP 投稿→评论链路 / 视频直链链路 / 批量收藏一条龙 / WBI 签名调试',
+  '3. 实用场景 ×10：两级评论 / 收藏夹导出 / 音频 CDN / 关键词搜索 / 文档站快照 / UP 投稿→评论链路 / 视频直链链路 / 批量收藏一条龙 / WBI 签名调试 / 文档站一键打包',
   '4. 前端 Explorer 与端点对应关系',
   '5. 部署侧注意事项（写操作鉴权 / 凭证不落盘）'
 ]
@@ -51,7 +51,7 @@ export default function CrawlersHomePage() {
       <header className={styles.hero}>
         <h1 className={styles.title}>Crawler Cookbook</h1>
         <p className={styles.lede}>
-          后端 4 个爬虫模块（迁移自 <code>.claude/repo/</code> 下的 4 个仓库，共 16 个端点）的交互式
+          后端 4 个爬虫模块（迁移自 <code>.claude/repo/</code> 下的 4 个仓库，共 17 个端点）的交互式
           API 浏览器。每个子页 = 参数表单 + 实时 curl 预览 + 响应 JSON。完整手册见仓库{' '}
           <code>docs/crawler-cookbook.md</code>。
         </p>

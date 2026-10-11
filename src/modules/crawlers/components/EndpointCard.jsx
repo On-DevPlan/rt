@@ -43,7 +43,24 @@ export default function EndpointCard({ spec }) {
     setResult(null)
     try {
       const res = await spec.submit(payload)
-      setResult(res)
+      if (spec.download && res.ok && res.blob) {
+        // 二进制产物：触发浏览器保存，结果区只显示摘要
+        const url = URL.createObjectURL(res.blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = res.filename || 'download.bin'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+        setResult({
+          __download: true,
+          filename: res.filename,
+          size: res.blob.size
+        })
+      } else {
+        setResult(res)
+      }
     } catch (e) {
       setError(e)
     } finally {

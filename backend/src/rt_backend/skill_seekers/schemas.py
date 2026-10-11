@@ -77,3 +77,25 @@ class ScrapeResponse(BaseModel):
     quick_reference: list[QuickRefItem] | None = Field(
         default=None, description="categorize=true 时返回：跨页 patterns 去重聚合（≤15）"
     )
+
+
+class ArchiveScrapeRequest(BaseModel):
+    """递归抓取并打包为 zip 下载（服务端渲染 markdown，每页一文件）。"""
+
+    base_url: str = Field(description="起始 URL（要整站就填文档根，如 https://x.com/docs/）")
+    scope: str = Field(
+        default="auto",
+        pattern="^(auto|strict)$",
+        description="范围语义：auto=起始页是无扩展名叶子（如 .../introduction）时自动放宽到其所在目录（抓同目录兄弟页）；strict=严格 base_url 目录前缀（原仓库语义）",
+    )
+    max_pages: int = Field(default=50, ge=1, le=200, description="最多抓取页数（打包场景放宽到 200；串行+rate_limit 注意耗时）")
+    rate_limit: float = Field(default=0.2, ge=0, le=10, description="每页间隔秒数")
+    include_patterns: list[str] = Field(default=[], description="URL 必须命中的子串（任一）；注意会把范围再收窄")
+    exclude_patterns: list[str] = Field(default=[], description="URL 命中即排除的子串（如 deprecated/blog）")
+    selector: str | None = Field(default=None, description="正文 CSS selector，缺省走内置回退链")
+    use_sitemap: bool = Field(default=True, description="先探测 sitemap.xml 发现页面")
+    use_llms_txt: bool = Field(default=True, description="sitemap 无结果时探测 llms.txt 发现页面")
+    categorize: bool = Field(default=True, description="压缩包内附带 categories.json / quick_reference.md")
+    categories: dict[str, list[str]] | None = Field(
+        default=None, description="分类配置 {分类名: [关键词...]}；缺省走 URL 段推断"
+    )

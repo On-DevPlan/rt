@@ -2,11 +2,11 @@
 import time
 from typing import Callable
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from ..core.http import HttpClientHolder
-from .schemas import ScrapeRequest, ScrapeResponse
-from .service import ScraperError, scrape_docs
+from .schemas import ArchiveScrapeRequest, ScrapeRequest, ScrapeResponse
+from .service import ScraperError, archive_filename, build_docs_archive, scrape_docs
 
 
 def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
@@ -39,5 +39,49 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
             raise HTTPException(status_code=502, detail=str(e))
         data["elapsed_sec"] = round(time.time() - started, 3)
         return ScrapeResponse(**data)
+
+    @router.post("/scrape/archive")
+    async def scrape_archive(
+        req: ArchiveScrapeRequest,
+        http: HttpClientHolder = Depends(http_provider),
+    ):
+        """递归抓取文档站并直接打包 zip 下载：README.md 索引 + pages/*.md +
+        categories.json / quick_reference.md（categorize=true 时）。"""
+        started = time.time()
+        # scope=auto：无扩展名叶子起始页（…/introduction）放宽到所在目录，
+        # 否则目录前缀只会圈住起始页自己、包里永远只有一页
+        scope_root = None
+        if req.scope == "auto" and not req.base_url.endswith("/"):
+            last = req.base_url.rsplit("/", 1)[-1]
+            if last and "." not in last:
+                scope_root = req.base_url.rsplit("/", 1)[0] + "/"
+        try:
+            data = await scrape_docs(
+                http.client,
+                base_url=req.base_url,
+                max_pages=req.max_pages,
+                rate_limit=req.rate_limit,
+                include_patterns=req.include_patterns,
+                exclude_patterns=req.exclude_patterns,
+                selector=req.selector,
+                use_sitemap=req.use_sitemap,
+                use_llms_txt=req.use_llms_txt,
+                dry_run=False,
+                categorize=req.categorize,
+                categories=req.categories,
+                scope_root=scope_root,
+            )
+        except ScraperError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        data["elapsed_sec"] = round(time.time() - started, 3)
+        zip_bytes = build_docs_archive(data)
+        return Response(
+            content=zip_bytes,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{archive_filename(req.base_url)}"',
+                "X-Scrape-Pages": str(data.get("pages_saved", 0)),
+            },
+        )
 
     return router

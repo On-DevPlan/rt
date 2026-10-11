@@ -35,6 +35,7 @@
 | 方法 | 路径 | 参数 | 响应 |
 |---|---|---|---|
 | POST | `/scrape` | body: `{base_url, max_pages=10(≤50), rate_limit=0.2, include_patterns[], exclude_patterns[], selector?, use_sitemap=true, use_llms_txt=true, dry_run=false, categorize=false, categories?}` | `{base_url, dry_run, discovered_via_sitemap, discovered_via_llms_txt, pages_scraped, limit_hit（已抓满 max_pages，结果可能非全量）, pages_saved, skipped, elapsed_sec, pages[], categories?, quick_reference?}` |
+| POST | `/scrape/archive` | body: `{base_url, scope=auto(auto=叶子起始页放宽到所在目录/strict=严格目录前缀), max_pages=50(≤200), rate_limit=0.2, include_patterns[], exclude_patterns[], selector?, use_sitemap=true, use_llms_txt=true, categorize=true, categories?}` | **zip 二进制下载**：`README.md` 索引 + `pages/*.md`（每页标题/正文/代码块/链接）+ `categories.json` / `quick_reference.md`；响应头 `X-Scrape-Pages` 为入库页数 |
 
 `pages[]` 元素：正常页 `{url, title, headings[], content, code_samples[], links[]}`；
 dry-run 页 `{url, links[], dry_run: true}`（仍会抓页做链接发现，原仓库语义）。
@@ -70,6 +71,16 @@ curl -X POST "http://127.0.0.1:8080/api/skill-seekers/scrape" \
 curl -X POST "http://127.0.0.1:8080/api/skill-seekers/scrape" \
   -H "Content-Type: application/json" \
   -d '{"base_url": "https://docs.example.com/", "selector": "div.theme-doc-markdown"}'
+
+# 5. 递归抓完直接打包 zip 下载（每页一个 markdown + 索引 + 分类）
+curl -X POST "http://127.0.0.1:8080/api/skill-seekers/scrape/archive" \
+  -H "Content-Type: application/json" -o docs-archive.zip \
+  -d '{"base_url": "https://docs.example.com/docs/", "max_pages": 100}'
+# → docs-docs.example.com_docs_-2026-10-11.zip
+#   ├─ README.md            # 索引（base_url/计数/每页链接表）
+#   ├─ pages/*.md           # 每页一个 markdown（标题/source/正文/代码块/链接）
+#   ├─ categories.json      # categorize=true 时
+#   └─ quick_reference.md   # categorize=true 时
 ```
 
 ## 测试

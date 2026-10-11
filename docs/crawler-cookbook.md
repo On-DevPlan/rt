@@ -28,7 +28,7 @@
 |---|---|---|---|
 | bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{id}`、`danmaku/{cid}` | `wbi/sign`、`comments`、`user-space`、`user-videos`、`play-url` |
 | bilibili-tools | `/api/bilibili-tools` | `favorites`、`audio/{sid}`、`audio/playlist/{sid}`、`audio/user` | `favorites/add` ⚠️写 |
-| skill-seekers | `/api/skill-seekers` | — | `scrape` |
+| skill-seekers | `/api/skill-seekers` | — | `scrape`、`scrape/archive`（zip 下载） |
 | mediacrawler | `/api/mediacrawler` | `platforms` | `search` |
 
 OpenAPI：`http://127.0.0.1:8080/docs`。
@@ -201,6 +201,22 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
   ```
 - **返回解读**：`query` 可直接拼到目标接口 URL 后；`signed_params` 是服务端实际发送的形态（参数值字符串化，与上游脚本 str(v) 行为一致）。WBI key 服务端同 client 实例内缓存 1 小时，遇风控（412/-352/-403/-412）自动失效换 key 重试一次。
 - **常见错误**：`w_rid` 校验不过多为参数被二次编码——直接用 `query` 原样拼接，不要再 urlencode。
+
+### 3.10 文档站一键打包（递归抓取 → zip 下载）
+
+- **场景**：把一个文档站递归抓完，直接拿到可离线使用的 markdown 压缩包（喂 LLM / 入库 / 存档），不要逐页 JSON 再自己拼。
+- **端点**：`POST /api/skill-seekers/scrape/archive`
+- **curl**：
+  ```bash
+  # 整站：base_url 填文档根（范围 = 该目录前缀）
+  curl -X POST "http://127.0.0.1:8080/api/skill-seekers/scrape/archive" \
+    -H "Content-Type: application/json" -o docs-archive.zip \
+    -d '{"base_url": "https://platform.example.com/docs/", "max_pages": 100, "exclude_patterns": ["deprecated"]}'
+  ```
+- **UI**：`/crawlers/skill-seekers` → 「文档站打包下载」→ 填起始 URL → 提交，浏览器自动保存 zip。
+- **包结构**：`README.md`（索引：base_url/计数/每页链接表）+ `pages/*.md`（每页一个 markdown：标题、source、正文、代码块、链接表）+ `categories.json` / `quick_reference.md`（categorize=true，缺省开）。
+- **返回解读**：HTTP 层直接是 zip（`Content-Disposition: attachment`）；`X-Scrape-Pages` 响应头 = 入库页数；`limit_hit` 语义在包内 README.md 里注明（true 表示被 max_pages 截断，不是全量）。
+- **常见错误**：`scope` 缺省 `auto`——起始页是无扩展名叶子（如 `.../introduction`）时自动放宽到所在目录抓兄弟页（严格行为传 `scope: "strict"`）；`max_pages` 上限 200（JSON 版是 50）；`include_patterns` 是**子串**匹配——写 `/v2/` 只命中路径里真有 `/v2/` 段的 URL，命中 `v2-xxx` 应写 `v2`；SPA 站点（正文 JS 渲染）抓不到。
 
 ---
 
