@@ -55,6 +55,16 @@ export default defineModule({
       order: 40,
       showcase: false,
       tags: ['mediacrawler', 'search', 'platforms']
+    }),
+    definePage({
+      id: 'proxy',
+      title: 'Proxy 边车',
+      route: '/crawlers/proxy',
+      entry: './pages/ProxyPage.jsx',
+      summary: 'mihomo 边车：Clash 订阅 URL → 白名单模块出站代理（服务端，非浏览器）。',
+      order: 50,
+      showcase: false,
+      tags: ['proxy', 'mihomo', 'subscription']
     })
   ]
 })

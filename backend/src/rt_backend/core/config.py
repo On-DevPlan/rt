@@ -33,6 +33,13 @@ class Settings(BaseSettings):
 
     tts_cache_db_path: str = "./tts_cache.db"
 
+    # --- Proxy sidecar（mihomo 边车：订阅 URL → 白名单模块出站代理）---
+    proxy_data_dir: str = ""  # 空 = 系统临时目录 / rt_proxy；生产挂 /data
+    mihomo_api_base: str = "http://127.0.0.1:9090"  # external-controller（仅容器内回环）
+    mihomo_mixed_port: int = 7890  # mixed-port（仅容器内回环）
+    proxy_subscription_timeout_sec: int = 20
+    proxy_restore_wait_sec: float = 5.0  # 启动时等 mihomo 就绪的最长秒数
+
     # --- Island cut (临时持久化，TTL 后清扫) ---
     island_cut_dir: str = ""  # 空 = 系统临时目录 / rt_island_cut
     island_cut_ttl_min: int = 60

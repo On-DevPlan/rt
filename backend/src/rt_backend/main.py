@@ -14,6 +14,8 @@ from .island_cut.video_apng.store import IslandVideoApngJobStore
 from .island_cut.video_island.store import IslandVideoJobStore
 from .island_cut.video_sheet.store import IslandSheetJobStore
 from .island_cut.video_webp.store import IslandVideoWebPJobStore
+from .proxy.mihomo import MihomoClient
+from .proxy.service import ProxyClientView, ProxyService
 from .sicau_timetable_v2.browser import PlaywrightHolder
 from .tts.cache import TTSCache
 
@@ -26,6 +28,20 @@ async def lifespan(app: FastAPI):
     http_holder = HttpClientHolder(timeout=float(settings.sicau_request_timeout_sec))
     await http_holder.start()
     app.state.http = http_holder
+
+    # mihomo 边车编排（订阅/开关状态恢复；mihomo 未就绪时降级直连，不阻塞启动）
+    proxy_root = (
+        Path(settings.proxy_data_dir)
+        if settings.proxy_data_dir
+        else Path(tempfile.gettempdir()) / "rt_proxy"
+    )
+    proxy_service = ProxyService(
+        store_dir=proxy_root,
+        mihomo=MihomoClient(settings.mihomo_api_base),
+        settings=settings,
+    )
+    app.state.proxy = proxy_service
+    await proxy_service.restore_on_startup(http_holder)
 
     v2_browser = PlaywrightHolder(headless=settings.sicau_v2_headless)
     await v2_browser.start()
@@ -46,6 +62,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        await proxy_service.close()
         await http_holder.close()
         await v2_browser.close()
         tts_cache.close()
@@ -98,11 +115,23 @@ def create_app() -> FastAPI:
     def _http_dep(request: _Req) -> HttpClientHolder:
         return request.app.state.http
 
+    def _proxy_dep(request: _Req) -> ProxyService:
+        return request.app.state.proxy
+
+    # 白名单代理：外部 httpx 模块的路由改用本 provider。路由拿到的是按模块名
+    # 动态解析 client 的视图（enabled 且模块在白名单 → mihomo 代理，否则直连），
+    # 开关/白名单改动即时生效。module 取值须与 /api/proxy/allowlist 里的名字一致。
+    def _proxied_http_dep(module: str):
+        def _dep(request: _Req) -> ProxyClientView:
+            return ProxyClientView(request.app.state.http, request.app.state.proxy, module)
+
+        return _dep
+
     from .tts.router import build_router as _build_tts
     app.include_router(_build_tts(_tts_cache_dep))
 
     from .sicau_timetable.router import build_router as _build_sicau_old
-    app.include_router(_build_sicau_old(_http_dep, settings))
+    app.include_router(_build_sicau_old(_proxied_http_dep("sicau_timetable"), settings))
 
     from .sicau_timetable_v2.router import build_router as _build_sicau_v2
 
@@ -112,25 +141,28 @@ def create_app() -> FastAPI:
     app.include_router(_build_sicau_v2(_v2_browser_dep, settings))
 
     from .bilibili_history.router import build_router as _build_bili
-    app.include_router(_build_bili(_http_dep))
+    app.include_router(_build_bili(_proxied_http_dep("bilibili_history")))
 
     from .bilibili_crawler.router import build_router as _build_bili_crawler
-    app.include_router(_build_bili_crawler(_http_dep))
+    app.include_router(_build_bili_crawler(_proxied_http_dep("bilibili_crawler")))
 
     from .bilibili_tools.router import build_router as _build_bili_tools
-    app.include_router(_build_bili_tools(_http_dep))
+    app.include_router(_build_bili_tools(_proxied_http_dep("bilibili_tools")))
 
     from .skill_seekers.router import build_router as _build_skill_seekers
-    app.include_router(_build_skill_seekers(_http_dep))
+    app.include_router(_build_skill_seekers(_proxied_http_dep("skill_seekers")))
 
     from .mediacrawler.router import build_router as _build_mediacrawler
-    app.include_router(_build_mediacrawler(_http_dep))
+    app.include_router(_build_mediacrawler(_proxied_http_dep("mediacrawler")))
 
     from .tetris_ai.router import build_router as _build_tetris
     app.include_router(_build_tetris())
 
     from .anime_season.router import build_router as _build_anime
-    app.include_router(_build_anime(_http_dep, settings))
+    app.include_router(_build_anime(_proxied_http_dep("anime_season"), settings))
+
+    from .proxy.router import build_router as _build_proxy
+    app.include_router(_build_proxy(_http_dep, _proxy_dep))
 
     def _island_store_dep(request: _Req) -> IslandJobStore:
         return request.app.state.island_store

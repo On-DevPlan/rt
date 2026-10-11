@@ -36,6 +36,16 @@
   color: #683e78;
 }
 
+.put {
+  background: rgba(180, 130, 40, 0.16);
+  color: #8a6414;
+}
+
+.delete {
+  background: rgba(160, 50, 50, 0.14);
+  color: #9c3c3c;
+}
+
 .path {
   font-family: var(--font-mono);
   font-size: 12px;

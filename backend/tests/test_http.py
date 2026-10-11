@@ -26,6 +26,60 @@ async def test_holder_idempotent():
     await holder.close()
 
 
+# --- 代理 client：start_proxy / stop_proxy ------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_proxy_client_lifecycle():
+    holder = HttpClientHolder()
+    await holder.start()
+    assert holder.proxy_client is None
+    assert holder.proxy_url is None
+
+    await holder.start_proxy("http://127.0.0.1:7890")
+    proxied = holder.proxy_client
+    assert isinstance(proxied, AsyncClient)
+    assert proxied is not holder.client  # 与直连 client 相互独立
+    assert holder.proxy_url == "http://127.0.0.1:7890"
+
+    await holder.stop_proxy()
+    assert holder.proxy_client is None
+    assert holder.proxy_url is None
+    assert holder.client is not None  # 直连 client 不受影响
+    await holder.close()
+
+
+@pytest.mark.asyncio
+async def test_proxy_client_idempotent_same_url():
+    holder = HttpClientHolder()
+    await holder.start_proxy("http://127.0.0.1:7890")
+    first = holder.proxy_client
+    await holder.start_proxy("http://127.0.0.1:7890")  # 同 URL 不重建
+    assert holder.proxy_client is first
+    await holder.close()
+
+
+@pytest.mark.asyncio
+async def test_proxy_client_rebuild_on_url_change():
+    holder = HttpClientHolder()
+    await holder.start_proxy("http://127.0.0.1:7890")
+    first = holder.proxy_client
+    await holder.start_proxy("http://127.0.0.1:7891")  # 换 URL 重建
+    assert holder.proxy_client is not first
+    assert holder.proxy_url == "http://127.0.0.1:7891"
+    await holder.close()
+
+
+@pytest.mark.asyncio
+async def test_close_closes_proxy_client_too():
+    holder = HttpClientHolder()
+    await holder.start_proxy("http://127.0.0.1:7890")
+    await holder.close()
+    assert holder.client is None
+    assert holder.proxy_client is None
+    assert holder.proxy_url is None
+
+
 # --- request_with_retry：指数退避重试 -----------------------------------------
 
 

@@ -53,28 +53,58 @@ class HttpClientHolder:
     def __init__(self, timeout: float = 30.0) -> None:
         self._timeout = timeout
         self._client: Optional[httpx.AsyncClient] = None
+        # 第二个 client：走 mihomo 边车（仅白名单模块经 ProxyClientView 取用）
+        self._proxy_client: Optional[httpx.AsyncClient] = None
+        self._proxy_url: Optional[str] = None
 
     @property
     def client(self) -> Optional[httpx.AsyncClient]:
         return self._client
 
+    @property
+    def proxy_client(self) -> Optional[httpx.AsyncClient]:
+        return self._proxy_client
+
+    @property
+    def proxy_url(self) -> Optional[str]:
+        return self._proxy_url
+
+    def _build_client(self, *, proxy: Optional[str]) -> httpx.AsyncClient:
+        return httpx.AsyncClient(
+            timeout=self._timeout,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+            },
+            follow_redirects=True,
+            proxy=proxy,
+        )
+
     async def start(self) -> None:
         if self._client is None:
-            self._client = httpx.AsyncClient(
-                timeout=self._timeout,
-                headers={
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/120.0.0.0 Safari/537.36"
-                    ),
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "zh-CN,zh;q=0.9",
-                },
-                follow_redirects=True,
-            )
+            self._client = self._build_client(proxy=None)
+
+    async def start_proxy(self, proxy_url: str) -> None:
+        """启动/重建代理 client。同 URL 幂等；换 URL 或已存在则先关旧的再建。"""
+        if self._proxy_client is not None and self._proxy_url == proxy_url:
+            return
+        await self.stop_proxy()
+        self._proxy_client = self._build_client(proxy=proxy_url)
+        self._proxy_url = proxy_url
+
+    async def stop_proxy(self) -> None:
+        if self._proxy_client is not None:
+            await self._proxy_client.aclose()
+            self._proxy_client = None
+            self._proxy_url = None
 
     async def close(self) -> None:
         if self._client is not None:
             await self._client.aclose()
             self._client = None
+        await self.stop_proxy()

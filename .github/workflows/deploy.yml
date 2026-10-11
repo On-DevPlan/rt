@@ -76,11 +76,15 @@ jobs:
             docker rm $CONTAINER_NAME 2>/dev/null || true
 
             echo "Starting new container..."
+            mkdir -p $APP_DIR/data
             docker run -d \
               --name $CONTAINER_NAME \
               --restart unless-stopped \
               -p $PORT:80 \
+              -v $APP_DIR/data:/data \
               -e NODE_ENV=production \
+              -e PROXY_DATA_DIR=/data \
+              -e TTS_CACHE_DB_PATH=/data/tts_cache.db \
               -e SICAU_V2_GLM_API_KEY=${{ secrets.SICAU_V2_GLM_API_KEY }} \
               $IMAGE_NAME:latest
 
@@ -106,6 +110,8 @@ jobs:
               HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:$PORT/api/tts/with-timing -H "Content-Type: application/json" -d "{\"text\":\"test\"}")
               if [ "$HTTP_CODE" = "200" ]; then
                 echo "Backend check passed!"
+                echo "Checking mihomo sidecar (non-fatal)..."
+                docker exec $CONTAINER_NAME curl -sf http://127.0.0.1:9090/version || echo "WARN: mihomo not responding yet (check GET /api/proxy/status)"
                 echo "Deployment successful!"
                 echo "Application is running at: http://your-server-ip:$PORT"
                 exit 0
