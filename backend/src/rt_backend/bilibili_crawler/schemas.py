@@ -160,6 +160,10 @@ class CommentsResponse(BaseModel):
     pages_fetched: int
     total: int
     is_end: bool | None = None
+    greedy: bool = False
+    limit_hit: bool = Field(
+        default=False, description="greedy 模式被 max_pages 截断（非上游到底）"
+    )
     items: list[CommentItem]
 
 
@@ -217,3 +221,30 @@ class UserVideosResponse(BaseModel):
     count: int | None = None
     total: int
     items: list[UserVideoItem]
+
+
+# --- 归档导出（贪心翻页 → zip 下载） --------------------------------------------
+
+
+class CommentsArchiveRequest(BaseModel):
+    oid: str = Field(description="评论区 id：type=1 时为 aid（纯数字），type=17 时为动态 id")
+    type: int = Field(default=1, ge=1, le=17, description="评论区类型：1=视频 17=动态")
+    ps: int = Field(default=20, ge=1, le=30, description="每页条数")
+    include_replies: bool = Field(default=True, description="是否抓取楼中楼回复")
+    mode: int = Field(default=3, ge=0, le=3, description="排序（透传上游）：2=按时间 3=按热度")
+    sessdata: str | None = None
+    max_pages: int = Field(
+        default=100, ge=1, le=200, description="贪心翻页安全上限（到上游 is_end 提前停）"
+    )
+
+
+class UserVideosArchiveRequest(BaseModel):
+    mid: str = Field(description="UP 主 uid")
+    ps: int = Field(default=30, ge=1, le=50, description="每页条数")
+    order: str = Field(
+        default="pubdate", description="排序：pubdate=最近发布 click=最多播放 stow=最多收藏"
+    )
+    sessdata: str | None = None
+    max_pn: int = Field(
+        default=20, ge=1, le=100, description="贪心翻页安全上限（到 count 覆盖完提前停）"
+    )

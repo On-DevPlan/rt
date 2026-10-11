@@ -655,3 +655,147 @@ async def test_user_videos_invalid_order_422():
     with TestClient(app) as client:
         r = client.post("/api/bilibili-crawler/user-videos", json={"mid": "42", "order": "bogus"})
     assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# loop-3 后追加：贪心归档端点（comments/archive、user-videos/archive）
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_comments_archive_greedy_until_is_end(monkeypatch):
+    """comments/archive：翻到上游 is_end 为止，zip 含 json+md。"""
+    import io
+    import json as _json
+    import zipfile
+
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    async def _fast_sleep():
+        return None
+
+    monkeypatch.setattr("rt_backend.bilibili_crawler.service.asyncio_sleep_small", _fast_sleep)
+
+    page = lambda n, end: {  # noqa: E731
+        "code": 0,
+        "data": {
+            "replies": [_reply(f"{n}0"), _reply(f"{n}1")],
+            "cursor": {"is_end": end},
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        main_route = router.get(VIEW_URL).mock(
+            side_effect=[
+                Response(200, json=page(1, False)),
+                Response(200, json=page(2, True)),
+            ]
+        )
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/comments/archive",
+                json={"oid": "170001", "max_pages": 10},
+            )
+
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/zip"
+    assert main_route.call_count == 2  # is_end=True 停，不再翻第 3 页
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    assert set(zf.namelist()) == {"README.md", "comments.json", "comments.md"}
+    body = _json.loads(zf.read("comments.json"))
+    assert body["greedy"] is True and body["limit_hit"] is False and body["is_end"] is True
+    assert body["total"] == 4
+    md = zf.read("comments.md").decode()
+    assert "## " in md and "评论" in md  # 渲染出了评论人/内容标题
+
+
+@pytest.mark.asyncio
+async def test_comments_archive_max_pages_cap(monkeypatch):
+    """greedy 安全上限：连续有内容时最多翻 max_pages 页并标 limit_hit。"""
+    import io
+    import zipfile
+
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    async def _fast_sleep():
+        return None
+
+    monkeypatch.setattr("rt_backend.bilibili_crawler.service.asyncio_sleep_small", _fast_sleep)
+
+    endless = {
+        "code": 0,
+        "data": {"replies": [_reply("9")], "cursor": {"is_end": False}},
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        main_route = router.get(VIEW_URL).mock(return_value=Response(200, json=endless))
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/comments/archive",
+                json={"oid": "1", "max_pages": 3},
+            )
+
+    assert r.status_code == 200, r.text
+    assert main_route.call_count == 3
+    import json as _json
+
+    body = _json.loads(zipfile.ZipFile(io.BytesIO(r.content)).read("comments.json"))
+    assert body["limit_hit"] is True and body["pages_fetched"] == 3
+
+
+@pytest.mark.asyncio
+async def test_user_videos_archive_greedy_until_count(monkeypatch):
+    """user-videos/archive：pn 翻到 count 覆盖完（2 页 × ps=2, count=4）。"""
+    import io
+    import json as _json
+    import zipfile
+
+    app = FastAPI()
+    holder = _holder()
+    await holder.start()
+    app.include_router(build_router(lambda: holder))
+
+    async def _fast_sleep(_s):
+        return None
+
+    monkeypatch.setattr("rt_backend.core.http._sleep", _fast_sleep)
+
+    def _arc_page(pn, count):
+        return {
+            "code": 0,
+            "data": {
+                "count": count,
+                "list": {
+                    "vlist": [
+                        {"aid": pn * 10 + i, "bvid": f"BV{pn}{i}", "title": f"稿{pn}-{i}",
+                         "play": 1, "length": "1:00"}
+                        for i in range(2)
+                    ]
+                },
+            },
+        }
+
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(NAV_URL).mock(return_value=Response(200, json=_nav_payload()))
+        arc_route = router.get("/x/space/wbi/arc/search").mock(
+            side_effect=[
+                Response(200, json=_arc_page(1, 4)),
+                Response(200, json=_arc_page(2, 4)),
+            ]
+        )
+        with TestClient(app) as client:
+            r = client.post(
+                "/api/bilibili-crawler/user-videos/archive",
+                json={"mid": "42", "ps": 2},
+            )
+
+    assert r.status_code == 200, r.text
+    assert arc_route.call_count == 2  # pn*ps=4 >= count=4 → 停
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    body = _json.loads(zf.read("videos.json"))
+    assert body["total"] == 4 and body["limit_hit"] is False
+    assert "| title |" in zf.read("videos.md").decode()

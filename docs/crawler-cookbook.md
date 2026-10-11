@@ -26,10 +26,12 @@
 
 | 模块 | 前缀 | GET | POST |
 |---|---|---|---|
-| bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{id}`、`danmaku/{cid}` | `wbi/sign`、`comments`、`user-space`、`user-videos`、`play-url` |
-| bilibili-tools | `/api/bilibili-tools` | `favorites`、`audio/{sid}`、`audio/playlist/{sid}`、`audio/user` | `favorites/add` ⚠️写 |
+| bilibili-crawler | `/api/bilibili-crawler` | `convert`、`video/{id}`、`danmaku/{cid}` | `wbi/sign`、`comments`、`comments/archive`📦、`user-space`、`user-videos`、`user-videos/archive`📦、`play-url` |
+| bilibili-tools | `/api/bilibili-tools` | `favorites`、`favorites/archive`📦、`audio/{sid}`、`audio/playlist/{sid}`、`audio/user` | `favorites/add` ⚠️写 |
 | skill-seekers | `/api/skill-seekers` | — | `scrape`、`scrape/archive`（zip 下载） |
-| mediacrawler | `/api/mediacrawler` | `platforms` | `search` |
+| mediacrawler | `/api/mediacrawler` | `platforms` | `search`、`search/archive`📦 |
+
+📦 = 贪心翻页 + 直接下载 zip（README.md 索引 + json 结构化数据 + md 可读渲染）。
 
 OpenAPI：`http://127.0.0.1:8080/docs`。
 
@@ -217,6 +219,30 @@ OpenAPI：`http://127.0.0.1:8080/docs`。
 - **包结构**：`README.md`（索引：base_url/计数/每页链接表）+ `pages/*.md`（每页一个 markdown：标题、source、正文、代码块、链接表）+ `categories.json` / `quick_reference.md`（categorize=true，缺省开）。
 - **返回解读**：HTTP 层直接是 zip（`Content-Disposition: attachment`）；`X-Scrape-Pages` 响应头 = 入库页数；`limit_hit` 语义在包内 README.md 里注明（true 表示被 max_pages 截断，不是全量）。
 - **常见错误**：`scope` 缺省 `auto`——起始页是无扩展名叶子（如 `.../introduction`）时自动放宽到所在目录抓兄弟页（严格行为传 `scope: "strict"`）；`max_pages` 上限 200（JSON 版是 50）；`include_patterns` 是**子串**匹配——写 `/v2/` 只命中路径里真有 `/v2/` 段的 URL，命中 `v2-xxx` 应写 `v2`；SPA 站点（正文 JS 渲染）抓不到。
+
+### 3.11 贪心归档一键下载（评论 / 投稿 / 收藏夹 / 搜索）
+
+- **场景**：四个爬虫模块的「翻到底 + 打包下载」统一入口——不再手动翻 pages/pn/limit，拿到手就是可离线用的 zip。
+- **端点与贪心语义**：
+  | 端点 | 贪心停止条件 | 安全上限 | 包内容 |
+  |---|---|---|---|
+  | `POST /api/bilibili-crawler/comments/archive` | 上游 `is_end=true` | max_pages≤200 | comments.json + comments.md（含置顶📌/楼中楼） |
+  | `POST /api/bilibili-crawler/user-videos/archive` | `pn*ps ≥ count` | max_pn≤100 | videos.json + videos.md 表格 |
+  | `GET /api/bilibili-tools/favorites/archive` | 上游 `has_more=false` | max_items≤2000 | favorites.json + favorites.md 表格（失效标注） |
+  | `POST /api/mediacrawler/search/archive` | 结果不足一页 | max_pages≤100 | results.json + results.md 表格 |
+- **curl**：
+  ```bash
+  # 某视频全部评论（含楼中楼）打包
+  curl -X POST "http://127.0.0.1:8080/api/bilibili-crawler/comments/archive" \
+    -H "Content-Type: application/json" -o comments.zip \
+    -d '{"oid": "170001", "type": 1, "max_pages": 100}'
+
+  # 某公开收藏夹全量导出
+  curl "http://127.0.0.1:8080/api/bilibili-tools/favorites/archive?link=https://space.bilibili.com/42/favlist?fid=12345" -o favorites.zip
+  ```
+- **UI**：各模块子页新增的「归档下载」卡片，提交即浏览器自动保存 zip（与 skill-seekers 打包卡一致）。
+- **返回解读**：HTTP 层直接是 zip；`X-Archive-Items` 响应头 = 归档条数；包内 README.md 记录 total/pages_fetched/is_end/limit_hit；json 是结构化全量数据，md 是人可读渲染。
+- **常见错误**：`limit_hit=true` 表示被安全上限截断（未到上游底）；大评论区贪心耗时长（串行+页间隔），建议带 SESSDATA；搜索归档的中文关键词文件名走 RFC 5987（浏览器显示正常名，curl 落盘名是 ASCII）。
 
 ---
 

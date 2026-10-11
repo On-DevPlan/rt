@@ -27,3 +27,11 @@ export const fetchUserSpace = (req) => request('POST', `${P}/user-space`, { body
 
 // POST /api/bilibili-crawler/user-videos  body: UserVideosRequest（WBI 签名的 arc/search）
 export const fetchUserVideos = (req) => request('POST', `${P}/user-videos`, { body: req })
+
+import { download } from './http.js'
+
+// POST /api/bilibili-crawler/comments/archive → zip（贪心翻页）
+export const commentsArchive = (req) => download('POST', `${P}/comments/archive`, { body: req })
+
+// POST /api/bilibili-crawler/user-videos/archive → zip（贪心翻页）
+export const userVideosArchive = (req) => download('POST', `${P}/user-videos/archive`, { body: req })

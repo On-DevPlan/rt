@@ -7,7 +7,7 @@ const MODULES = [
     name: 'bilibili-crawler',
     title: 'Bilibili Crawler',
     desc: 'WBI 签名、av↔bv、视频详情（分P）、播放直链、弹幕、两级评论（置顶+排序）、UP 动态与全量投稿。',
-    endpoints: '8 个端点',
+    endpoints: '10 个端点',
     source: 'Bilibili_crawler'
   },
   {
@@ -15,7 +15,7 @@ const MODULES = [
     name: 'bilibili-tools',
     title: 'Bilibili Tools',
     desc: '收藏夹 v3 枚举、批量收藏（写操作）、音频区三件套（单曲 CDN / 歌单 / UP 歌曲）。',
-    endpoints: '5 个端点',
+    endpoints: '6 个端点',
     source: 'BilibiliTools'
   },
   {
@@ -30,17 +30,17 @@ const MODULES = [
     route: '/crawlers/mediacrawler',
     name: 'mediacrawler',
     title: 'Media Crawler',
-    desc: '平台能力矩阵（7 平台）+ B 站关键词搜索（免登录核心，WBI 复用）。',
-    endpoints: '2 个端点',
+    desc: '平台能力矩阵（7 平台）+ B 站关键词搜索（免登录核心，WBI 复用）；搜索支持贪心翻页归档下载。',
+    endpoints: '3 个端点',
     source: 'MediaCrawler'
   }
 ]
 
 const COOKBOOK_SECTIONS = [
   '0. 阅读对象与前置（后端启动命令）',
-  '1. 端点速查表（4 模块 17 端点）',
+  '1. 端点速查表（4 模块 21 端点）',
   '2. 错误信封与排障规则（401/403/422/502 → 动作）',
-  '3. 实用场景 ×10：两级评论 / 收藏夹导出 / 音频 CDN / 关键词搜索 / 文档站快照 / UP 投稿→评论链路 / 视频直链链路 / 批量收藏一条龙 / WBI 签名调试 / 文档站一键打包',
+  '3. 实用场景 ×11：两级评论 / 收藏夹导出 / 音频 CDN / 关键词搜索 / 文档站快照 / UP 投稿→评论链路 / 视频直链链路 / 批量收藏一条龙 / WBI 签名调试 / 文档站一键打包 / 贪心归档下载',
   '4. 前端 Explorer 与端点对应关系',
   '5. 部署侧注意事项（写操作鉴权 / 凭证不落盘）'
 ]
@@ -51,7 +51,7 @@ export default function CrawlersHomePage() {
       <header className={styles.hero}>
         <h1 className={styles.title}>Crawler Cookbook</h1>
         <p className={styles.lede}>
-          后端 4 个爬虫模块（迁移自 <code>.claude/repo/</code> 下的 4 个仓库，共 17 个端点）的交互式
+          后端 4 个爬虫模块（迁移自 <code>.claude/repo/</code> 下的 4 个仓库，共 21 个端点）的交互式
           API 浏览器。每个子页 = 参数表单 + 实时 curl 预览 + 响应 JSON。完整手册见仓库{' '}
           <code>docs/crawler-cookbook.md</code>。
         </p>

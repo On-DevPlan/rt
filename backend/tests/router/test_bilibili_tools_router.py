@@ -348,3 +348,48 @@ def test_user_songs_order_three_accepted_and_forwarded(client):
 def test_user_songs_order_out_of_range_rejected(client):
     r = client.get("/api/bilibili-tools/audio/user", params={"uid": "2932528", "order": 4})
     assert r.status_code == 422  # 上游 order 合法域为 1/2/3
+
+
+def test_favorites_archive_greedy_zip(client):
+    """收藏夹贪心枚举 → zip：翻到 has_more=False，包内 json+md 表格。"""
+    import io
+    import json as _json
+    import zipfile
+
+    page1 = {
+        "code": 0,
+        "data": {
+            "info": {"title": "归档夹"},
+            "medias": [
+                {"id": 1, "bvid": "BVaaa", "title": "视频一", "cover": "", "attr": 0},
+                {"id": 2, "bvid": "BVbbb", "title": "视频二", "cover": "", "attr": 1},
+            ],
+            "has_more": True,
+        },
+    }
+    page2 = {
+        "code": 0,
+        "data": {
+            "info": {"title": "归档夹"},
+            "medias": [{"id": 3, "bvid": "BVccc", "title": "视频三", "cover": "", "attr": 0}],
+            "has_more": False,
+        },
+    }
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        fav_route = router.get(FAV_LIST_URL).mock(
+            side_effect=[Response(200, json=page1), Response(200, json=page2)]
+        )
+        r = client.get(
+            "/api/bilibili-tools/favorites/archive",
+            params={"mid": "42", "fid": "123"},
+        )
+
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/zip"
+    assert fav_route.call_count == 2  # has_more=False 停
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    assert set(zf.namelist()) == {"README.md", "favorites.json", "favorites.md"}
+    body = _json.loads(zf.read("favorites.json"))
+    assert body["total"] == 3 and body["fav_title"] == "归档夹"
+    md = zf.read("favorites.md").decode()
+    assert "视频二" in md and "失效" in md  # state=1 渲染为失效

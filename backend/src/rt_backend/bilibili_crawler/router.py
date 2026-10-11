@@ -1,10 +1,14 @@
 """Bilibili crawler HTTP endpoints（前缀 /api/bilibili-crawler）。"""
+import datetime
+import json
 from typing import Callable
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
+from ..core.archive import md_table, readme_index, zip_bytes
 from ..core.http import HttpClientHolder
 from .schemas import (
+    CommentsArchiveRequest,
     CommentsRequest,
     CommentsResponse,
     DanmakuResponse,
@@ -13,6 +17,7 @@ from .schemas import (
     PlayUrlResponse,
     UserSpaceRequest,
     UserSpaceResponse,
+    UserVideosArchiveRequest,
     UserVideosRequest,
     UserVideosResponse,
     VideoInfoResponse,
@@ -30,6 +35,7 @@ from .service import (
     fetch_play_url,
     fetch_user_space,
     fetch_user_videos,
+    fetch_user_videos_all,
     fetch_video_detail,
     sign_params,
 )
@@ -200,5 +206,124 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
         except BilibiliCrawlerError as e:
             raise HTTPException(status_code=500, detail=str(e))
         return UserVideosResponse(**data)
+
+    # --- 归档导出：贪心翻页 → zip 下载 --------------------------------------
+
+    def _archive_response(filename: str, data: dict, files: dict[str, str], items_header: int) -> Response:
+        payload = dict(files)
+        payload["README.md"] = readme_index(
+            filename.replace(".zip", "").replace("-", " ").replace(".json", "").replace(".md", ""),
+            [(k, v) for k, v in data.items() if k != "items" and not isinstance(v, list)],
+            [(name, name.rsplit(".", 1)[-1].upper() + " 数据") for name in files if name != "README.md"],
+        )
+        return Response(
+            content=zip_bytes(payload),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "X-Archive-Items": str(items_header),
+            },
+        )
+
+    @router.post("/comments/archive")
+    async def comments_archive(
+        req: CommentsArchiveRequest,
+        http: HttpClientHolder = Depends(http_provider),
+    ):
+        """两级评论贪心爬取 → zip 下载（README.md + comments.json + comments.md）。
+
+        与 /comments 的区别：忽略 pages，翻到上游 is_end 为止（安全上限 max_pages）。"""
+        try:
+            data = await fetch_comments(
+                http.client,
+                oid=req.oid,
+                type_=req.type,
+                ps=req.ps,
+                include_replies=req.include_replies,
+                mode=req.mode,
+                sessdata=req.sessdata,
+                greedy=True,
+                max_pages=req.max_pages,
+            )
+        except AuthError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+        except UpstreamError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except BilibiliCrawlerError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+        md_lines = [
+            f"# 评论归档 {req.oid}（type={req.type}）",
+            "",
+            f"- 总评论（一级，含置顶）: {data['total']} · 翻页: {data['pages_fetched']} · "
+            f"is_end: {data['is_end']} · limit_hit: {data['limit_hit']}",
+            "",
+        ]
+        for c in data["items"]:
+            pin = "📌 " if c.get("pinned") else ""
+            md_lines += [
+                f"## {pin}{c['name']} · {c['time']} · 👍 {c['like']}",
+                "",
+                c["message"],
+                "",
+                f"> {c['location']} · Lv{c['level']}",
+                "",
+            ]
+            for r in c.get("replies") or []:
+                md_lines += [f"> **↳ {r['name']}** {r['time']} 👍 {r['like']}：{r['message']}", ""]
+        day = datetime.date.today().isoformat()
+        return _archive_response(
+            f"bilibili-comments-{req.oid}-{day}.zip",
+            data,
+            {
+                "comments.json": json.dumps(data, ensure_ascii=False, indent=2),
+                "comments.md": "\n".join(md_lines).rstrip() + "\n",
+            },
+            data["total"],
+        )
+
+    @router.post("/user-videos/archive")
+    async def user_videos_archive(
+        req: UserVideosArchiveRequest,
+        http: HttpClientHolder = Depends(http_provider),
+    ):
+        """UP 主全量投稿贪心爬取 → zip 下载（README.md + videos.json + videos.md）。
+
+        与 /user-videos 的区别：自动翻 pn 到 count 覆盖完（安全上限 max_pn）。"""
+        try:
+            data = await fetch_user_videos_all(
+                http.client,
+                mid=req.mid,
+                ps=req.ps,
+                order=req.order,
+                sessdata=req.sessdata,
+                max_pn=req.max_pn,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except AuthError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+        except UpstreamError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except BilibiliCrawlerError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+        videos_md = md_table(
+            ["#", "title", "bvid", "aid", "play", "length"],
+            [
+                [i + 1, v["title"], v["bvid"], v["aid"], v.get("play"), v.get("length", "")]
+                for i, v in enumerate(data["items"])
+            ],
+        )
+        day = datetime.date.today().isoformat()
+        return _archive_response(
+            f"bilibili-videos-{req.mid}-{day}.zip",
+            data,
+            {
+                "videos.json": json.dumps(data, ensure_ascii=False, indent=2),
+                "videos.md": videos_md,
+            },
+            data["total"],
+        )
 
     return router

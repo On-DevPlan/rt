@@ -133,3 +133,53 @@ async def test_search_validation():
         assert r.status_code == 422
         r = c.post("/api/mediacrawler/search", json={"keyword": "x", "order": "bogus"})
         assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_search_archive_greedy_zip():
+    """搜索贪心翻页 → zip：第 2 页不足一页即停。"""
+    import io
+    import json as _json
+    import zipfile
+
+    client = await _make_client()
+
+    def _search_page(n_hits):
+        return {
+            "code": 0,
+            "data": {
+                "numResults": 99,
+                "result": [
+                    {
+                        "result_type": "video",
+                        "data": [
+                            {"aid": i, "bvid": f"BV{i}", "title": f"视频{i}", "author": "up", "play": i}
+                            for i in range(n_hits)
+                        ],
+                    }
+                ],
+            },
+        }
+
+    with respx.mock(base_url="https://api.bilibili.com") as router:
+        router.get(NAV_URL).mock(return_value=Response(200, json=_nav()))
+        search_route = router.get(SEARCH_URL).mock(
+            side_effect=[
+                Response(200, json=_search_page(2)),
+                Response(200, json=_search_page(1)),  # 不足 page_size=2 → 到底
+            ]
+        )
+        with client as c:
+            r = c.post(
+                "/api/mediacrawler/search/archive",
+                json={"keyword": "测试", "page_size": 2},
+            )
+
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/zip"
+    assert search_route.call_count == 2
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    assert set(zf.namelist()) == {"README.md", "results.json", "results.md"}
+    body = _json.loads(zf.read("results.json"))
+    assert body["total"] == 3 and body["limit_hit"] is False
+    assert "视频0" in zf.read("results.md").decode()

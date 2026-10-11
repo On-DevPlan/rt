@@ -145,3 +145,52 @@ async def search_bilibili_videos(
                 }
             )
     return {"keyword": keyword, "page": page, "num_results": data.get("numResults"), "items": items}
+
+
+async def search_bilibili_videos_all(
+    client: httpx.AsyncClient,
+    keyword: str,
+    order: str = "default",
+    page_size: int = 20,
+    sessdata: str | None = None,
+    max_pages: int = 50,
+) -> dict[str, Any]:
+    """贪心版关键词搜索：自动翻页直到结果不足一页（安全上限 max_pages）。
+
+    归档用：items 与单页版同构，另带 pages_fetched / limit_hit。
+    """
+    if order not in SEARCH_ORDERS:
+        raise ValueError(f"order 必须是 {sorted(SEARCH_ORDERS)} 之一")
+    items: list[dict[str, Any]] = []
+    num_results = None
+    page = 0
+    limit_hit = False
+    while page < max_pages:
+        page += 1
+        data = await search_bilibili_videos(
+            client,
+            keyword,
+            page=page,
+            page_size=page_size,
+            order=order,
+            sessdata=sessdata,
+        )
+        num_results = data.get("num_results")
+        batch = data.get("items") or []
+        if not batch:
+            page -= 1  # 空页不计
+            break
+        items.extend(batch)
+        if len(batch) < page_size:
+            break
+    else:
+        limit_hit = True
+    return {
+        "keyword": keyword,
+        "order": order,
+        "num_results": num_results,
+        "total": len(items),
+        "pages_fetched": page,
+        "limit_hit": limit_hit,  # max_pages 触顶（非上游到底）
+        "items": items,
+    }

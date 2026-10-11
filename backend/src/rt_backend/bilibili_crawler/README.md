@@ -31,6 +31,8 @@
 | POST | `/comments` | body: `{oid, type=1, ps=20, pages=1, include_replies=true, mode=3, sessdata?}` | 规范化评论列表（含楼中楼；置顶评论置顶并带 `pinned: true`，按 rpid 去重） |
 | POST | `/user-space` | body: `{mid, max_pages=3, sessdata?}` | 动态列表（comment_id_str/comment_type/title） |
 | POST | `/user-videos` | body: `{mid, pn=1, ps=30, order=pubdate, sessdata?}` | 全量投稿列表（aid/bvid/title/created/play/video_review/length + count 总数） |
+| POST | `/comments/archive` | body: `{oid, type=1, ps=20, include_replies=true, mode=3, max_pages=100(≤200), sessdata?}` | **zip 下载**：README.md + comments.json + comments.md；贪心翻到上游 is_end（`X-Archive-Items`=条数，limit_hit=被上限截断） |
+| POST | `/user-videos/archive` | body: `{mid, ps=30, order=pubdate, max_pn=20(≤100), sessdata?}` | **zip 下载**：README.md + videos.json + videos.md 表格；贪心翻到 count 覆盖完 |
 
 ## curl 案例
 

@@ -22,6 +22,7 @@
 | 方法 | 路径 | 参数 | 响应 |
 |---|---|---|---|
 | GET | `/favorites` | query: `link`（完整收藏夹链接）或 `mid`+`fid`；`limit≤200` | `{mid, fid, total, items:[{aid,title,pic,state}]}` |
+| GET | `/favorites/archive` | query: 同上（limit 换 `max_items≤2000`） | **zip 下载**：README.md + favorites.json + favorites.md 表格；贪心翻到 has_more=false |
 | POST | `/favorites/add` | body: `{sessdata, bili_jct, fid, aids[]}` | 逐个 av 的 `{code, ok, pattern, message}` |
 | GET | `/audio/playlist/{sid}` | 路径: `am{id}` 或纯数字；`max_pages≤10` | `{menu_sid, total, page_count, truncated, items:[{sid,title,author,...}]}` |
 | GET | `/audio/user` | query: `uid` 或 `link`（space 链接）；`order`（1=最新发布 2=最多播放 3=最多收藏）、`max_pages` | `{uid, total, page_count, truncated, items:[...]}` |

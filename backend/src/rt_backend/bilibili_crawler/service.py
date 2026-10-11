@@ -486,6 +486,9 @@ async def fetch_comments(
     include_replies: bool = True,
     mode: int = 3,
     sessdata: str | None = None,
+    *,
+    greedy: bool = False,
+    max_pages: int = 100,
 ) -> dict[str, Any]:
     """爬取两级评论（含置顶，对齐原仓库 top_replies/top 处理）。
 
@@ -493,10 +496,12 @@ async def fetch_comments(
         oid: 目标 id（type=1 视频为 aid，type=17 动态为动态 id）
         type_: 评论区类型（1=视频 17=动态，见 bilibili-API-collect）
         ps: 每页条数（上游上限 49？常用 20/30）
-        pages: 抓取的一级评论页数
+        pages: 抓取的一级评论页数（greedy=False 时生效）
         include_replies: 是否抓取楼中楼
         mode: 排序参数透传上游（2=按时间 3=按热度，0/1 为混合态）
         sessdata: 可选登录态
+        greedy: 贪心模式——忽略 pages，翻到上游 is_end 为止（安全上限 max_pages）
+        max_pages: greedy 模式的翻页安全上限（触顶记 limit_hit=True）
     """
     comments: list[dict[str, Any]] = []
     seen_rpids: set[str] = set()
@@ -515,7 +520,18 @@ async def fetch_comments(
             )
         comments.append(item)
 
-    for page in range(1, pages + 1):
+    page = 0
+    fetched = 0
+    is_end = None
+    limit_hit = False
+    while True:
+        if not greedy and page >= pages:
+            break
+        if greedy and page >= max_pages:
+            limit_hit = True
+            break
+        page += 1
+        fetched = page
         data = await _get_json(
             client,
             _REPLY_MAIN_API,
@@ -530,15 +546,20 @@ async def fetch_comments(
             break
         for reply in replies:
             await _append(reply, pinned=False)
+        cursor = data.get("cursor") or {}
+        is_end = bool(cursor.get("is_end")) if cursor else None
+        if greedy and is_end:
+            break
         await asyncio_sleep_small()
 
-    cursor = data.get("cursor") if pages else None  # 保留最后一页的游标信息
     return {
         "oid": oid,
         "type": type_,
-        "pages_fetched": pages,
+        "pages_fetched": fetched,
         "total": len(comments),
-        "is_end": bool((cursor or {}).get("is_end")) if cursor else None,
+        "is_end": is_end,
+        "greedy": greedy,
+        "limit_hit": limit_hit,  # greedy 模式被 max_pages 截断（非上游到底）
         "items": comments,
     }
 
@@ -634,3 +655,57 @@ async def fetch_user_videos(
         for v in vlist
     ]
     return {"mid": mid, "count": data.get("count"), "total": len(items), "items": items}
+
+
+async def fetch_user_videos_all(
+    client: httpx.AsyncClient,
+    mid: str,
+    ps: int = 30,
+    order: str = "pubdate",
+    sessdata: str | None = None,
+    max_pn: int = 20,
+) -> dict[str, Any]:
+    """贪心版 UP 主全量投稿：自动翻 pn 直到 count 覆盖完 / 空页（安全上限 max_pn）。
+
+    归档用：items 与单页版同构，另带 pages_fetched / limit_hit。
+    """
+    if order not in _ARC_ORDERS:
+        raise ValueError(f"order 必须是 {_ARC_ORDERS} 之一")
+    items: list[dict[str, Any]] = []
+    count = None
+    pn = 0
+    limit_hit = False
+    while True:
+        if pn >= max_pn:
+            limit_hit = True
+            break
+        pn += 1
+        params: dict[str, Any] = {"mid": mid, "pn": pn, "ps": ps, "order": order}
+        data = await _signed_get_json(client, _ARC_SEARCH_API, params, sessdata)
+        vlist = (data.get("list") or {}).get("vlist") or []
+        if not vlist:
+            break
+        items.extend(
+            {
+                "aid": v.get("aid"),
+                "bvid": v.get("bvid", ""),
+                "title": v.get("title", ""),
+                "created": v.get("created"),
+                "play": v.get("play"),
+                "video_review": v.get("video_review"),
+                "length": v.get("length", ""),
+            }
+            for v in vlist
+        )
+        count = data.get("count")
+        if count is not None and pn * ps >= int(count):
+            break
+        await asyncio_sleep_small()
+    return {
+        "mid": mid,
+        "count": count,
+        "total": len(items),
+        "pages_fetched": pn,
+        "limit_hit": limit_hit,  # max_pn 触顶（非上游到底）
+        "items": items,
+    }

@@ -186,5 +186,71 @@ export const bilibiliCrawlerEndpoints = [
     buildCurl: (v) =>
       `curl -X POST "${BASE}/user-videos" -H "Content-Type: application/json" -d '${JSON.stringify(v)}'`,
     submit: (v) => api.fetchUserVideos(v)
+  },
+  {
+    id: 'comments-archive',
+    title: '评论归档下载（贪心翻页 → zip）',
+    description: '与「两级评论」同管线，但忽略 pages：自动翻到上游 is_end 为止（安全上限 max_pages），服务端打包 zip 下载（README.md + comments.json + comments.md 可读渲染）。高频大评论区建议带 SESSDATA。',
+    method: 'POST',
+    path: '/api/bilibili-crawler/comments/archive',
+    download: true,
+    inputs: [
+      { name: 'oid', label: 'oid（type=1 视频 aid；type=17 动态 id）', type: 'text', placeholder: '170001', default: '170001' },
+      {
+        name: 'type',
+        label: '评论区类型',
+        type: 'select',
+        default: 1,
+        options: [
+          { value: 1, label: '1 — 视频' },
+          { value: 17, label: '17 — 动态' }
+        ]
+      },
+      { name: 'ps', label: '每页条数（≤30）', type: 'number', default: 20 },
+      { name: 'include_replies', label: '展开楼中楼', type: 'bool', default: true },
+      {
+        name: 'mode',
+        label: '排序（透传上游）',
+        type: 'select',
+        default: 3,
+        options: [
+          { value: 3, label: '3 — 按热度' },
+          { value: 2, label: '2 — 按时间' }
+        ]
+      },
+      { name: 'max_pages', label: '翻页安全上限（≤200）', type: 'number', default: 100 },
+      { name: 'sessdata', label: 'SESSDATA（可选，降风控）', type: 'text', sensitive: true }
+    ],
+    buildCurl: (v) =>
+      `curl -X POST "${BASE}/comments/archive" -H "Content-Type: application/json" -o comments.zip -d '${JSON.stringify(v)}'`,
+    submit: (v) => api.commentsArchive(v)
+  },
+  {
+    id: 'user-videos-archive',
+    title: '投稿归档下载（贪心翻页 → zip）',
+    description: '与「UP 主全量投稿」同管线，但自动翻 pn 到 count 覆盖完（安全上限 max_pn），服务端打包 zip 下载（README.md + videos.json + videos.md 表格）。',
+    method: 'POST',
+    path: '/api/bilibili-crawler/user-videos/archive',
+    download: true,
+    inputs: [
+      { name: 'mid', label: 'UP 主 uid', type: 'text', placeholder: '42', default: '42' },
+      { name: 'ps', label: '每页条数（≤50）', type: 'number', default: 30 },
+      {
+        name: 'order',
+        label: '排序',
+        type: 'select',
+        default: 'pubdate',
+        options: [
+          { value: 'pubdate', label: 'pubdate — 最近发布' },
+          { value: 'click', label: 'click — 最多播放' },
+          { value: 'stow', label: 'stow — 最多收藏' }
+        ]
+      },
+      { name: 'max_pn', label: '翻页安全上限（≤100）', type: 'number', default: 20 },
+      { name: 'sessdata', label: 'SESSDATA（可选）', type: 'text', sensitive: true }
+    ],
+    buildCurl: (v) =>
+      `curl -X POST "${BASE}/user-videos/archive" -H "Content-Type: application/json" -o videos.zip -d '${JSON.stringify(v)}'`,
+    submit: (v) => api.userVideosArchive(v)
   }
 ]

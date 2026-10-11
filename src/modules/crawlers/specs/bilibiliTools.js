@@ -106,5 +106,27 @@ export const bilibiliToolsEndpoints = [
       return `curl "${BASE}/audio/user?${q}"`
     },
     submit: (v) => api.userSongs(v)
+  },
+  {
+    id: 'favorites-archive',
+    title: '收藏夹归档下载（贪心枚举 → zip）',
+    description: '与「收藏夹枚举」同管线，但自动翻到 has_more=false（安全上限 max_items≤2000），服务端打包 zip 下载（README.md + favorites.json + favorites.md 表格，失效视频在 md 里标「失效」）。',
+    method: 'GET',
+    path: '/api/bilibili-tools/favorites/archive',
+    download: true,
+    inputs: [
+      { name: 'link', label: '收藏夹链接（优先）', type: 'text', placeholder: 'https://space.bilibili.com/42/favlist?fid=12345' },
+      { name: 'mid', label: 'UP 主 uid（与 fid 一起）', type: 'text', placeholder: '42' },
+      { name: 'fid', label: '收藏夹 fid', type: 'text', placeholder: '12345' },
+      { name: 'max_items', label: '条数安全上限（≤2000）', type: 'number', default: 2000 }
+    ],
+    buildCurl: (v) => {
+      const q = new URLSearchParams()
+      for (const k of ['link', 'mid', 'fid', 'max_items']) {
+        if (v[k] !== undefined && v[k] !== '') q.set(k, v[k])
+      }
+      return `curl "${BASE}/favorites/archive?${q}" -o favorites.zip`
+    },
+    submit: (v) => api.favoritesArchive(v)
   }
 ]

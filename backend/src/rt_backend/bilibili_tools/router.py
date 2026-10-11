@@ -1,8 +1,11 @@
 """Bilibili tools HTTP endpoints（前缀 /api/bilibili-tools）。"""
+import datetime
+import json
 from typing import Callable
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
+from ..core.archive import md_table, readme_index, zip_bytes
 from ..core.http import HttpClientHolder
 from .schemas import (
     AddFavoriteRequest,
@@ -60,6 +63,53 @@ def build_router(http_provider: Callable[[], HttpClientHolder]) -> APIRouter:
         except BilibiliToolsError as e:
             raise _http_exc(e)
         return FavoritesResponse(**data)
+
+    @router.get("/favorites/archive")
+    async def favorites_archive(
+        http: HttpClientHolder = Depends(http_provider),
+        link: str | None = Query(default=None, description="收藏夹链接（优先）"),
+        mid: str | None = Query(default=None, description="UP 主 uid（与 fid 一起）"),
+        fid: str | None = Query(default=None, description="收藏夹 id"),
+        max_items: int = Query(default=2000, ge=1, le=2000, description="贪心安全上限"),
+    ):
+        """收藏夹贪心枚举（翻到 has_more 为止）→ zip 下载
+        （README.md + favorites.json + favorites.md 表格）。"""
+        if link:
+            try:
+                mid, fid = parse_fav_link(link)
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=str(e))
+        if not mid or not fid:
+            raise HTTPException(status_code=422, detail="需要 link 或 (mid + fid)")
+        try:
+            data = await fetch_favorites(http.client, mid, fid, max_items)
+        except BilibiliToolsError as e:
+            raise _http_exc(e)
+        fav_md = md_table(
+            ["#", "title", "bvid", "aid", "state"],
+            [
+                [i + 1, v["title"], v["bvid"], v["aid"], "失效" if v["state"] else "ok"]
+                for i, v in enumerate(data["items"])
+            ],
+        )
+        day = datetime.date.today().isoformat()
+        payload = {
+            "favorites.json": json.dumps(data, ensure_ascii=False, indent=2),
+            "favorites.md": fav_md,
+        }
+        payload["README.md"] = readme_index(
+            f"Favorites Archive {mid}/{fid}",
+            [(k, v) for k, v in data.items() if k != "items"],
+            [(n, n.rsplit(".", 1)[-1].upper() + " 数据") for n in payload],
+        )
+        return Response(
+            content=zip_bytes(payload),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="bilibili-fav-{fid}-{day}.zip"',
+                "X-Archive-Items": str(data["total"]),
+            },
+        )
 
     @router.post("/favorites/add", response_model=AddFavoriteResponse)
     async def favorites_add(

@@ -20,3 +20,9 @@ export const playlistSongs = (sid, { max_pages } = {}) =>
 // GET /api/bilibili-tools/audio/user?uid=|link=&order=&max_pages=
 export const userSongs = ({ uid, link, order, max_pages }) =>
   request('GET', `${P}/audio/user`, { query: { uid, link, order, max_pages } })
+
+import { download } from './http.js'
+
+// GET /api/bilibili-tools/favorites/archive → zip（贪心枚举）
+export const favoritesArchive = ({ link, mid, fid, max_items }) =>
+  download('GET', '/bilibili-tools/favorites/archive', { query: { link, mid, fid, max_items } })

@@ -25,6 +25,7 @@ xhs/douyin/kuaishou/weibo/tieba/zhihu 需要浏览器登录签名的平台不包
 |---|---|---|---|
 | GET | `/platforms` | — | 7 个平台的 `{name, login_required, playwright_required, wrapped, note}` |
 | POST | `/search` | body: `{keyword, page=1, page_size=20(≤50), order=default, pubtime_begin_s=0, pubtime_end_s=0, sessdata?}` | `{keyword, page, num_results, items[]}` |
+| POST | `/search/archive` | body: `{keyword, order=default, page_size=20, max_pages=50(≤100), sessdata?}` | **zip 下载**：README.md + results.json + results.md 表格；贪心翻到结果不足一页 |
 
 `order` 取值对齐原仓库 `SearchOrderType`：`default`（综合）/ `click`（最多点击）/
 `pubdate`（最新发布）/ `dm`（弹幕最多）/ `stow`（最多收藏）。
